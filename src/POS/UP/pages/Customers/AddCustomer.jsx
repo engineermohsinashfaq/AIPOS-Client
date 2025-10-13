@@ -1,0 +1,223 @@
+import React, { useState, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+
+const emptyCustomer = {
+  customerId: "",
+  firstName: "",
+  lastName: "",
+  contact: "",
+  cnic: "",
+  city: "",
+  status: "Active", // ✅ Add default status
+  address: "",
+};
+
+// Function to generate auto ID like C-001, C-002, etc.
+const generateCustomerId = () => {
+  let lastId = Number(localStorage.getItem("lastCustomerId") || 0);
+  lastId = lastId < 1 ? 1 : lastId + 1;
+  localStorage.setItem("lastCustomerId", lastId);
+  return `C-${String(lastId).padStart(3, "0")}`;
+};
+
+export default function AddCustomer({ onSave }) {
+  const [customer, setCustomer] = useState(emptyCustomer);
+
+  useEffect(() => {
+    setCustomer((prev) => ({ ...prev, customerId: generateCustomerId() }));
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "contact") {
+      let digits = value.replace(/\D/g, "");
+      setCustomer((prev) => ({ ...prev, [name]: digits }));
+      return;
+    }
+
+    if (name === "cnic") {
+      let digits = value.replace(/\D/g, "");
+      if (digits.length > 13) digits = digits.slice(0, 13);
+
+      let formatted = "";
+      if (digits.length <= 5) formatted = digits;
+      else if (digits.length <= 12)
+        formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+      else
+        formatted = `${digits.slice(0, 5)}-${digits.slice(
+          5,
+          12
+        )}-${digits.slice(12)}`;
+
+      setCustomer((prev) => ({ ...prev, [name]: formatted }));
+      return;
+    }
+
+    setCustomer((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!/^C-\d+$/.test(customer.customerId))
+      return toast.error("Invalid Customer ID format");
+
+    if (!customer.firstName.trim())
+      return toast.error("First Name is required");
+    if (!customer.lastName.trim()) return toast.error("Last Name is required");
+
+    const fullContact = "+" + customer.contact;
+    if (!/^\+\d{7,15}$/.test(fullContact))
+      return toast.error(
+        "Contact must start with '+' followed by 7–15 digits (e.g., +923001234567)"
+      );
+
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(customer.cnic))
+      return toast.error(
+        "CNIC must be in format 12345-1234567-1 (13 digits total)"
+      );
+
+    if (!customer.city.trim()) return toast.error("City is required");
+    if (!customer.address.trim()) return toast.error("Address is required");
+
+    // Save with formatted contact and timestamp
+    const savedCustomer = {
+      ...customer,
+      contact: fullContact,
+      dateAdded: new Date().toLocaleString(),
+    };
+
+    console.log("Saved Customer:", savedCustomer);
+
+    if (onSave) onSave(savedCustomer);
+
+    toast.success("Customer added successfully!", {
+      onClose: () => window.location.reload(),
+      autoClose: 2000,
+    });
+
+    setCustomer({ ...emptyCustomer, customerId: generateCustomerId() });
+  };
+
+  return (
+    <div className="px-4 py-2">
+      <ToastContainer />
+      <div className="max-w-6xl mx-auto space-y-3">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-white">Add Customer</h1>
+          <p className="text-white/80">
+            Fill in the customer details below and save.
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8 text-white shadow-lg mt-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Auto Customer ID */}
+            <input
+              type="text"
+              name="customerId"
+              value={customer.customerId}
+              readOnly
+              className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+            />
+
+            {/* First and Last Name */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="firstName"
+                placeholder="First Name"
+                value={customer.firstName}
+                onChange={handleChange}
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+              />
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={customer.lastName}
+                onChange={handleChange}
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+              />
+            </div>
+
+            {/* Contact and CNIC */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 select-none">
+                  +
+                </span>
+                <input
+                  type="text"
+                  name="contact"
+                  placeholder="923001234567"
+                  value={customer.contact}
+                  onChange={handleChange}
+                  className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+                />
+              </div>
+
+              <input
+                type="text"
+                name="cnic"
+                placeholder="CNIC"
+                value={customer.cnic}
+                onChange={handleChange}
+                maxLength={15}
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+              />
+            </div>
+
+            {/* City and Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="city"
+                placeholder="City"
+                value={customer.city}
+                onChange={handleChange}
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+              />
+
+              <select
+                name="status"
+                value={customer.status}
+                onChange={handleChange}
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+              >
+                <option className="bg-black/90">Active</option>
+                <option className="bg-black/90">Inactive</option>
+                <option className="bg-black/90">Suspended</option>
+              </select>
+            </div>
+
+            {/* Address */}
+            <textarea
+              name="address"
+              placeholder="Address"
+              value={customer.address}
+              onChange={handleChange}
+              rows="10"
+              className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+            />
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="w-full py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
+            >
+              <PersonAddIcon />
+              Save
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
