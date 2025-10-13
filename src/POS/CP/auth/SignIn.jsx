@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import logo from "../../../assets/common-images/logo.webp";
-import { Helmet } from "react-helmet";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import BackButton from "../../../components/Button/BackButton";
@@ -81,13 +80,13 @@ const SignIn = () => {
 
   return (
     <>
-      <Helmet>
+      {/* <Helmet>
         <title>Customer Portal - Zubi Electronics</title>
         <meta
           name="description"
           content="This is the customer portal of zubi electronics."
         />
-      </Helmet>
+      </Helmet> */}
 
       {/* Toast Container */}
       <ToastContainer />

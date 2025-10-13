@@ -1,5 +1,4 @@
 import React from "react";
-import { Helmet } from "react-helmet";
 import BackButton from "../../components/Button/BackButton";
 const FAQ = () => {
   const faqs = [
@@ -50,13 +49,13 @@ const FAQ = () => {
 
   return (
     <>
-      <Helmet>
+      {/* <Helmet>
         <title>FAQ's - Zubi Electronics</title>
         <meta
           name="description"
           content="This is the faq's page of zubi electronics."
         />
-      </Helmet>
+      </Helmet> */}
       <div className=" min-h-screen w-full flex items-center justify-center p-6">
         <div className="backdrop-blur-lg bg-white/10 rounded-2xl shadow-xl max-w-4xl w-full p-8">
           <div className="hidden sm:block">

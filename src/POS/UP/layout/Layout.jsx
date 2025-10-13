@@ -1,17 +1,16 @@
 import Sidebar from "../components/Sidebar/Sidebar";
 import NullPage from "../pages/NullPage";
-import { Helmet } from "react-helmet";
 
 const Layout = () => {
   return (
     <>
-      <Helmet>
+      {/* <Helmet>
         <title>User Portal - Zubi Electronics</title>
         <meta
           name="description"
           content="This is the customer services page of zubi electronics."
         />
-      </Helmet>
+      </Helmet> */}
       <div className="flex flex-col lg:flex-row h-screen text-white relative ">
         {/* Sidebar */}
         <div className="order-2 lg:order-1">

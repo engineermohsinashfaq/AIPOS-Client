@@ -10,23 +10,23 @@ import { mobilesLaptops } from "../../constants/productsDetails";
 // Fade In Up Animation (duration = 0.2s)
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      duration: 0.2,    // ⏱️ Transition time
-      ease: "easeOut"   // 🌀 Easing type
-    } 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.2, // ⏱️ Transition time
+      ease: "easeOut", // 🌀 Easing type
+    },
   },
 };
 
 // Container Stagger (delay between children = 0.2s)
 const staggerContainer = {
   hidden: {},
-  visible: { 
-    transition: { 
-      staggerChildren: 0.2 // ⏱️ Delay between child animations
-    } 
+  visible: {
+    transition: {
+      staggerChildren: 0.2, // ⏱️ Delay between child animations
+    },
   },
 };
 
@@ -36,9 +36,9 @@ const cardVariant = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { 
-      duration: 0.2,   // ⏱️ Transition time
-      ease: "easeOut"  // 🌀 Easing type
+    transition: {
+      duration: 0.2, // ⏱️ Transition time
+      ease: "easeOut", // 🌀 Easing type
     },
   },
 };
@@ -72,9 +72,9 @@ const MobilesLaptops = () => {
             variants={cardVariant}
             whileHover={{ scale: 1.02 }} // Hover effect
           >
-            <a href={product.link} className="block w-full h-full">
+            <div className="block w-full h-full">
               <ProductCard {...product} />
-            </a>
+            </div>
           </motion.div>
         ))}
       </motion.div>

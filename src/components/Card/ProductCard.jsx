@@ -6,7 +6,6 @@ import Badge from "../../components/Badge/ProductCardBadge";
 const ProductCard = ({ image, brand, title, description, badge }) => {
   return (
     <div className="max-w-sm w-full h-[350px] flex flex-col justify-between rounded-2xl shadow-xl bg-white/10 backdrop-blur-lg border border-white/20 p-5 transition-transform hover:scale-105 hover:shadow-2xl duration-300">
-      
       {/* |===============================| Product Image Section |===============================| */}
       <div className="relative h-1/2">
         <img
