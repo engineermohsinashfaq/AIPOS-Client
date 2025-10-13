@@ -1,6 +1,5 @@
 // |===============================| Imports |===============================|
 import React from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import categories from "../../constants/products";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -67,8 +66,8 @@ const Products = () => {
                 const slug = category.title.toLowerCase().replace(/\s+/g, "-");
 
                 return (
-                  <Link
-                    to={`/pages/products/${slug}`}
+                  <MotionLink
+                    href={`/pages/products/${slug}`}
                     key={index}
                     className="group relative overflow-hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-500 hover:scale-105 cursor-pointer block"
                     variants={cardVariant}
@@ -100,7 +99,7 @@ const Products = () => {
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <ArrowForwardIcon className="w-7 h-7 text-white" />
                     </div>
-                  </Link>
+                  </MotionLink>
                 );
               })}
             </motion.div>

@@ -1,5 +1,5 @@
 import React from 'react'
-import UnderDevelopment from "../../pages/UnderDevelopment/UnderDevelopment"
+import UnderDevelopment from "../UnderDevelopment/UnderDevelopment"
 
 const OthersAccessories = () => {
   return (

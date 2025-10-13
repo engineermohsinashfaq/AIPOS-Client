@@ -1,4 +1,4 @@
-// |===============================| Import React, Formik, Yup, Framer Motion, and Icons |===============================|
+// |===============================| Import React, Formik, Yup, Framer Motion, Icons, and Toastify |===============================|
 import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -7,6 +7,8 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
 import MailIcon from "@mui/icons-material/Mail";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // |===============================| Animation Variants |===============================|
 const fadeInUp = {
@@ -28,7 +30,6 @@ const cardVariant = {
 
 // |===============================| Contact Component |===============================|
 const Contact = () => {
-  // |===============================| Formik Setup |===============================|
   const formik = useFormik({
     initialValues: {
       firstName: "",
@@ -53,19 +54,23 @@ const Contact = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
+
         if (response.ok) {
-          alert("Thanks for your message!");
+          toast.success("Thanks for your message!");
           resetForm();
         } else {
-          alert("Submission failed. Please try again.");
+          toast.error("Submission failed. Please try again.");
         }
       } catch (error) {
-        alert("An error occurred. Please try again.");
+        toast.error("An error occurred. Please try again.");
       } finally {
         setSubmitting(false);
       }
     },
   });
+
+  const inputClass =
+    "w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30";
 
   return (
     <motion.section
@@ -78,7 +83,7 @@ const Contact = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative z-10">
-          {/* |===============================| Section Header |===============================| */}
+          {/* Section Header */}
           <motion.div className="text-center mb-16" variants={fadeInUp}>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Get In Touch
@@ -90,12 +95,12 @@ const Contact = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* |===============================| Contact Info Section |===============================| */}
+            {/* Contact Info Section */}
             <motion.div
-              className="space-y-8 lg:space-y-12"
+              className="space-y-6 lg:space-y-8"
               variants={staggerContainer}
             >
-              {/* |===============================| Contact Info Cards |===============================| */}
+              {/* Contact Info Cards */}
               <motion.div
                 className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6"
                 variants={cardVariant}
@@ -138,7 +143,7 @@ const Contact = () => {
                         variants={fadeInUp}
                       >
                         <div
-                          className={`p-3 bg-gradient-to-r ${info.gradient} rounded-lg text-white`}
+                          className={`p-3 bg-gradient-to-r ${info.gradient} rounded-md text-white`}
                         >
                           <Icon sx={{ width: 24, height: 24 }} />
                         </div>
@@ -156,7 +161,7 @@ const Contact = () => {
                 </div>
               </motion.div>
 
-              {/* |===============================| Google Map Card |===============================| */}
+              {/* Google Map Card */}
               <motion.div
                 className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6"
                 variants={cardVariant}
@@ -164,7 +169,7 @@ const Contact = () => {
                 <h3 className="text-2xl font-semibold text-white mb-6">
                   Locate Us
                 </h3>
-                <div className="w-full h-64 rounded-lg overflow-hidden">
+                <div className="w-full h-64 rounded-md overflow-hidden">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2781.5261585458175!2d71.53724329612466!3d33.997395804267576!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38d917ab3f41fdc7%3A0xa5152a9b8582e87a!2sZubi%20electronics!5e0!3m2!1sen!2s!4v1758749602920!5m2!1sen!2s"
                     width="100%"
@@ -173,13 +178,13 @@ const Contact = () => {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    className="rounded-lg"
+                    className="rounded-md"
                   ></iframe>
                 </div>
               </motion.div>
             </motion.div>
 
-            {/* |===============================| Contact Form Section |===============================| */}
+            {/* Contact Form Section */}
             <motion.div
               className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 text-sm"
               variants={cardVariant}
@@ -189,7 +194,6 @@ const Contact = () => {
               </h3>
 
               <form className="space-y-6" onSubmit={formik.handleSubmit}>
-                {/* Form Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* First Name */}
                   <div>
@@ -199,8 +203,9 @@ const Contact = () => {
                     <input
                       type="text"
                       name="firstName"
+                      autoComplete="given-name"
                       {...formik.getFieldProps("firstName")}
-                      className="w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="First Name"
                     />
                     {formik.touched.firstName && formik.errors.firstName && (
@@ -218,8 +223,9 @@ const Contact = () => {
                     <input
                       type="text"
                       name="lastName"
+                      autoComplete="family-name"
                       {...formik.getFieldProps("lastName")}
-                      className="w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="Last Name"
                     />
                     {formik.touched.lastName && formik.errors.lastName && (
@@ -238,8 +244,9 @@ const Contact = () => {
                   <input
                     type="email"
                     name="email"
+                    autoComplete="email"
                     {...formik.getFieldProps("email")}
-                    className="w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="example@info.com"
                   />
                   {formik.touched.email && formik.errors.email && (
@@ -257,8 +264,9 @@ const Contact = () => {
                   <input
                     type="text"
                     name="subject"
+                    autoComplete="off"
                     {...formik.getFieldProps("subject")}
-                    className="w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="Inquiry about installment plans"
                   />
                   {formik.touched.subject && formik.errors.subject && (
@@ -275,9 +283,10 @@ const Contact = () => {
                   </label>
                   <textarea
                     name="message"
+                    autoComplete="off"
                     {...formik.getFieldProps("message")}
                     rows={13}
-                    className="w-full px-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={inputClass + " resize-none"}
                     placeholder="Tell us how we can help you..."
                   ></textarea>
                   {formik.touched.message && formik.errors.message && (
@@ -287,7 +296,6 @@ const Contact = () => {
                   )}
                 </div>
 
-                {/* Submit Button with SignIn Style */}
                 <button
                   type="submit"
                   disabled={formik.isSubmitting}
@@ -300,9 +308,22 @@ const Contact = () => {
           </div>
         </div>
       </div>
+
+      {/* Toastify Container */}
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </motion.section>
   );
 };
 
-// |===============================| Export Contact Component |===============================|
 export default Contact;
