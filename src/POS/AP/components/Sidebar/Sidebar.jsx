@@ -7,7 +7,7 @@ import {
   ExpandMore,
   ChevronRight,
 } from "@mui/icons-material";
-import "../../../../CSS/Scrollbar.css";
+import "../../../../css/ScrollBar.css";
 import logo from "../../../../assets/common-images/logo.webp";
 import { menuItems } from "../../constants/sidebar";
 
