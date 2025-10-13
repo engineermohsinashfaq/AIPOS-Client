@@ -24,7 +24,7 @@ const Services = () => {
   return (
     <motion.section
       id="services"
-      className="relative py-20 overflow-hidden"
+      className="relative py-30 overflow-hidden"
       style={{ fontFamily: "Poppins, sans-serif" }}
       initial="hidden"
       whileInView="visible"

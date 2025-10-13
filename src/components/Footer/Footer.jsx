@@ -37,14 +37,14 @@ const cardVariant = {
 const Footer = () => {
   return (
     <motion.footer
-      className="relative bg-slate-900/40 border-t border-white/20 overflow-hidden"
+      className="relative bg-black/40 backdrop-blur-2xl border-t border-white/20 overflow-hidden"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       variants={staggerContainer}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="relative z-10">
+        <div className="relative z-50">
           {/* |===============================| Main Footer Grid |===============================| */}
           <motion.div
             className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-12"
@@ -57,7 +57,7 @@ const Footer = () => {
                   href="/"
                   className="flex items-center space-x-2 hover:rotate-180 transition-transform duration-300"
                 >
-                  <div className="p-2 rounded-4xl backdrop-blur-md bg-white/10 border border-white/20 shadow-md transition hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]">
+                  <div className="p-2 rounded-4xl backdrop-blur-md bg-white/10 border border-white/10 shadow-md transition hover:bg-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)]">
                     <img
                       src={logo}
                       alt="logo"
@@ -94,12 +94,12 @@ const Footer = () => {
                           : `/${link.toLowerCase().replace(/\s+/g, "")}`;
                       return (
                         <li key={link}>
-                          <a
-                            href={path}
+                          <Link
+                            to={path}
                             className="text-white/90 hover:text-white transition-colors duration-300"
                           >
                             {link}
-                          </a>
+                          </Link>
                         </li>
                       );
                     }
@@ -123,7 +123,6 @@ const Footer = () => {
                     <li key={label}>
                       <Link
                         to={`/pages/policies/${path}`}
-                        target="_blank"
                         className="text-white/90 hover:text-white transition-colors duration-300"
                       >
                         {label}

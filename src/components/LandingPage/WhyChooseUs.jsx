@@ -24,7 +24,7 @@ const WhyChooseUs = () => {
   return (
     <motion.section
       id="about"
-      className="relative py-20 overflow-hidden"
+      className="relative py-30 overflow-hidden"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}

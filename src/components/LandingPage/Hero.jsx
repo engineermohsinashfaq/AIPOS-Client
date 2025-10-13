@@ -24,9 +24,9 @@ const Hero = () => {
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
-      className="relative h-[85vh] flex items-center justify-center overflow-hidden"
+      className="relative h-[100vh] flex items-center justify-center overflow-hidden"
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center justify-center pt-5 sm:pt-0">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8  text-center flex flex-col items-center justify-center pt-5 sm:pt-0">
         
         {/* |===============================| Hero Title & Description |===============================| */}
         <div className="space-y-8">

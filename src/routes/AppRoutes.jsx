@@ -18,6 +18,8 @@ import Contact from "../components/LandingPage/Contact";
 import Footer from "../components/Footer/Footer";
 import NotFound from "../pages/404-not-found/NotFound";
 import WhatsAppCTA from "../components/WhatsApp/WhatsAppCTA";
+import ScrollTop from "../components/Scroll/ScrollTop";
+
 
 // |===============================| Products Page Routes |===============================|
 import Mobiles from "../pages/ProductsDetails/MobilesLaptops";
@@ -124,6 +126,7 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Layout>
+        <ScrollTop/>
         <Routes>
           {/* |===============================| Global Routes |===============================| */}
           <Route path="*" element={<NotFound />} />

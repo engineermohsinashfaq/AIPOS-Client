@@ -1,7 +1,9 @@
 // |===============================| Imports |===============================|
 import React from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import categories from "../../constants/products";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 // Motion Link
 const MotionLink = motion.a;
@@ -30,13 +32,13 @@ const Products = () => {
     <>
       <motion.section
         id="products"
-        className="relative py-20 overflow-hidden"
+        className="relative py-30 overflow-hidden "
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={staggerContainer}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
           <div className="relative z-10">
             {/* |===============================| Section Title |===============================| */}
             <div className="text-center mb-16">
@@ -65,8 +67,8 @@ const Products = () => {
                 const slug = category.title.toLowerCase().replace(/\s+/g, "-");
 
                 return (
-                  <MotionLink
-                    href={`/pages/products/${slug}`}
+                  <Link
+                    to={`/pages/products/${slug}`}
                     key={index}
                     className="group relative overflow-hidden bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-500 hover:scale-105 cursor-pointer block"
                     variants={cardVariant}
@@ -95,12 +97,10 @@ const Products = () => {
                     </div>
 
                     {/* |===============================| Explore CTA |===============================| */}
-                    <div className="absolute bottom-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="text-white" style={{ fontSize: "12px" }}>
-                        Explore →
-                      </div>
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <ArrowForwardIcon className="w-7 h-7 text-white" />
                     </div>
-                  </MotionLink>
+                  </Link>
                 );
               })}
             </motion.div>

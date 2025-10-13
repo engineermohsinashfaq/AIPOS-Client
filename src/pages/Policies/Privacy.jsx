@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-
+import BackButton from "../../components/Button/BackButton";
 const Privacy = () => {
   const policy = [
     {
@@ -54,6 +54,9 @@ const Privacy = () => {
       </Helmet>
       <div className=" min-h-screen w-full flex items-center justify-center p-6">
         <div className="backdrop-blur-lg bg-white/10 rounded-2xl shadow-xl max-w-4xl w-full p-8">
+        <div className="hidden sm:block">
+                  <BackButton />
+                </div>
           <h1 className="text-3xl font-bold text-white/90 mb-8 text-center">
             Privacy Policy
           </h1>
