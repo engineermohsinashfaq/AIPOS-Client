@@ -1,6 +1,6 @@
 import React from "react";
 import Dashboard from "../pages/Dashboard/Dashboard";
-import ManageUsers from "../pages/User/ManageUsers";
+// import ManageUsers from "../pages/User/ManageUsers";
 import AddUser from "./User/AddUser";
 import AllUsers from "./User/AllUsers";
 import AllBranches from "./Branch/AllBranches";
@@ -13,8 +13,8 @@ import Profile from "../pages/Settings/Profile";
 const NullPage = () => {
   return (
     <>
-      <Dashboard />
-      <ManageUsers />
+      {/* <Dashboard /> */}
+      {/* <ManageUsers /> */}
       <AddUser />
       <AllUsers />
       <AllBranches />
