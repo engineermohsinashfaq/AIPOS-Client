@@ -1,17 +1,15 @@
 import {
   Dashboard,
   People,
-  BarChart,
   Person,
   Bolt,
   PersonAdd,
   List,
   Settings,
   Store,
-  TrendingUp,
-  ShoppingCart,
-  Report,
   Info,
+  GroupAdd, // 👥 for "All Admins"
+  PersonAddAlt1, // 👤➕ for "Add Admin"
 } from "@mui/icons-material";
 
 // |===============================| Admin Dashboard Menu Items |===============================|
@@ -27,7 +25,12 @@ export const adminDashboardMenuItems = [
     children: [
       {
         icon: PersonAdd,
-        label: "Manage Users",
+        label: "Add User",
+        path: "/ap-add-user",
+      },
+      {
+        icon: List,
+        label: "All Users",
         path: "/ap-manage-users",
       },
     ],
@@ -43,54 +46,36 @@ export const adminDashboardMenuItems = [
       },
     ],
   },
-  {
-    icon: BarChart,
-    label: "Reports",
-    children: [
-      {
-        icon: Person,
-        label: "User Report",
-        path: "/ap-user-report",
-      },
-      {
-        icon: Report,
-        label: "Branch Reports",
-        path: "/ap-branch-reports",
-      },
 
-      {
-        icon: TrendingUp,
-        label: "Sales Report",
-        path: "/ap-sales-report",
-      },
-
-      {
-        icon: ShoppingCart,
-        label: "Stock Report",
-        path: "/ap-stock-report",
-      },
-    ],
-  },
   {
     icon: Settings,
     label: "Settings",
+    accordion: true, // ✅ Accordion-enabled group
     children: [
       {
-        icon: Person,
-        label: "Profile",
-        path: "/ap-profile",
+        icon: PersonAddAlt1, // 👤➕ Add Admin (MUI equivalent)
+        label: "Add Admin",
+        path: "/ap-add-admin",
       },
-
+      {
+        icon: GroupAdd, // 👥 All Admins (MUI equivalent)
+        label: "All Admins",
+        path: "/ap-all-admins",
+      },
       {
         icon: Bolt,
         label: "System Backup",
         path: "/ap-system-backup",
       },
-
       {
         icon: Info,
-        label: "About",
-        path: "/ap-about",
+        label: "Developers",
+        path: "/ap-developers",
+      },
+      {
+        icon: Person,
+        label: "Profile",
+        path: "/ap-profile",
       },
     ],
   },

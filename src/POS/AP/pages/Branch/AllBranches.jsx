@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-export default function ManageBranch() {
+export default function AllBranches() {
   const [branches, setBranches] = useState(() => {
     try {
       const raw = localStorage.getItem("manage_branches_data");
@@ -55,7 +55,9 @@ export default function ManageBranch() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Manage Branches</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            All Branches
+          </h1>
           <p className="text-white/80">View all branches.</p>
         </div>
 

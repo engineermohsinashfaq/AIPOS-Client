@@ -19,6 +19,10 @@ import {
   CreditCard,
   Bolt,
   Info,
+  Backup,
+  Notifications,
+  AdminPanelSettings,
+  Group,
 } from "@mui/icons-material";
 
 // Full Menu Items with Roles & Children
@@ -33,7 +37,7 @@ export const menuItems = [
         label: "Overview",
         path: "/dashboard",
         roles: ["owner", "admin", "sales"],
-      }
+      },
     ],
   },
   {
@@ -52,7 +56,7 @@ export const menuItems = [
         label: "All Customers",
         path: "/dashboard/customers/all",
         roles: ["owner", "admin", "sales"],
-      }
+      },
     ],
   },
   {
@@ -71,7 +75,8 @@ export const menuItems = [
         label: "All Products",
         path: "/dashboard/products/all",
         roles: ["owner", "admin"],
-      }
+      },
+      
     ],
   },
   {
@@ -81,18 +86,18 @@ export const menuItems = [
     children: [
       {
         icon: Add,
-        label: "New Purchase",
+        label: "Add Purchase",
         path: "/dashboard/purchase/new",
         roles: ["owner", "admin"],
       },
       {
-        icon: List,
+        icon: Receipt,
         label: "Purchase History",
         path: "/dashboard/purchase/history",
         roles: ["owner", "admin"],
       },
       {
-        icon: People,
+        icon: Group,
         label: "Suppliers",
         path: "/dashboard/purchase/suppliers",
         roles: ["owner", "admin"],
@@ -100,14 +105,39 @@ export const menuItems = [
     ],
   },
   {
-    icon: CreditCard,
+    icon: ShoppingCart,
     label: "POS",
     roles: ["owner", "admin", "sales"],
     children: [
       {
-        icon: ShoppingCart,
+        icon:CreditCard, // or CreditCard if POS unavailable
         label: "Point of Sale",
-        path: "/dashboard/transactions/pos",
+        path: "/dashboard/pos",
+        roles: ["owner", "admin", "sales"],
+      },
+      {
+        icon: Receipt,
+        label: "Transactions",
+        path: "/dashboard/pos/transactions",
+        roles: ["owner", "admin", "sales"],
+      },
+    ],
+  },
+  {
+    icon: AdminPanelSettings,
+    label: "Guarantors",
+    roles: ["owner", "admin", "sales"],
+    children: [
+      {
+        icon: PersonAdd,
+        label: "Add Guarantor",
+        path: "/dashboard/guarantors/new",
+        roles: ["owner", "admin", "sales"],
+      },
+      {
+        icon: List,
+        label: "All Guarantors",
+        path: "/dashboard/guarantors/all",
         roles: ["owner", "admin", "sales"],
       },
     ],
@@ -130,55 +160,47 @@ export const menuItems = [
         roles: ["owner", "admin"],
       },
       {
-        icon: Inventory,
-        label: "Inventory Reports",
-        path: "/dashboard/reports/inventory",
+        icon: AttachMoney,
+        label: "Purchase Reports",
+        path: "/dashboard/reports/purchases",
         roles: ["owner", "admin"],
       },
       {
-        icon: AttachMoney,
-        label: "Financial Reports",
-        path: "/dashboard/reports/financial",
+        icon: Inventory,
+        label: "Product Reports",
+        path: "/dashboard/reports/products",
         roles: ["owner", "admin"],
       },
     ],
   },
-
   {
-    icon: Person,
-    label: "Profile",
+    icon: Settings,
+    label: "Settings",
     roles: ["owner", "admin", "sales", "customer"],
     children: [
       {
-        icon: Person,
-        label: "My Profile",
-        path: "/dashboard/profile",
+        icon: Notifications,
+        label: "Notifications",
+        path: "/dashboard/settings/notifications",
         roles: ["owner", "admin", "sales", "customer"],
       },
       {
-        icon: Settings,
-        label: "Settings",
-        path: "/dashboard/profile/settings",
+        icon: Backup,
+        label: "Backup",
+        path: "/dashboard/settings/backup",
+        roles: ["owner", "admin"],
+      },
+      {
+        icon: Person,
+        label: "Profile",
+        path: "/dashboard/settings/profile",
         roles: ["owner", "admin", "sales", "customer"],
       },
-    ],
-  },
-  {
-    icon: Bolt,
-    label: "System",
-    roles: ["owner", "admin"],
-    children: [
       {
         icon: Info,
-        label: "About",
-        path: "/dashboard/system/about",
-        roles: ["owner", "admin"],
-      },
-      {
-        icon: Bolt,
-        label: "System Backup",
-        path: "/dashboard/system/backup",
-        roles: ["owner", "admin"],
+        label: "Developers",
+        path: "/dashboard/settings/developers",
+        roles: ["owner", "admin", "sales", "customer"],
       },
     ],
   },
