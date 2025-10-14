@@ -68,14 +68,14 @@ export const adminDashboardMenuItems = [
         path: "/ap-system-backup",
       },
       {
-        icon: Info,
-        label: "Developers",
-        path: "/ap-developers",
-      },
-      {
         icon: Person,
         label: "Profile",
         path: "/ap-profile",
+      },
+      {
+        icon: Info,
+        label: "Developers",
+        path: "/ap-developers",
       },
     ],
   },

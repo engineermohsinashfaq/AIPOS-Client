@@ -201,16 +201,6 @@ export default function AddUser() {
             </select>
           </div>
 
-          {/* Username + Password Display */}
-          <div className="text-white/80">
-            <p>
-              <strong>CNIC:</strong> {form.cnic || "—"}
-            </p>
-            <p>
-              <strong>Password:</strong> {form.password || "—"}
-            </p>
-          </div>
-
           {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button

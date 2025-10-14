@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import devImage1 from "../../../../assets/developer-images/engineer-mohsin-image.webp";
-const About = () => {
+const Developers = () => {
   const [developers, setDevelopers] = useState([
     {
       id: "DEV01",
@@ -106,4 +106,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Developers;
