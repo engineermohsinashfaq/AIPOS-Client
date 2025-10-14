@@ -4,9 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import logo from "../../../assets/common-images/logo.webp";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Helmet, HelmetProvider } from "react-helmet-async";
+
+import logo from "../../../assets/common-images/logo.webp";
 import BackButton from "../../../components/Button/BackButton";
 
 // |===============================| Animation Variants |===============================|
@@ -79,14 +81,14 @@ const SignIn = () => {
   };
 
   return (
-    <>
-      {/* <Helmet>
+    <HelmetProvider>
+      <Helmet>
         <title>Customer Portal - Zubi Electronics</title>
         <meta
           name="description"
           content="This is the customer portal of zubi electronics."
         />
-      </Helmet> */}
+      </Helmet>
 
       {/* Toast Container */}
       <ToastContainer />
@@ -102,7 +104,7 @@ const SignIn = () => {
           variants={cardVariant}
         >
           <motion.div
-            className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:p-6 shadow-2xl relative"
+            className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl relative"
             variants={fadeInUp}
           >
             {/* Back Button Component */}
@@ -206,7 +208,7 @@ const SignIn = () => {
               <motion.div className="flex justify-center" variants={fadeInUp}>
                 <button
                   type="submit"
-                  className="w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-8 py-2 rounded-md font-semibold text-sm transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer flex items-center justify-center space-x-2"
+                  className="w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-8 py-2  rounded-md font-semibold text-sm transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer flex items-center justify-center space-x-2 "
                 >
                   <span>Sign In</span>
                 </button>
@@ -219,13 +221,13 @@ const SignIn = () => {
               >
                 <Link
                   to="/up-signin"
-                  className="w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-6 py-2 rounded-md font-semibold text-sm text-center transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer"
+                  className="mb-2 w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-6 py-2 rounded-md font-semibold text-sm text-center transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer"
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/ap-signin"
-                  className="w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-6 py-2 rounded-md font-semibold text-sm text-center transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer"
+                  className="mb-2 w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-6 py-2 rounded-md font-semibold text-sm text-center transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer"
                 >
                   Admin
                 </Link>
@@ -234,7 +236,7 @@ const SignIn = () => {
           </motion.div>
         </motion.div>
       </motion.div>
-    </>
+    </HelmetProvider>
   );
 };
 

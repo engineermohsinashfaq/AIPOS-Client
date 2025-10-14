@@ -8,6 +8,7 @@ import logo from "../../../assets/common-images/logo.webp";
 import BackButton from "../../../components/Button/BackButton";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 
 // |===============================| Animation Variants |===============================|
 const fadeInUp = {
@@ -80,14 +81,14 @@ const SignIn = () => {
   };
 
   return (
-    <>
-      {/* <Helmet>
+    <HelmetProvider>
+      <Helmet>
         <title>Admin Portal - Zubi Electronics</title>
         <meta
           name="description"
           content="This is the admin portal of zubi electronics."
         />
-      </Helmet> */}
+      </Helmet>
 
       {/* Toast Container */}
       <ToastContainer />
@@ -109,8 +110,8 @@ const SignIn = () => {
             <BackButton />
             <motion.div className="text-center mb-4" variants={fadeInUp}>
               <div className="flex items-center justify-center mb-4">
-                <a
-                  href="/cp-signin"
+                <Link
+                  to="/cp-signin"
                   className="p-2 rounded-full backdrop-blur-md bg-white/10 shadow-lg hover:bg-white/20 transition duration-300 hover:shadow-[0_0_25px_rgba(255,255,255,0.4)] transform hover:rotate-180"
                 >
                   <img
@@ -118,7 +119,7 @@ const SignIn = () => {
                     alt="logo"
                     className="w-12 h-12 object-contain"
                   />
-                </a>
+                </Link>
               </div>
               <motion.h1
                 className="text-2xl font-bold text-white mb-1"
@@ -204,7 +205,7 @@ const SignIn = () => {
               <motion.div className="flex justify-center" variants={fadeInUp}>
                 <button
                   type="submit"
-                  className="w-1/2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-8 py-2 rounded-md font-semibold text-sm transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer flex items-center justify-center space-x-2"
+                  className="w-1/2 mb-2 bg-cyan-950/70 backdrop-blur-lg border border-white/10 text-white/90 px-8 py-2 rounded-md font-semibold text-sm transition-all duration-200 hover:bg-cyan-950 hover:text-white hover:cursor-pointer flex items-center justify-center space-x-2"
                 >
                   <span>Sign In</span>
                 </button>
@@ -213,7 +214,7 @@ const SignIn = () => {
           </motion.div>
         </motion.div>
       </motion.div>
-    </>
+    </HelmetProvider>
   );
 };
 
