@@ -13,7 +13,7 @@ const ProductBanner = ({ title, description }) => {
       </div>
 
       {/* |===============================| Heading and Description Section |===============================| */}
-      <div className="text-center mb-10">
+      <div className="text-center ">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white drop-shadow-md">
           {title}
         </h1>
