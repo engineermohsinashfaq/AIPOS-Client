@@ -22,7 +22,7 @@ const categories = [
     gradient: "from-green-500 to-emerald-500",
   },
   {
-    title: "Solar & Power",
+    title: "Power & Batteries",
     description: "Solar panels, UPS, batteries, and generators for backup.",
     icon: SolarPowerIcon,
     gradient: "from-yellow-400 to-orange-500",

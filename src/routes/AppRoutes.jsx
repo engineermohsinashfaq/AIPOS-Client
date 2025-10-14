@@ -24,7 +24,7 @@ import ScrollTop from "../components/Scroll/ScrollTop";
 // |===============================| Products Page Routes |===============================|
 import Mobiles from "../pages/ProductsDetails/MobilesLaptops";
 import HomeAppliances from "../pages/ProductsDetails/HomeAppliances";
-import SolarPower from "../pages/ProductsDetails/SolarPower";
+import PowerBatteries from "../pages/ProductsDetails/PowerBatteries";
 import CoolingItems from "../pages/ProductsDetails/CoolingItems";
 import BikesEscoters from "../pages/ProductsDetails/BikesEscoters";
 import OtherAccessories from "../pages/ProductsDetails/OthersAccessories";
@@ -146,8 +146,8 @@ const AppRoutes = () => {
             element={<HomeAppliances />}
           />
           <Route
-            path="/pages/products/solar-&-power"
-            element={<SolarPower />}
+            path="/pages/products/power-&-batteries"
+            element={<PowerBatteries />}
           />
           <Route
             path="/pages/products/cooling-&-air"
