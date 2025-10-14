@@ -18,8 +18,7 @@ const HomeAppliances = () => {
       </div>
 
       {/* |===============================| Product Grid Section |===============================| */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mx-auto gap-8 justify-items-center p-4 mt-70 sm:mt-55 md:mt-48 lg:mt-48 xl:mt-48 overflow-y-auto h-[650px] md:h-[700px] lg:h-[750px] xl:h-[800px] scrollbar-hide">
-        {homeAppliances.map((product, idx) => (
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mx-auto gap-8 justify-items-center p-4 mt-75 sm:mt-50 md:mt-48 lg:mt-48 xl:mt-48 overflow-y-auto h-[650px] md:h-[700px] lg:h-[750px] xl:h-[800px] py-10 scrollbar-hide">        {homeAppliances.map((product, idx) => (
           <div key={idx} className="w-full">
             <ProductCard {...product} />
           </div>
