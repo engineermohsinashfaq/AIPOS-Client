@@ -10,7 +10,7 @@ const emptyForm = {
   phone: "",
   cnic: "",
   address: "",
-  password: "", // ✅ Added editable password field
+  password: "",
   role: "User",
   branch: "",
   location: "",
@@ -24,7 +24,7 @@ export default function AddUser() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // ✅ Auto-format CNIC while typing
+    // ✅ Auto-format CNIC
     if (name === "cnic") {
       let digits = value.replace(/\D/g, "").slice(0, 13);
       let formatted = digits;
@@ -59,7 +59,7 @@ export default function AddUser() {
 
     const users = JSON.parse(localStorage.getItem("manage_users_data") || "[]");
 
-    // ✅ Auto-increment user ID
+    // ✅ Auto-increment ID
     const nextId =
       users.length > 0
         ? (Math.max(...users.map((u) => parseInt(u.id))) + 1)
@@ -67,31 +67,27 @@ export default function AddUser() {
             .padStart(2, "0")
         : "01";
 
-    // ✅ Create new user object
     const newUser = {
       ...form,
       id: nextId,
       created: new Date().toISOString(),
-      username: form.cnic, // CNIC is the User ID
+      username: form.cnic,
     };
 
-    // ✅ Save to localStorage
-    localStorage.setItem(
-      "manage_users_data",
-      JSON.stringify([newUser, ...users])
-    );
+    localStorage.setItem("manage_users_data", JSON.stringify([newUser, ...users]));
 
     toast.success(`${form.firstName} ${form.lastName} added successfully!`);
 
-    // Redirect after short delay
-    setTimeout(() => navigate("/all-users"), 1500);
+    setTimeout(() => navigate("/ap-all-users"), 2500);
   };
 
   return (
-    <div className="p-6 min-h-screen text-white">
-      <ToastContainer />
-      <div className="max-w-7xl mx-auto bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6">
-        <h1 className="text-3xl font-bold mb-4">Add New User</h1>
+    <div className="p-6 min-h-[100%] text-white flex items-center justify-center">
+      {/* ✅ Dark Toasts with 2-second duration */}
+      <ToastContainer theme="dark" autoClose={2000} />
+
+      <div className="w-7xl mx-auto bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+        <h1 className="text-3xl font-bold mb-4">Add User</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* First + Last Name */}
@@ -205,7 +201,7 @@ export default function AddUser() {
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
-              onClick={() => navigate("/all-users")}
+              onClick={() => navigate("/ap-all-users")}
               className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
             >
               Cancel

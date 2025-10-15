@@ -71,7 +71,7 @@ const Header = () => {
       ${
         isScrolled
           ? "bg-black/40 backdrop-blur-2xl  shadow-[0_4px_15px_rgba(0,0,0,0.2)]"
-          : " bg-white/10 backdrop-blur-lg "
+          : " backdrop-blur-lg "
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -127,7 +127,7 @@ const Header = () => {
               to="/cp-signin"
               className="flex items-center space-x-2 px-5 py-2 rounded-lg font-semibold text-white text-base 
        backdrop-blur-md bg-white/10 shadow-md 
-       hover:bg-white/20 hover:shadow-[0_0_10px_rgba(255,255,255,0.6)] 
+       hover:scale-95
        transition cursor-pointer"
             >
               <MonitorIcon className="w-5 h-5" />
@@ -144,11 +144,7 @@ const Header = () => {
             <div
               className={`select-none p-3 rounded-4xl backdrop-blur-md shadow-md flex items-center justify-center 
     transition ] 
-    ${
-      isMenuOpen
-        ? "bg-cyan-800/80"
-        : "bg-white/10 hover:bg-white/20"
-    }`}
+    ${isMenuOpen ? "bg-cyan-800/80" : "bg-white/10 hover:bg-white/20"}`}
             >
               {isMenuOpen ? (
                 <CloseIcon className="w-24 h-24 text-white" />

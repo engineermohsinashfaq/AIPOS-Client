@@ -31,7 +31,7 @@ export const adminDashboardMenuItems = [
       {
         icon: List,
         label: "All Users",
-        path: "/ap-manage-users",
+        path: "/ap-all-users",
       },
     ],
   },
@@ -46,22 +46,29 @@ export const adminDashboardMenuItems = [
       },
     ],
   },
+  {
+    icon: Person,
+    label: "Admin",
+    children: [
+      {
+        icon: PersonAdd,
+        label: "Add Admin",
+        path: "/ap-add-admin",
+      },
+      {
+        icon: GroupAdd  ,
+        label: "All Admins",
+        path: "/ap-all-admins",
+      },
+    ],
+  },
 
   {
     icon: Settings,
     label: "Settings",
     accordion: true, // ✅ Accordion-enabled group
     children: [
-      {
-        icon: PersonAddAlt1, // 👤➕ Add Admin (MUI equivalent)
-        label: "Add Admin",
-        path: "/ap-add-admin",
-      },
-      {
-        icon: GroupAdd, // 👥 All Admins (MUI equivalent)
-        label: "All Admins",
-        path: "/ap-all-admins",
-      },
+      
       {
         icon: Bolt,
         label: "System Backup",

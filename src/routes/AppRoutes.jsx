@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -19,7 +20,6 @@ import Footer from "../components/Footer/Footer";
 import NotFound from "../pages/404-not-found/NotFound";
 import WhatsAppCTA from "../components/WhatsApp/WhatsAppCTA";
 import ScrollTop from "../components/Scroll/ScrollTop";
-
 
 // |===============================| Products Page Routes |===============================|
 import Mobiles from "../pages/ProductsDetails/MobilesLaptops";
@@ -44,9 +44,43 @@ import CPSignIn from "../POS/CP/auth/SignIn";
 
 // AP Routes
 import APLayout from "../POS/AP/layout/Layout";
+import APDashboard from "../POS/AP/pages/Dashboard/Dashboard";
+import APAddUser from "../POS/AP/pages/User/AddUser";
+import APAllUsers from "../POS/AP/pages/User/AllUsers";
+import APAllBranches from "../POS/AP/pages/Branch/AllBranches";
+import APAddAdmin from "../POS/AP/pages/Admin/AddAdmin";
+import APAllAdmins from "../POS/AP/pages/Admin/AllAdmins";
+import APSystemBackup from "../POS/AP/pages/Settings/SystemBackup";
+import APProfile from "../POS/AP/pages/Settings/Profile";
+import APDevelopers from "../POS/AP/pages/Settings/Developers";
 
 // UP Routes
 import UPLayout from "../POS/UP/layout/Layout";
+import UPDashboard from "../POS/UP/pages/Dashboard/Dashboard";
+
+import UPAddCustomer from "../POS/UP/pages/Customers/AddCustomer";
+import UPAllCustomers from "../POS/UP/pages/Customers/AllCustomers";
+
+import UPAddProduct from "../POS/UP/pages/Products/AddProduct";
+import UPAllProducts from "../POS/UP/pages/Products/AllProducts";
+
+import UPAddPurchase from "../POS/UP/pages/Purchases/AddPurchase";
+import UPPurchaseHistory from "../POS/UP/pages/Purchases/PurchaseHistory";
+
+import UPSuppliers from "../POS/UP/pages/Suppliers/Suppliers";
+import UPPOS from "../POS/UP/pages/POS/POS";
+
+import UPAddGuarantor from "../POS/UP/pages/Guarantors/AddGuarantor";
+import UPAllGuarantors from "../POS/UP/pages/Guarantors/AllGuarantors";
+
+import UPSalesReport from "../POS/UP/pages/Reports/SalesReport";
+import UPCustomerReport from "../POS/UP/pages/Reports/CustomerReport";
+import UPPurchaseReport from "../POS/UP/pages/Reports/PurchaseReport";
+import UPProductReport from "../POS/UP/pages/Reports/ProductReport";
+
+import UPSystemBackup from "../POS/UP/pages/SystemBackup/SystemBackup";
+import UPProfile from "../POS/UP/pages/Profile/Profile";
+import UPDevelopers from "../POS/UP/pages/Developers/Developers";
 
 // CP Routes
 
@@ -126,7 +160,7 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Layout>
-        <ScrollTop/>
+        <ScrollTop />
         <Routes>
           {/* |===============================| Global Routes |===============================| */}
           <Route path="*" element={<NotFound />} />
@@ -187,10 +221,42 @@ const AppRoutes = () => {
           <Route path="/cp-signin" element={<CPSignIn />} />
 
           {/* AP Dashboard Layout */}
-          <Route path="/ap-dashboard" element={<APLayout />} />
+          {/* use / for the APLayout */}
+          <Route path="/change-the-path to / " element={<APLayout />}>
+            <Route index element={<Navigate to="ap-dashboard" />} />
+            <Route path="ap-dashboard" element={<APDashboard />} />
+            <Route path="ap-add-user" element={<APAddUser />} />
+            <Route path="ap-all-users" element={<APAllUsers />} />
+            <Route path="ap-all-branches" element={<APAllBranches />} />
+            <Route path="ap-add-admin" element={<APAddAdmin />} />
+            <Route path="ap-all-admins" element={<APAllAdmins />} />
+            <Route path="ap-system-backup" element={<APSystemBackup />} />
+            <Route path="ap-profile" element={<APProfile />} />
+            <Route path="ap-developers" element={<APDevelopers />} />
+          </Route>
 
           {/* UP Dashboard Layout */}
-          <Route path="/up-dashboard" element={<UPLayout />} />
+          <Route path="/" element={<UPLayout />}>
+            <Route index element={<Navigate to="up-dashboard" />} />
+            <Route path="up-dashboard" element={<UPDashboard />} />
+            <Route path="up-add-customer" element={<UPAddCustomer />} />
+            <Route path="up-all-customers" element={<UPAllCustomers />} />
+            <Route path="up-add-product" element={<UPAddProduct />} />
+            <Route path="up-all-products" element={<UPAllProducts />} />
+            <Route path="up-add-purchase" element={<UPAddPurchase />} />
+            <Route path="up-purchase-history" element={<UPPurchaseHistory />} />
+            <Route path="up-suppliers" element={<UPSuppliers />} />
+            <Route path="up-pos" element={<UPPOS />} />
+            <Route path="up-add-guarantor" element={<UPAddGuarantor />} />
+            <Route path="up-all-guarantors" element={<UPAllGuarantors />} />
+            <Route path="up-sales-report" element={<UPSalesReport />} />
+            <Route path="up-customer-report" element={<UPCustomerReport />} />
+            <Route path="up-purchase-report" element={<UPPurchaseReport />} />
+            <Route path="up-product-report" element={<UPProductReport />} />
+            <Route path="up-system-backup" element={<UPSystemBackup />} />
+            <Route path="up-profile" element={<UPProfile />} />
+            <Route path="up-developers" element={<UPDevelopers />} />
+          </Route>
 
           {/* CP Dashboard Layout */}
         </Routes>

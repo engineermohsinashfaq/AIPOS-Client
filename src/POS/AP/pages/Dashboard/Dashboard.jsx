@@ -13,7 +13,7 @@ const Dashboard = () => {
   const user = { name: "Admin" }; // Dummy user
 
   return (
-    <div className="space-y-8 mx-auto max-w-[1200px] ">
+    <div className="space-y-8 mx-auto max-w-8xl ">
       {/* |===============================| Header |===============================| */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">
@@ -39,7 +39,7 @@ const Dashboard = () => {
       </div>
 
       {/* |===============================| Recent Sales Table |===============================| */}
-      <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6">
+      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">
           Recent Sales
         </h2>

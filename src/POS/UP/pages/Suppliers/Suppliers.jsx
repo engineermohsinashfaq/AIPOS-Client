@@ -35,7 +35,7 @@ const sampleSuppliers = [
   },
 ];
 
-export default function AllSuppliers() {
+export default function Suppliers() {
   const [suppliers, setSuppliers] = useState(() => {
     try {
       const raw = localStorage.getItem("all_suppliers_data");

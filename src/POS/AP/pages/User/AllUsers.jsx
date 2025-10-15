@@ -80,11 +80,12 @@ export default function AllUsers() {
     return arr;
   }, [users, query, statusFilter]);
 
+  // ✅ Toast helpers
   function notifySuccess(msg) {
-    toast.success(msg, { position: "top-right" });
+    toast.success(msg);
   }
   function notifyError(msg) {
-    toast.error(msg, { position: "top-right" });
+    toast.error(msg);
   }
 
   function handleOpenEdit(user) {
@@ -191,16 +192,17 @@ export default function AllUsers() {
 
   return (
     <div className="p-2 min-h-screen text-black">
-      <ToastContainer />
+      {/* ✅ Dark toast, auto close in 2s */}
+      <ToastContainer theme="dark" autoClose={2000} />
+
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">All Users</h1>
           <p className="text-white/80">View, edit, and remove users.</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2">
             <SearchIcon className="text-white" />
             <input
@@ -226,7 +228,7 @@ export default function AllUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md overflow-x-auto">
           <table className="w-full text-white/90 min-w-[900px]">
             <thead className="bg-white/10 text-left text-sm">
               <tr>
@@ -299,8 +301,8 @@ export default function AllUsers() {
 
       {/* Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-50">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
             <h2 className="text-xl font-semibold mb-4">Edit User</h2>
             <form onSubmit={handleSave} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -418,7 +420,7 @@ export default function AllUsers() {
       {/* Save Confirmation Modal */}
       {isSaveConfirmOpen && pendingForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
             <h2 className="text-xl font-semibold mb-4">Confirm Save</h2>
             <p className="mb-4">
               Are you sure you want to update{" "}
@@ -446,78 +448,97 @@ export default function AllUsers() {
       )}
 
       {/* View Modal */}
-     {/* View Modal */}
-{/* View Modal */}
-{isViewOpen && selectedUser && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 sm:p-0">
-    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-4 sm:p-6 w-full max-w-lg text-white max-h-[90vh] overflow-y-auto mx-2">
-      <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center">
-        👤 User Details
-      </h2>
 
-      {/* Personal Information Section */}
-      <div className="space-y-3">
-        <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
-          Personal Information
-        </h3>
+      {isViewOpen && selectedUser && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-50 p-2 sm:p-0">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 sm:p-6 w-full max-w-lg text-white max-h-[90vh] overflow-y-auto mx-2">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center">
+              👤 User Details
+            </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 sm:gap-x-3">
-          <p><strong>ID:</strong> {selectedUser.id}</p>
-          <p><strong>Name:</strong> {selectedUser.firstName} {selectedUser.lastName}</p>
-          <p><strong>Phone:</strong> {selectedUser.phone}</p>
-          <p><strong>CNIC:</strong> {selectedUser.cnic}</p>
-          <p className="sm:col-span-2"><strong>Address:</strong> {selectedUser.address || "—"}</p>
-          <p><strong>Role:</strong> {selectedUser.role}</p>
-          <p><strong>Branch:</strong> {selectedUser.branch}</p>
-          <p><strong>Location:</strong> {selectedUser.location}</p>
-          <p><strong>Status:</strong> {selectedUser.status}</p>
-          <p><strong>Created:</strong> {formatDate(selectedUser.created)}</p>
+            {/* Personal Information Section */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
+                Personal Information
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 sm:gap-x-3">
+                <p>
+                  <strong>ID:</strong> {selectedUser.id}
+                </p>
+                <p>
+                  <strong>Name:</strong> {selectedUser.firstName}{" "}
+                  {selectedUser.lastName}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {selectedUser.phone}
+                </p>
+                <p>
+                  <strong>CNIC:</strong> {selectedUser.cnic}
+                </p>
+                <p className="sm:col-span-2">
+                  <strong>Address:</strong> {selectedUser.address || "—"}
+                </p>
+                <p>
+                  <strong>Role:</strong> {selectedUser.role}
+                </p>
+                <p>
+                  <strong>Branch:</strong> {selectedUser.branch}
+                </p>
+                <p>
+                  <strong>Location:</strong> {selectedUser.location}
+                </p>
+                <p>
+                  <strong>Status:</strong> {selectedUser.status}
+                </p>
+                <p>
+                  <strong>Created:</strong> {formatDate(selectedUser.created)}
+                </p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="my-4 border-t border-white/20"></div>
+
+            {/* Login Credentials Section */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
+                Login Credentials
+              </h3>
+
+              <div className="bg-black/10 border border-white/20 rounded p-3 sm:p-4">
+                <p className="mb-2 break-all">
+                  <strong>CNIC:</strong>{" "}
+                  <span className="bg-black/30 text-yellow-300 px-2 py-1 rounded ">
+                    {selectedUser.cnic}
+                  </span>
+                </p>
+                <p className="break-all">
+                  <strong>Password:</strong>{" "}
+                  <span className="bg-black/30 px-2 py-1 rounded text-yellow-300 font-mono select-all">
+                    {selectedUser.password || "—"}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Button */}
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer w-full sm:w-auto"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Divider */}
-      <div className="my-4 border-t border-white/20"></div>
-
-      {/* Login Credentials Section */}
-      <div className="space-y-3">
-        <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
-          Login Credentials
-        </h3>
-
-        <div className="bg-black/10 border border-white/20 rounded p-3 sm:p-4">
-          <p className="mb-2 break-all">
-            <strong>CNIC:</strong>{" "}
-            <span className="bg-black/30 text-yellow-300 px-2 py-1 rounded ">{selectedUser.cnic}</span>
-          </p>
-          <p className="break-all">
-            <strong>Password:</strong>{" "}
-            <span className="bg-black/30 px-2 py-1 rounded text-yellow-300 font-mono select-all">
-              {selectedUser.password || "—"}
-            </span>
-          </p>
-        </div>
-      </div>
-
-      {/* Footer Button */}
-      <div className="flex justify-end gap-3 pt-4">
-        <button
-          onClick={() => setIsViewOpen(false)}
-          className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer w-full sm:w-auto"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
+      )}
 
       {/* Delete Modal */}
       {isDeleteModalOpen && userToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-md bg-black/30 z-50">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
             <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
             <p className="mb-4">
               Are you sure you want to delete{" "}

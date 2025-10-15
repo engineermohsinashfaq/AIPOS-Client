@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import BackupIcon from "@mui/icons-material/Backup";
-import DownloadIcon from "@mui/icons-material/Download";
-import PrintIcon from "@mui/icons-material/Print";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -19,13 +17,13 @@ export default function SystemBackup() {
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  // Simulate creating a DB backup
+  // ✅ Create Backup
   const handleCreateBackup = () => {
     if (!branch) {
       toast.error("Please select a branch before creating a backup.", {
-        position: "top-center",
+        position: "top-right",
         autoClose: 2000,
-        theme: "light",
+        theme: "dark",
       });
       return;
     }
@@ -41,13 +39,13 @@ export default function SystemBackup() {
     setIsDownloadModalOpen(true);
 
     toast.success("Backup created successfully!", {
-      position: "top-center",
+      position: "top-right",
       autoClose: 2000,
-      theme: "light",
+      theme: "dark",
     });
   };
 
-  // Simulate file download
+  // ✅ Download Backup
   const handleDownload = (backup) => {
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: "application/json",
@@ -60,13 +58,13 @@ export default function SystemBackup() {
     URL.revokeObjectURL(url);
 
     toast.info("Backup file downloaded!", {
-      position: "bottom-center",
+      position: "top-right",
       autoClose: 2000,
-      theme: "light",
+      theme: "dark",
     });
   };
 
-  // Print report
+  // ✅ Print Backup Report
   const handlePrint = (backup) => {
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
@@ -89,14 +87,16 @@ export default function SystemBackup() {
     toast.success("Backup report sent to printer!", {
       position: "bottom-center",
       autoClose: 2000,
-      theme: "light",
+      theme: "dark",
     });
   };
 
   return (
-    <div className="p-6 min-h-screen text-white flex flex-col items-center justify-center">
-      <ToastContainer theme="light" autoClose={2000} />
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg p-8 w-full max-w-md text-center">
+    <div className="p-6 h-[100%] text-white flex flex-col items-center justify-center">
+      {/* ✅ Dark Toasts with 2s Duration */}
+      <ToastContainer theme="dark" autoClose={2000} />
+
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg p-8 max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4">System Backup</h1>
         <p className="text-white/80 mb-6">
           Select a branch and create a secure system backup.
@@ -118,18 +118,18 @@ export default function SystemBackup() {
           ))}
         </select>
 
-        {/* Backup Button */}
+        {/* Create Backup Button */}
         <button
           className="flex items-center justify-center gap-2 w-full bg-cyan-800/80 hover:bg-cyan-900 px-4 py-3 rounded-lg text-lg font-semibold transition cursor-pointer"
           onClick={handleCreateBackup}
         >
-          <BackupIcon /> Create Backup
+          Backup
         </button>
       </div>
 
       {/* Download Modal */}
       {isDownloadModalOpen && latestBackup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md  z-50">
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-md text-white text-center">
             <h2 className="text-2xl font-bold mb-3">Backup Created!</h2>
             <p className="mb-2">
@@ -144,21 +144,21 @@ export default function SystemBackup() {
 
             <div className="flex justify-between gap-3">
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition w-1/2 cursor-pointer"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition w-1/2 cursor-pointer text-center"
                 onClick={() => handleDownload(latestBackup)}
               >
-                <DownloadIcon /> Download
+                Download
               </button>
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition w-1/2 cursor-pointer"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition w-1/2 cursor-pointer text-center"
                 onClick={() => handlePrint(latestBackup)}
               >
-                <PrintIcon /> Print Report
+                Print
               </button>
             </div>
 
             <button
-              className="mt-5 w-full px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer"
+              className="mt-5 w-full px-4 py-2 rounded bg-red-600 hover:bg-red-500 transition cursor-pointer"
               onClick={() => setIsDownloadModalOpen(false)}
             >
               Close

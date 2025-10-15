@@ -1,3 +1,4 @@
+import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar/Sidebar";
 import NullPage from "../pages/NullPage";
 
@@ -19,7 +20,7 @@ const Layout = () => {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-4 order-1 lg:order-2 mt-[75px] h-screen lg:mt-0 scrollbar-hide ">
-          <NullPage />
+          <Outlet/>
         </main>
       </div>
     </>

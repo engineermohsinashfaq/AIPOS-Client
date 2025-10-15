@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { X } from "lucide-react";
+
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -44,8 +46,19 @@ export default function AllAdmins() {
     return arr;
   }, [admins, query]);
 
-  const notifySuccess = (msg) => toast.success(msg, { position: "top-right" });
-  const notifyError = (msg) => toast.error(msg, { position: "top-right" });
+  // ✅ Toast settings for consistent dark theme and timing
+  const toastConfig = {
+    position: "top-right",
+    theme: "dark",
+    autoClose: 2000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
+
+  const notifySuccess = (msg) => toast.success(msg, toastConfig);
+  const notifyError = (msg) => toast.error(msg, toastConfig);
 
   const initials = (a) =>
     `${(a.firstName || "").charAt(0)}${(a.lastName || "").charAt(
@@ -131,8 +144,18 @@ export default function AllAdmins() {
   };
 
   return (
-    <div className="p-2 min-h-screen text-black">
-      <ToastContainer />
+    <div className="p-2 min-h-screen text-white">
+      {/* ✅ Toast container with dark theme */}
+      <ToastContainer
+        position="top-right"
+        theme="dark"
+        autoClose={2000}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+      />
+
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
@@ -221,8 +244,8 @@ export default function AllAdmins() {
 
       {/* Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
             <h2 className="text-xl font-semibold mb-4">Edit Admin</h2>
             <form onSubmit={handleSave} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -282,7 +305,7 @@ export default function AllAdmins() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                  className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -298,13 +321,20 @@ export default function AllAdmins() {
         </div>
       )}
 
-      {/* Modern View Modal */}
+      {/* View Modal */}
       {isViewOpen && selectedAdmin && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-2">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 backdrop-blur-md">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl w-full max-w-lg p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+            <button
+              onClick={() => setIsViewOpen(false)}
+              className="absolute top-3 right-3 text-white/80 hover:bg-white/20 transition p-1 cursor-pointer bg-white/10 rounded-full"
+              aria-label="Close modal"
+            >
+              <X size={22} />
+            </button>
+
             <h2 className="text-2xl font-semibold mb-4 text-center">
-              👤 Admin Details
+              Admin Details
             </h2>
 
             <div className="space-y-3 text-sm sm:text-base">
@@ -339,23 +369,14 @@ export default function AllAdmins() {
                 </p>
               </div>
             </div>
-
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="px-5 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}
 
       {/* Delete Modal */}
       {isDeleteModalOpen && adminToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
             <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
             <p className="mb-4">
               Are you sure you want to delete{" "}

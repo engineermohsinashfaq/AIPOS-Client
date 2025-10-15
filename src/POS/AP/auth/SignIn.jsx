@@ -38,7 +38,6 @@ const SignIn = () => {
 
   // Simulated fetch user from DB
   const fetchUserFromDB = (cnic) => {
-    // Example DB (replace with real API)
     const users = [
       { cnic: "11111-1111111-1", username: "John Doe", password: "1111" },
       { cnic: "22222-2222222-2", username: "Jane Smith", password: "2222" },
@@ -58,13 +57,13 @@ const SignIn = () => {
     const user = fetchUserFromDB(cnic);
     if (user && user.password === password) {
       toast.success(`Welcome : ${user.username}`, {
-        position: "top-center",
-        autoClose: 3000,
+        position: "top-right",
+        autoClose: 2000,
         hideProgressBar: false,
         closeOnClick: true,
-        pauseOnHover: true,
+        pauseOnHover: false,
         draggable: false,
-        theme: "light",
+        theme: "dark",
         onClose: () => navigate("/ap-dashboard"),
       });
     } else {
@@ -90,8 +89,8 @@ const SignIn = () => {
         />
       </Helmet>
 
-      {/* Toast Container */}
-      <ToastContainer />
+      {/* ✅ Dark Toasts at Top-Right, Auto Close in 2s */}
+      <ToastContainer position="top-right" autoClose={2000} theme="dark" />
 
       <motion.div
         className="min-h-screen flex items-center justify-center relative"
@@ -176,9 +175,7 @@ const SignIn = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white/80 hover:text-white"
                   >
                     {showPassword ? (
