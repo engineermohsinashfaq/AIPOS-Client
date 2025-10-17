@@ -485,28 +485,28 @@ export default function PurchaseHistory() {
               {/* Purchase Details */}
               <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
                 <span>Purchase Price (Per Unit):</span>
-                <span>Rs {selectedProduct.price}</span>
+                <span>Rs {selectedProduct.price}/-</span>
               </div>
               <div className="flex justify-between">
                 <span>Sell Price (Per Unit):</span>
-                <span>Rs {selectedProduct.sellPrice}</span>
+                <span>Rs {selectedProduct.sellPrice}/-</span>
               </div>
               <div className="flex justify-between">
                 <span>Quantity in Stock:</span>
-                <span>{selectedProduct.quantity} units</span>
+                <span>{selectedProduct.quantity} piece(s)</span>
               </div>
               
               {/* Added Total Purchase Price */}
               <div className="flex justify-between font-bold border-t border-dashed border-black/90 pt-2">
                 <span>Total Purchase Price:</span>
                 {/* Calculate total if 'total' property is missing for older records, otherwise use the stored 'total' */}
-                <span>Rs {selectedProduct.total || (parseFloat(selectedProduct.price) * parseInt(selectedProduct.quantity)).toFixed(2)}</span> 
+                <span>Rs {selectedProduct.total || (parseFloat(selectedProduct.price) * parseInt(selectedProduct.quantity)).toFixed(2)}/-</span> 
               </div>
 
               {/* Inventory Value */}
               <div className="flex justify-between border-b border-dashed border-black/90 pb-2">
                 <span>Total Inventory Value:</span>
-                <span>Rs {selectedProduct.value}</span>
+                <span>Rs {selectedProduct.value}/-</span>
               </div>
 
               {/* Supplier Details */}

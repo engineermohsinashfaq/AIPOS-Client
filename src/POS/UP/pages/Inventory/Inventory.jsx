@@ -27,7 +27,7 @@ const loadProducts = () => {
   }
 };
 
-export default function InventoryStockDetails() {
+export default function Inventory() {
   const [products] = useState(loadProducts);
   const [query, setQuery] = useState("");
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -74,7 +74,7 @@ export default function InventoryStockDetails() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Inventory Details
+            Inventory & Stocks
           </h1>
           <p className="text-white/80">
             View all stocks and inventory records.
@@ -161,9 +161,7 @@ export default function InventoryStockDetails() {
               <h2 className="text-xl font-bold tracking-wider">
                 ZUBI ELECTRONICS
               </h2>
-              <p className="text-xs mt-1">
-                Product & Stock Details
-              </p>
+              <p className="text-xs mt-1">Product & Stock Details</p>
             </div>
 
             <div className="space-y-2 leading-6">
@@ -202,9 +200,7 @@ export default function InventoryStockDetails() {
               </div>
               <div className="flex justify-between font-bold border-t border-dashed border-black/90 pt-2">
                 <span>Total Purchase Price:</span>
-                <span>
-                  Rs {calculateTotalPurchasePrice(selectedProduct)}/-
-                </span>
+                <span>Rs {calculateTotalPurchasePrice(selectedProduct)}/-</span>
               </div>
               <div className="flex justify-between  pb-2">
                 <span>Total Inventory Value:</span>
@@ -213,7 +209,7 @@ export default function InventoryStockDetails() {
             </div>
 
             <div className="text-center border-t border-dashed border-black/90 mt-2 pt-4  text-xs">
-            <p>This is a computer-generated record.</p>
+              <p>This is a computer-generated record.</p>
               <p>Contains product and stock details only.</p>
             </div>
 

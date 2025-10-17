@@ -29,6 +29,17 @@ export const menuItems = [
     path: "/up-dashboard",
   },
   {
+    icon: ShoppingCart,
+    label: "POS",
+    children: [
+      {
+        icon: CreditCard, // or CreditCard if POS unavailable
+        label: "Point of Sale",
+        path: "/up-pos",
+      }
+    ],
+  },
+  {
     icon: People,
     label: "Customers",
     children: [
@@ -45,15 +56,19 @@ export const menuItems = [
     ],
   },
   {
-    icon: Inventory,
-    label: "Products",
+    icon: AdminPanelSettings,
+    label: "Guarantors",
     children: [
       {
-        icon: List,
-        label: "All Products",
-        path: "/up-all-products",
+        icon: PersonAdd,
+        label: "Add Guarantor",
+        path: "/up-add-guarantor",
       },
-
+      {
+        icon: List,
+        label: "All Guarantors",
+        path: "/up-all-guarantors",
+      },
     ],
   },
   {
@@ -78,32 +93,23 @@ export const menuItems = [
     ],
   },
   {
-    icon: ShoppingCart,
-    label: "POS",
+    icon: Inventory,
+    label: "Stocks",
     children: [
       {
-        icon: CreditCard, // or CreditCard if POS unavailable
-        label: "Point of Sale",
-        path: "/up-pos",
-      }
-    ],
-  },
-  {
-    icon: AdminPanelSettings,
-    label: "Guarantors",
-    children: [
-      {
-        icon: PersonAdd,
-        label: "Add Guarantor",
-        path: "/up-add-guarantor",
+        icon: Add,
+        label: "Add Stock",
+        path: "/up-add-stock",
       },
       {
         icon: List,
-        label: "All Guarantors",
-        path: "/up-all-guarantors",
+        label: "Inventory",
+        path: "/up-inventory",
       },
+
     ],
   },
+
   {
     icon: BarChart,
     label: "Reports",

@@ -61,7 +61,8 @@ import UPDashboard from "../POS/UP/pages/Dashboard/Dashboard";
 import UPAddCustomer from "../POS/UP/pages/Customers/AddCustomer";
 import UPAllCustomers from "../POS/UP/pages/Customers/AllCustomers";
 
-import UPAllProducts from "../POS/UP/pages/Products/AllProducts";
+import UPAddStock from "../POS/UP/pages/Inventory/AddStock";
+import UPInventory from "../POS/UP/pages/Inventory/Inventory";
 
 import UPAddPurchase from "../POS/UP/pages/Purchases/AddPurchase";
 import UPPurchaseHistory from "../POS/UP/pages/Purchases/PurchaseHistory";
@@ -240,7 +241,8 @@ const AppRoutes = () => {
             <Route path="up-dashboard" element={<UPDashboard />} />
             <Route path="up-add-customer" element={<UPAddCustomer />} />
             <Route path="up-all-customers" element={<UPAllCustomers />} />
-            <Route path="up-all-products" element={<UPAllProducts />} />
+            <Route path="up-add-stock" element={<UPAddStock />} />
+            <Route path="up-inventory" element={<UPInventory />} />
             <Route path="up-add-purchase" element={<UPAddPurchase />} />
             <Route path="up-purchase-history" element={<UPPurchaseHistory />} />
             <Route path="up-suppliers" element={<UPSuppliers />} />

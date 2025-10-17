@@ -155,9 +155,9 @@ export default function AddPurchase({ onSave }) {
       <ToastContainer theme="dark" autoClose={2000} />
       <div className="w-8xl mx-auto space-y-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Add Product</h1>
+          <h1 className="text-3xl font-bold text-white">Add Purchase</h1>
           <p className="text-white/80">
-            Fill in the product details below and save.
+            Fill in the product details below purchase and save.
           </p>
         </div>
 
@@ -397,7 +397,7 @@ export default function AddPurchase({ onSave }) {
               <button
                 type="button"
                 onClick={handleClear}
-                className="w-full sm:w-1/2 py-3 rounded-md bg-red-600 hover:bg-red-700 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
+                className="w-full sm:w-1/2 py-3 rounded-md bg-red-700/80 hover:bg-red-800 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
               >
                 Clear
               </button>

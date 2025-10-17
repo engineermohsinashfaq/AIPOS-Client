@@ -1,5 +1,5 @@
 // |===============================| Import Dependencies |===============================|
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // 👈 Import useEffect
 import { Link, useLocation } from "react-router-dom";
 import {
   Dashboard,
@@ -9,12 +9,33 @@ import {
 } from "@mui/icons-material";
 import "../../../../css/Scrollbar.css";
 import logo from "../../../../assets/common-images/logo.webp";
-import { menuItems } from "../../constants/sidebar";
+import { menuItems } from "../../constants/sidebar"; // Assuming menuItems structure is available
+
+// |===============================| Helper to find active parent |===============================|
+const findActiveParentLabel = (menuItems, pathname) => {
+  for (const item of menuItems) {
+    // If it's a single link and active
+    if (!item.children && item.path === pathname) {
+      return item.label; // Return its own label if it's the active single link (though not an accordion)
+    }
+
+    // If it has children (is an accordion)
+    if (item.children) {
+      if (item.children.some(child => pathname.startsWith(child.path))) {
+        return item.label; // Return the parent's label if an active child is found
+      }
+    }
+  }
+  return "Dashboard"; // Default to a known single-link item or an empty string
+};
+
 
 // |===============================| Sidebar Component |===============================|
 const Sidebar = () => {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState(["Dashboard"]);
+  // Initialize state with only the label of the active parent or "Dashboard"
+  // We'll update this in useEffect to ensure the correct one is open on page load
+  const [expandedItems, setExpandedItems] = useState([]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // |===============================| Dummy User (Replace with Auth Later) |===============================|
@@ -28,22 +49,44 @@ const Sidebar = () => {
   // |===============================| Remove role filtering (Use all menu items) |===============================|
   const filteredMenuItems = menuItems;
 
-  // |===============================| Expand / Collapse Sidebar Items |===============================|
-  const toggleExpanded = (label) => {
-    setExpandedItems((prev) =>
-      prev.includes(label)
-        ? prev.filter((item) => item !== label)
-        : [...prev, label]
-    );
-  };
-
   // |===============================| Active Route Checkers |===============================|
   const isActive = (path) => {
+    // Check for exact path match or path prefix match (e.g., /app/users vs /app/users/details)
     return location.pathname === path || location.pathname.startsWith(path);
   };
 
   const isParentActive = (children) => {
     return children.some((child) => child.path && isActive(child.path));
+  };
+  
+  // |===============================| Auto-Expand on Load/Path Change |===============================|
+  useEffect(() => {
+    const activeParentLabel = findActiveParentLabel(filteredMenuItems, location.pathname);
+    
+    // Set only the active parent as expanded
+    if (activeParentLabel && activeParentLabel !== "Dashboard") {
+        setExpandedItems([activeParentLabel]);
+    } else {
+        // If no parent or "Dashboard" is active (Dashboard is a single link, not an accordion)
+        setExpandedItems([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // Re-run when the route changes
+
+  // |===============================| Expand / Collapse Sidebar Items (Single Open Logic) |===============================|
+  const toggleExpanded = (label) => {
+    setExpandedItems((prev) => {
+      // Check if the clicked item is already expanded
+      const isCurrentlyExpanded = prev.includes(label);
+
+      if (isCurrentlyExpanded) {
+        // If it's already open, close it (set to empty array)
+        return [];
+      } else {
+        // If it's not open, open only this one and close all others
+        return [label];
+      }
+    });
   };
 
   // |===============================| Sidebar UI |===============================|
@@ -112,11 +155,13 @@ const Sidebar = () => {
           {/* |===============================| Sidebar Menu |===============================| */}
           <nav className="flex-1 p-2 space-y-2 overflow-y-auto scrollbar-hide">
             {filteredMenuItems.map((item) => {
+              // Now we check if the label is the ONLY item in the array
               const isExpanded = expandedItems.includes(item.label);
+              
               const hasActiveChild =
                 item.children && isParentActive(item.children);
 
-              const Icon = item.icon; // 👈 use icon reference
+              const Icon = item.icon; 
 
               return (
                 <div key={item.label}>
