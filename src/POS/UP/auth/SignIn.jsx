@@ -6,7 +6,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import logo from "../../../assets/common-images/logo.webp";
 import BackButton from "../../../components/Button/BackButton";
-import { toast, ToastContainer } from "react-toastify"; // <-- Toastify import
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 
@@ -32,14 +32,13 @@ const cardVariant = {
 
 // |===============================| SignIn Component |===============================|
 const SignIn = () => {
-  // |===============================| State Variables |===============================|
   const [cnic, setCnic] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // |===============================| Simulated DB user check |===============================|
+  // Simulated DB user fetch
   const fetchUserFromDB = (cnic) => {
     const users = [
       { cnic: "11111-1111111-1", username: "John Doe", password: "1111" },
@@ -48,10 +47,9 @@ const SignIn = () => {
     return users.find((user) => user.cnic === cnic);
   };
 
-  // |===============================| Form Submission Handler |===============================|
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
 
     if (!cnic || !password) {
       setError("Please fill in all fields");
@@ -61,13 +59,13 @@ const SignIn = () => {
     const user = fetchUserFromDB(cnic);
     if (user && user.password === password) {
       toast.success(`Welcome: ${user.username}`, {
-        position: "top-center",
-        autoClose: 3000,
+        position: "top-right",
+        autoClose: 2000, // ✅ 2 seconds
         hideProgressBar: false,
         closeOnClick: true,
-        pauseOnHover: true,
+        pauseOnHover: false,
         draggable: false,
-        theme: "light",
+        theme: "dark", // ✅ Dark theme
         onClose: () => navigate("/up-dashboard"),
       });
     } else {
@@ -75,7 +73,6 @@ const SignIn = () => {
     }
   };
 
-  // |===============================| CNIC Formatting |===============================|
   const formatCNIC = (value) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 13);
     const match = cleaned.match(/^(\d{0,5})(\d{0,7})(\d{0,1})$/);
@@ -90,21 +87,29 @@ const SignIn = () => {
         <title>User Portal - Zubi Electronics</title>
         <meta
           name="description"
-          content="This is the user portal of zubi electronics."
+          content="This is the user portal of Zubi Electronics."
         />
       </Helmet>
 
-      {/* TOAST CONTAINER */}
-      <ToastContainer />
+      {/* Toast Container (Dark Mode) */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover={false}
+        draggable={false}
+        theme="dark" // ✅ Matches the dark UI
+      />
 
-      {/* Content */}
+      {/* Main Content */}
       <motion.div
         className="min-h-screen flex items-center justify-center relative"
         initial="hidden"
         animate="visible"
         variants={staggerContainer}
       >
-        {/* Glassy Card Container */}
         <motion.div
           className="max-w-sm w-full mx-4 relative"
           variants={cardVariant}
@@ -115,7 +120,7 @@ const SignIn = () => {
           >
             <BackButton />
 
-            {/* Header Section */}
+            {/* Header */}
             <motion.div className="text-center mb-4" variants={fadeInUp}>
               <div className="flex items-center justify-center mb-4">
                 <Link
@@ -140,7 +145,7 @@ const SignIn = () => {
               </motion.p>
             </motion.div>
 
-            {/* Sign In Form */}
+            {/* Sign-In Form */}
             <motion.form
               onSubmit={handleSubmit}
               className="space-y-2"
@@ -187,9 +192,7 @@ const SignIn = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white/90 hover:text-white"
                   >
                     {showPassword ? (
@@ -201,7 +204,7 @@ const SignIn = () => {
                 </div>
               </motion.div>
 
-              {/* Forgot Password Link */}
+              {/* Forgot Password */}
               <motion.div
                 className="flex items-center justify-between"
                 variants={fadeInUp}
@@ -214,7 +217,7 @@ const SignIn = () => {
                 </Link>
               </motion.div>
 
-              {/* Sign In Button */}
+              {/* Submit Button */}
               <motion.div className="flex justify-center" variants={fadeInUp}>
                 <button
                   type="submit"
@@ -231,5 +234,4 @@ const SignIn = () => {
   );
 };
 
-// |===============================| Export Component |===============================|
 export default SignIn;

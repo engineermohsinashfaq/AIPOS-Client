@@ -28,7 +28,10 @@ export default function AddAdmin() {
       if (digits.length > 5 && digits.length <= 12)
         formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
       if (digits.length === 13)
-        formatted = `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
+        formatted = `${digits.slice(0, 5)}-${digits.slice(
+          5,
+          12
+        )}-${digits.slice(12)}`;
       setForm((s) => ({ ...s, cnic: formatted }));
       return;
     }
@@ -61,7 +64,9 @@ export default function AddAdmin() {
     if (!/^\d{5}-\d{7}-\d{1}$/.test(form.cnic))
       return toast.error("Invalid CNIC format (e.g., 12345-6789012-3)");
 
-    const admins = JSON.parse(localStorage.getItem("manage_admins_data") || "[]");
+    const admins = JSON.parse(
+      localStorage.getItem("manage_admins_data") || "[]"
+    );
 
     // ✅ Auto-increment ID
     const nextId =
@@ -80,9 +85,14 @@ export default function AddAdmin() {
     };
 
     // ✅ Save to localStorage
-    localStorage.setItem("manage_admins_data", JSON.stringify([newAdmin, ...admins]));
+    localStorage.setItem(
+      "manage_admins_data",
+      JSON.stringify([newAdmin, ...admins])
+    );
 
-    toast.success(`Admin ${form.firstName} ${form.lastName} added successfully!`);
+    toast.success(
+      `Admin ${form.firstName} ${form.lastName} added successfully!`
+    );
 
     setTimeout(() => navigate("/ap-all-admins"), 2500);
   };
@@ -164,17 +174,17 @@ export default function AddAdmin() {
           {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
-              type="button"
-              onClick={() => navigate("/ap-all-admins")}
-              className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
               type="submit"
-              className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+              className="px-4 py-2 border border-white/40 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
             >
               Save
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/ap-all-admins")}
+              className="px-4 py-2 border border-white/40 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
+            >
+              Cancel
             </button>
           </div>
         </form>

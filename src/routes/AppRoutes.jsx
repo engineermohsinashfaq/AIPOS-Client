@@ -61,7 +61,6 @@ import UPDashboard from "../POS/UP/pages/Dashboard/Dashboard";
 import UPAddCustomer from "../POS/UP/pages/Customers/AddCustomer";
 import UPAllCustomers from "../POS/UP/pages/Customers/AllCustomers";
 
-import UPAddProduct from "../POS/UP/pages/Products/AddProduct";
 import UPAllProducts from "../POS/UP/pages/Products/AllProducts";
 
 import UPAddPurchase from "../POS/UP/pages/Purchases/AddPurchase";
@@ -222,7 +221,7 @@ const AppRoutes = () => {
 
           {/* AP Dashboard Layout */}
           {/* use / for the APLayout */}
-          <Route path="/change-the-path to / " element={<APLayout />}>
+          <Route path="/asas" element={<APLayout />}>
             <Route index element={<Navigate to="ap-dashboard" />} />
             <Route path="ap-dashboard" element={<APDashboard />} />
             <Route path="ap-add-user" element={<APAddUser />} />
@@ -241,7 +240,6 @@ const AppRoutes = () => {
             <Route path="up-dashboard" element={<UPDashboard />} />
             <Route path="up-add-customer" element={<UPAddCustomer />} />
             <Route path="up-all-customers" element={<UPAllCustomers />} />
-            <Route path="up-add-product" element={<UPAddProduct />} />
             <Route path="up-all-products" element={<UPAllProducts />} />
             <Route path="up-add-purchase" element={<UPAddPurchase />} />
             <Route path="up-purchase-history" element={<UPPurchaseHistory />} />

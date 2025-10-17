@@ -202,13 +202,13 @@ export default function AddUser() {
             <button
               type="button"
               onClick={() => navigate("/ap-all-users")}
-              className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
+              className="px-4 py-2 border border-white/40 rounded bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+              className="px-4 py-2 border border-white/40 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
             >
               Save
             </button>

@@ -49,11 +49,6 @@ export const menuItems = [
     label: "Products",
     children: [
       {
-        icon: Add,
-        label: "Add Product",
-        path: "/up-add-product",
-      },
-      {
         icon: List,
         label: "All Products",
         path: "/up-all-products",

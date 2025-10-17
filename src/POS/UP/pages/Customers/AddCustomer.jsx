@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { useNavigate } from "react-router-dom";
 
 const emptyCustomer = {
   customerId: "",
@@ -10,7 +11,7 @@ const emptyCustomer = {
   contact: "",
   cnic: "",
   city: "",
-  status: "Active", // ✅ Add default status
+  status: "Active",
   address: "",
 };
 
@@ -24,6 +25,7 @@ const generateCustomerId = () => {
 
 export default function AddCustomer({ onSave }) {
   const [customer, setCustomer] = useState(emptyCustomer);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setCustomer((prev) => ({ ...prev, customerId: generateCustomerId() }));
@@ -62,51 +64,99 @@ export default function AddCustomer({ onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation
+    // Validation (keep all your existing checks)
     if (!/^C-\d+$/.test(customer.customerId))
-      return toast.error("Invalid Customer ID format");
+      return toast.error("Invalid Customer ID format", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "dark",
+      });
 
     if (!customer.firstName.trim())
-      return toast.error("First Name is required");
-    if (!customer.lastName.trim()) return toast.error("Last Name is required");
+      return toast.error("First Name is required", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "dark",
+      });
+
+    if (!customer.lastName.trim())
+      return toast.error("Last Name is required", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "dark",
+      });
 
     const fullContact = "+" + customer.contact;
     if (!/^\+\d{7,15}$/.test(fullContact))
       return toast.error(
-        "Contact must start with '+' followed by 7–15 digits (e.g., +923001234567)"
+        "Contact must start with '+' followed by 7–15 digits (e.g., +923001234567)",
+        { position: "top-right", autoClose: 2000, theme: "dark" }
       );
 
     if (!/^\d{5}-\d{7}-\d{1}$/.test(customer.cnic))
       return toast.error(
-        "CNIC must be in format 12345-1234567-1 (13 digits total)"
+        "CNIC must be in format 12345-1234567-1 (13 digits total)",
+        { position: "top-right", autoClose: 2000, theme: "dark" }
       );
 
-    if (!customer.city.trim()) return toast.error("City is required");
-    if (!customer.address.trim()) return toast.error("Address is required");
+    if (!customer.city.trim())
+      return toast.error("City is required", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "dark",
+      });
 
-    // Save with formatted contact and timestamp
+    if (!customer.address.trim())
+      return toast.error("Address is required", {
+        position: "top-right",
+        autoClose: 2000,
+        theme: "dark",
+      });
+
+    // ✅ Prepare customer object
     const savedCustomer = {
       ...customer,
       contact: fullContact,
-      dateAdded: new Date().toLocaleString(),
+      dateAdded: new Date().toISOString(),
     };
 
-    console.log("Saved Customer:", savedCustomer);
+    // ✅ Save to localStorage (append to existing array)
+    const existing = JSON.parse(
+      localStorage.getItem("all_customers_data") || "[]"
+    );
+    const updated = [...existing, savedCustomer];
+    localStorage.setItem("all_customers_data", JSON.stringify(updated));
 
+    // Optional: callback if passed
     if (onSave) onSave(savedCustomer);
 
+    // ✅ Success Toast and Redirect
     toast.success("Customer added successfully!", {
-      onClose: () => window.location.reload(),
+      position: "top-right",
       autoClose: 2000,
+      theme: "dark",
+      onClose: () => navigate("/up-all-customers"),
     });
 
+    // ✅ Reset form
     setCustomer({ ...emptyCustomer, customerId: generateCustomerId() });
   };
 
   return (
-    <div className="px-4 py-2">
-      <ToastContainer />
-      <div className="max-w-6xl mx-auto space-y-3">
+    <div className="px-4 py-2 min-h-[100%]">
+      {/* Toast Container (Dark theme, top-right) */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover={false}
+        draggable={false}
+        theme="dark"
+      />
+
+      <div className="mx-auto space-y-3 w-[100%]">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-white">Add Customer</h1>
@@ -203,14 +253,14 @@ export default function AddCustomer({ onSave }) {
               placeholder="Address"
               value={customer.address}
               onChange={handleChange}
-              rows="10"
+              rows="8"
               className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
             />
 
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
+              className="w-full py-3 border border-white/40 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
             >
               <PersonAddIcon />
               Save

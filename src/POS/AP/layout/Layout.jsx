@@ -19,7 +19,7 @@ const Layout = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-2 md:p-6 order-1 lg:order-2 mt-[75px]  lg:mt-0  h-screen scrollbar-hide">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 order-1 lg:order-2 mt-[75px]  lg:mt-0  h-screen scrollbar-hide">
           <Outlet />
         </main>
       </div>

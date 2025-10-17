@@ -2,242 +2,406 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AddIcon from "@mui/icons-material/Add";
+import { useNavigate } from "react-router-dom";
 
-const emptyPurchase = {
-  purchaseId: "",
+const emptyProduct = {
+  productId: "",
   name: "",
+  model: "",
   category: "",
   company: "",
   price: "",
+  sellPrice: "",
   quantity: "",
   supplier: "",
   supplierContact: "",
-  description: "",
   total: "",
+  value: "",
 };
 
-// ✅ Auto-generate Purchase ID like PU-001, PU-002, etc.
-const generatePurchaseId = () => {
-  let lastId = Number(localStorage.getItem("lastPurchaseId") || 0);
-  if (lastId < 1) lastId = 1;
-  else lastId += 1;
-  localStorage.setItem("lastPurchaseId", lastId);
-  return `PU-${String(lastId).padStart(3, "0")}`;
+const generateProductId = () => {
+  let lastId = Number(localStorage.getItem("lastProductId") || 0);
+  lastId += 1;
+  localStorage.setItem("lastProductId", lastId);
+  return `PR-${String(lastId).padStart(3, "0")}`;
+};
+
+const loadProducts = () => {
+  const stored = localStorage.getItem("products");
+  return stored ? JSON.parse(stored) : [];
 };
 
 export default function AddPurchase({ onSave }) {
-  const [purchase, setPurchase] = useState(emptyPurchase);
+  const [product, setProduct] = useState(emptyProduct);
+  const [products, setProducts] = useState(loadProducts());
+  const navigate = useNavigate();
 
-  // ✅ Auto-generate ID on load
   useEffect(() => {
-    setPurchase((prev) => ({ ...prev, purchaseId: generatePurchaseId() }));
+    setProduct((prev) => ({ ...prev, productId: generateProductId() }));
   }, []);
 
-  // ✅ Recalculate total automatically (price × quantity)
   useEffect(() => {
-    const price = parseFloat(purchase.price) || 0;
-    const qty = parseInt(purchase.quantity) || 0;
+    const price = parseFloat(product.price) || 0;
+    const qty = parseInt(product.quantity) || 0;
     const total = (price * qty).toFixed(2);
-    setPurchase((prev) => ({ ...prev, total }));
-  }, [purchase.price, purchase.quantity]);
+    setProduct((prev) => ({
+      ...prev,
+      total,
+      value: total,
+    }));
+  }, [product.price, product.quantity]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // ✅ Price – only allow numbers and decimals
-    if (name === "price") {
+    if (name === "price" || name === "sellPrice") {
       const val = value.replace(/[^\d.]/g, "");
-      setPurchase((prev) => ({ ...prev, [name]: val }));
+      setProduct((prev) => ({ ...prev, [name]: val }));
       return;
     }
 
-    // ✅ Quantity – only allow integers
     if (name === "quantity") {
       const val = value.replace(/\D/g, "");
-      setPurchase((prev) => ({ ...prev, [name]: val }));
+      setProduct((prev) => ({ ...prev, [name]: val }));
       return;
     }
 
-    // ✅ Supplier Contact – only digits, max 15 digits
     if (name === "supplierContact") {
       let digits = value.replace(/\D/g, "");
       if (digits.length > 15) digits = digits.slice(0, 15);
-      setPurchase((prev) => ({ ...prev, [name]: digits }));
+      setProduct((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
-    setPurchase((prev) => ({ ...prev, [name]: value }));
+    setProduct((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const toastOptions = { theme: "dark", autoClose: 2000 };
 
-    // ✅ Full Form Validation using Toastify
-    if (!/^PU-\d+$/.test(purchase.purchaseId))
-      return toast.error("Invalid Purchase ID format");
-    if (!purchase.name.trim()) return toast.error("Name is required");
-    if (!purchase.category.trim()) return toast.error("Category is required");
-    if (!purchase.company.trim()) return toast.error("Company is required");
-    if (!purchase.price || isNaN(purchase.price) || parseFloat(purchase.price) <= 0)
-      return toast.error("Valid Price is required");
-    if (!purchase.quantity || isNaN(purchase.quantity) || parseInt(purchase.quantity) <= 0)
-      return toast.error("Valid Quantity is required");
-    if (!purchase.supplier.trim()) return toast.error("Supplier is required");
+    if (!/^PR-\d+$/.test(product.productId))
+      return toast.error("Invalid Product ID format", toastOptions);
+    if (!product.name.trim())
+      return toast.error("Name is required", toastOptions);
+    if (!product.model.trim())
+      return toast.error("Model is required", toastOptions);
+    if (!product.category.trim())
+      return toast.error("Category is required", toastOptions);
+    if (!product.company.trim())
+      return toast.error("Company is required", toastOptions);
+    if (
+      !product.price ||
+      isNaN(product.price) ||
+      parseFloat(product.price) <= 0
+    )
+      return toast.error("Valid Purchase Price is required", toastOptions);
+    if (
+      !product.sellPrice ||
+      isNaN(product.sellPrice) ||
+      parseFloat(product.sellPrice) <= 0
+    )
+      return toast.error("Valid Sell Price is required", toastOptions);
+    if (
+      !product.quantity ||
+      isNaN(product.quantity) ||
+      parseInt(product.quantity) <= 0
+    )
+      return toast.error("Valid Quantity is required", toastOptions);
+    if (!product.supplier.trim())
+      return toast.error("Supplier is required", toastOptions);
 
-    const fullSupplierContact = "+" + purchase.supplierContact;
+    const fullSupplierContact = "+" + product.supplierContact;
     if (!/^\+\d{7,15}$/.test(fullSupplierContact))
       return toast.error(
-        "Supplier Contact must start with '+' followed by 7–15 digits"
+        "Supplier Contact must start with '+' followed by 7–15 digits",
+        toastOptions
       );
 
-    if (!purchase.description.trim()) return toast.error("Description is required");
+    const modelExists = products.some(
+      (p) => p.model?.toLowerCase() === product.model.toLowerCase()
+    );
+    if (modelExists) return toast.error("Model must be unique!", toastOptions);
 
-    // ✅ Success toast (reload after toast closes)
-    toast.success("Purchase added successfully!", {
-      onClose: () => {
-        window.location.reload();
-      },
-      autoClose: 2000,
-    });
-
-    // ✅ Print all data with date & time
     const timestamp = new Date().toLocaleString();
-    console.log("✅ Purchase saved successfully at:", timestamp);
-    console.table({
-      ...purchase,
+    const newProduct = {
+      ...product,
       supplierContact: fullSupplierContact,
-      Saved_On: timestamp,
+      savedOn: timestamp,
+    };
+
+    const updatedProducts = [...products, newProduct];
+    localStorage.setItem("products", JSON.stringify(updatedProducts));
+    setProducts(updatedProducts);
+
+    toast.success("Product added successfully!", {
+      ...toastOptions,
+      onClose: () => navigate("/up-purchase-history"),
     });
 
-    // ✅ Save callback
-    onSave({ ...purchase, supplierContact: fullSupplierContact });
+    onSave?.(newProduct);
+  };
+
+  const handleClear = () => {
+    setProduct({
+      ...emptyProduct,
+      productId: generateProductId(),
+    });
+    toast.info("Form cleared", { theme: "dark", autoClose: 1500 });
   };
 
   return (
-    <div className="px-4 py-2">
-      <ToastContainer />
-      <div className="max-w-6xl mx-auto space-y-3">
-        {/* Header */}
+    <div className="px-4 py-2 min-h-[100%]">
+      <ToastContainer theme="dark" autoClose={2000} />
+      <div className="w-8xl mx-auto space-y-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Add Purchase</h1>
+          <h1 className="text-3xl font-bold text-white">Add Product</h1>
           <p className="text-white/80">
-            Fill in the purchase details below and save.
+            Fill in the product details below and save.
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8 text-white shadow-lg mt-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Purchase ID + Name */}
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-5 text-white shadow-lg mt-6">
+          <form onSubmit={handleSubmit} className="space-y-2">
+            {/* Product ID + Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="purchaseId"
-                value={purchase.purchaseId}
-                readOnly
-                className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
-              />
-              <input
-                type="text"
-                name="name"
-                placeholder="Name"
-                value={purchase.name}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
+              <div>
+                <label
+                  htmlFor="productId"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Product ID
+                </label>
+                <input
+                  type="text"
+                  id="productId"
+                  name="productId"
+                  value={product.productId}
+                  readOnly
+                  className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter product name"
+                  value={product.name}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
             </div>
 
-            {/* Category + Company */}
+            {/* Model + Category */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="category"
-                placeholder="Category"
-                value={purchase.category}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
-              <input
-                type="text"
-                name="company"
-                placeholder="Company"
-                value={purchase.company}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
+              <div>
+                <label
+                  htmlFor="model"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Model
+                </label>
+                <input
+                  type="text"
+                  id="model"
+                  name="model"
+                  placeholder="Enter model"
+                  value={product.model}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Category
+                </label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  placeholder="Enter category"
+                  value={product.category}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
             </div>
 
-            {/* Price + Quantity */}
+            {/* Company + Purchase Price */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="price"
-                placeholder="Price"
-                value={purchase.price}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
-              <input
-                type="text"
-                name="quantity"
-                placeholder="Quantity"
-                value={purchase.quantity}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
+              <div>
+                <label
+                  htmlFor="company"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Company
+                </label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  placeholder="Enter company name"
+                  value={product.company}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="price"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Purchase Price
+                </label>
+                <input
+                  type="text"
+                  id="price"
+                  name="price"
+                  placeholder="Enter purchase price"
+                  value={product.price}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
             </div>
 
-            {/* Supplier + Supplier Contact */}
+            {/* Sell Price + Quantity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="supplier"
-                placeholder="Supplier"
-                value={purchase.supplier}
-                onChange={handleChange}
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-              />
+              <div>
+                <label
+                  htmlFor="sellPrice"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Sell Price
+                </label>
+                <input
+                  type="text"
+                  id="sellPrice"
+                  name="sellPrice"
+                  placeholder="Enter sell price"
+                  value={product.sellPrice}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="quantity"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Quantity
+                </label>
+                <input
+                  type="text"
+                  id="quantity"
+                  name="quantity"
+                  placeholder="Enter quantity"
+                  value={product.quantity}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Value + Supplier */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="value"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Value
+                </label>
+                <input
+                  type="text"
+                  id="value"
+                  name="value"
+                  value={product.value}
+                  placeholder="0.0"
+                  readOnly
+                  className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="supplier"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Supplier
+                </label>
+                <input
+                  type="text"
+                  id="supplier"
+                  name="supplier"
+                  placeholder="Enter supplier name"
+                  value={product.supplier}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Supplier Contact */}
+            <div>
+              <label
+                htmlFor="supplierContact"
+                className="block mb-1 text-sm text-white/80"
+              >
+                Supplier Contact
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 select-none">
                   +
                 </span>
                 <input
                   type="text"
+                  id="supplierContact"
                   name="supplierContact"
                   placeholder="923001234567"
-                  value={purchase.supplierContact}
+                  value={product.supplierContact}
                   onChange={handleChange}
-                  className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
+                  className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
             </div>
 
-            {/* Description */}
-            <textarea
-              name="description"
-              placeholder="Description"
-              value={purchase.description}
-              onChange={handleChange}
-              rows="3"
-              className="w-full p-3 rounded-md bg-black/30 border border-white/20 placeholder-white/80 text-white outline-none"
-            />
-
-            {/* Total Display */}
-            <div className="flex justify-between items-center mt-2 border-t border-white/20 pt-4">
+            {/* Total */}
+            <div className="flex justify-between items-center mt-4 border-t border-white/20 pt-4 ">
               <span className="text-lg font-bold text-white">Total Price:</span>
               <span className="text-lg font-bold text-white">
-                Rs: {purchase.total || "0.00"}/-
+                Rs: {product.total || "0.00"}/-
               </span>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2 mt-4"
-            >
-              <AddIcon />
-              Save
-            </button>
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-2">
+              <button
+                type="submit"
+                className="w-full sm:w-1/2 py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
+              >
+                <AddIcon />
+                Save
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClear}
+                className="w-full sm:w-1/2 py-3 rounded-md bg-red-600 hover:bg-red-700 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
+              >
+                Clear
+              </button>
+            </div>
           </form>
         </div>
       </div>

@@ -15,7 +15,7 @@ const Dashboard = () => {
   const user = { name: "Zubi" }; // Dummy user
 
   return (
-    <div className="space-y-8 mx-auto max-w-[1200px]">
+    <div className="space-y-8 mx-auto w-8xl">
       {/* |===============================| Header |===============================| */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">
@@ -28,13 +28,13 @@ const Dashboard = () => {
 
       {/* |===============================| Tabs |===============================| */}
       <div className="flex space-x-3">
-        {["overview", "sales", "customers"].map((tab) => (
+        {["overview", "sales"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-2 py-2 rounded-md font-base hover:cursor-pointer ${
               activeTab === tab
-                ? "bg-cyan-900 text-white"
+                ? "bg-cyan-900 text-white border border-white/40"
                 : "bg-cyan-800/80 text-white/80 hover:bg-cyan-900/90 transition-colors"
             }`}
           >
@@ -78,64 +78,6 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* Customers Tab */}
-        {activeTab === "customers" && (
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">
-              Recent Sales
-            </h2>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm sm:text-base min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left text-white font-medium py-2 sm:py-3 px-2 sm:px-3">
-                      Customer
-                    </th>
-                    <th className="text-left text-white font-medium py-2 sm:py-3 px-2 sm:px-3">
-                      Amount
-                    </th>
-                    <th className="text-left text-white font-medium py-2 sm:py-3 px-2 sm:px-3">
-                      Type
-                    </th>
-                    <th className="text-left text-white font-medium py-2 sm:py-3 px-2 sm:px-3">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentSales.map((sale) => (
-                    <tr
-                      key={sale.id}
-                      className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                    >
-                      <td className="py-3 sm:py-4 px-2 sm:px-3 text-white/80 font-medium whitespace-nowrap">
-                        {sale.customer}
-                      </td>
-                      <td className="py-3 sm:py-4 px-2 sm:px-3 text-white/80 whitespace-nowrap">
-                        ${sale.amount.toLocaleString()}
-                      </td>
-                      <td className="py-3 sm:py-4 px-2 sm:px-3 whitespace-nowrap">
-                        <span
-                          className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                            sale.type === "cash"
-                              ? "bg-green-600 text-white"
-                              : "bg-indigo-700 text-white"
-                          }`}
-                        >
-                          {sale.type === "cash" ? "Cash" : "Installment"}
-                        </span>
-                      </td>
-                      <td className="py-3 sm:py-4 px-2 sm:px-3 text-gray-300 whitespace-nowrap">
-                        {sale.date}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

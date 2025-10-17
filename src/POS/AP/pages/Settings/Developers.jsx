@@ -121,7 +121,7 @@ const Developers = () => {
               {/* Email Button */}
               <a
                 href={`mailto:${selectedDev.email}`}
-                className="flex items-center justify-center gap-2 bg-blue-500/70 hover:bg-blue-500 text-white px-4 py-2 rounded-md font-medium transition w-full sm:w-auto"
+                className="flex border border-white/40  items-center justify-center gap-2 bg-blue-500/70 hover:bg-blue-500 text-white px-4 py-2 rounded-md font-medium transition w-full sm:w-auto"
               >
                 Email
               </a>
@@ -134,7 +134,7 @@ const Developers = () => {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-green-500/70 hover:bg-green-500 text-white px-4 py-2 rounded-md font-medium transition w-full sm:w-auto"
+                className="flex border border-white/40 items-center justify-center gap-2 bg-green-500/70 hover:bg-green-500 text-white px-4 py-2 rounded-md font-medium transition w-full sm:w-auto"
               >
                 WhatsApp
               </a>

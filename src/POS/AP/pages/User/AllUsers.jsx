@@ -203,16 +203,19 @@ export default function AllUsers() {
 
         {/* Filters */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2">
+          {/* Search Input */}
+          <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
-              className="flex-1 outline-none bg-transparent text-white"
+              className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 justify-between md:justify-end">
             <label className="text-sm text-white/70">Status</label>
             <select
               value={statusFilter}
@@ -242,59 +245,69 @@ export default function AllUsers() {
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-t border-white/5 hover:bg-white/5 transition"
-                >
-                  <td className="p-3">{u.id}</td>
-                  <td className="p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                      <span className="font-medium text-white">
-                        {initials(u)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">
-                        {u.firstName} {u.lastName}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">{u.email}</td>
-                  <td className="p-3">{u.role}</td>
-                  <td className="p-3">{u.branch || "—"}</td>
-                  <td className="p-3">{u.location || "—"}</td>
-                  <td className="p-3">{u.status}</td>
-                  <td className="p-3 flex gap-2">
-                    <button
-                      title="View"
-                      onClick={() => {
-                        setSelectedUser(u);
-                        setIsViewOpen(true);
-                      }}
-                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
-                    >
-                      <VisibilityIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Edit"
-                      onClick={() => handleOpenEdit(u)}
-                      className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
-                    >
-                      <EditIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Delete"
-                      onClick={() => handleDelete(u)}
-                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+           <tbody>
+  {filtered.length === 0 ? (
+    <tr>
+      <td
+        colSpan="8"
+        className="text-center p-5 text-white/70 italic border-t border-white/5"
+      >
+        No user found
+      </td>
+    </tr>
+  ) : (
+    filtered.map((u) => (
+      <tr
+        key={u.id}
+        className="border-t border-white/5 hover:bg-white/5 transition"
+      >
+        <td className="p-3">{u.id}</td>
+        <td className="p-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <span className="font-medium text-white">{initials(u)}</span>
+          </div>
+          <div>
+            <div className="font-medium text-white">
+              {u.firstName} {u.lastName}
+            </div>
+          </div>
+        </td>
+        <td className="p-3">{u.email}</td>
+        <td className="p-3">{u.role}</td>
+        <td className="p-3">{u.branch || "—"}</td>
+        <td className="p-3">{u.location || "—"}</td>
+        <td className="p-3">{u.status}</td>
+        <td className="p-3 flex gap-2">
+          <button
+            title="View"
+            onClick={() => {
+              setSelectedUser(u);
+              setIsViewOpen(true);
+            }}
+            className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
+          >
+            <VisibilityIcon fontSize="small" />
+          </button>
+          <button
+            title="Edit"
+            onClick={() => handleOpenEdit(u)}
+            className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
+          >
+            <EditIcon fontSize="small" />
+          </button>
+          <button
+            title="Delete"
+            onClick={() => handleDelete(u)}
+            className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+          >
+            <DeleteIcon fontSize="small" />
+          </button>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
           </table>
         </div>
       </div>
@@ -401,13 +414,13 @@ export default function AllUsers() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                  className="px-4 py-2 border border-white/40 rounded  bg-red-600 hover:bg-red-700  transition hover:cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                  className="px-4 py-2 border border-white/40 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
                 >
                   Save
                 </button>
@@ -432,13 +445,13 @@ export default function AllUsers() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={cancelSaveConfirm}
-                className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
+                className="px-4 py-2 border border-white/40 rounded bg-red-600 hover:bg-red-700 hover:cursor-pointer transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveConfirm}
-                className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
+                className="px-4 py-2 border border-white/40 rounded bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
               >
                 Confirm
               </button>
@@ -450,83 +463,103 @@ export default function AllUsers() {
       {/* View Modal */}
 
       {isViewOpen && selectedUser && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-50 p-2 sm:p-0">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 sm:p-6 w-full max-w-lg text-white max-h-[90vh] overflow-y-auto mx-2">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center">
-              👤 User Details
-            </h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
+          <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsViewOpen(false)}
+              className="absolute top-2 right-2 text-black transition p-1 cursor-pointer rounded-full print:hidden"
+            >
+              ✕
+            </button>
 
-            {/* Personal Information Section */}
-            <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
-                Personal Information
-              </h3>
+            {/* Header */}
+            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
+              <h2 className="text-xl font-bold tracking-wider">
+                ZUBI ELECTRONICS
+              </h2>
+              <p className="text-xs mt-1">
+                Contact: +92 300 1234567 | Email: info@zubielectronics.com
+              </p>
+              <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 sm:gap-x-3">
-                <p>
-                  <strong>ID:</strong> {selectedUser.id}
-                </p>
-                <p>
-                  <strong>Name:</strong> {selectedUser.firstName}{" "}
-                  {selectedUser.lastName}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {selectedUser.phone}
-                </p>
-                <p>
-                  <strong>CNIC:</strong> {selectedUser.cnic}
-                </p>
-                <p className="sm:col-span-2">
-                  <strong>Address:</strong> {selectedUser.address || "—"}
-                </p>
-                <p>
-                  <strong>Role:</strong> {selectedUser.role}
-                </p>
-                <p>
-                  <strong>Branch:</strong> {selectedUser.branch}
-                </p>
-                <p>
-                  <strong>Location:</strong> {selectedUser.location}
-                </p>
-                <p>
-                  <strong>Status:</strong> {selectedUser.status}
-                </p>
-                <p>
-                  <strong>Created:</strong> {formatDate(selectedUser.created)}
-                </p>
+            {/* Body */}
+            <div className="space-y-2 leading-6">
+              <div className="flex justify-between">
+                <span>User ID:</span>
+                <span>{selectedUser.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Name:</span>
+                <span>
+                  {selectedUser.firstName} {selectedUser.lastName}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Email:</span>
+                <span>{selectedUser.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Phone:</span>
+                <span>{selectedUser.phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>CNIC:</span>
+                <span>{selectedUser.cnic}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Branch:</span>
+                <span>{selectedUser.branch}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Location:</span>
+                <span>{selectedUser.location}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Role:</span>
+                <span>{selectedUser.role}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span>{selectedUser.status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Password:</span>
+                <span className="font-semibold text-yellow-700">
+                  {selectedUser.password}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-dashed border-black mt-2 pt-2">
+                <span>Created:</span>
+                <span>{formatDate(selectedUser.created)}</span>
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="my-4 border-t border-white/20"></div>
-
-            {/* Login Credentials Section */}
-            <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-medium border-b border-white/10 pb-1">
-                Login Credentials
-              </h3>
-
-              <div className="bg-black/10 border border-white/20 rounded p-3 sm:p-4">
-                <p className="mb-2 break-all">
-                  <strong>CNIC:</strong>{" "}
-                  <span className="bg-black/30 text-yellow-300 px-2 py-1 rounded ">
-                    {selectedUser.cnic}
-                  </span>
-                </p>
-                <p className="break-all">
-                  <strong>Password:</strong>{" "}
-                  <span className="bg-black/30 px-2 py-1 rounded text-yellow-300 font-mono select-all">
-                    {selectedUser.password || "—"}
-                  </span>
-                </p>
-              </div>
+            {/* Footer */}
+            <div className="text-center border-t border-dashed border-black mt-2 pt-6 text-xs">
+              <p>
+                Thank you for being part of <strong>ZUBI ELECTRONICS</strong>!
+              </p>
+              <p>This is a computer-generated receipt.</p>
             </div>
 
-            {/* Footer Button */}
-            <div className="flex justify-end gap-3 pt-4">
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-5 print:hidden">
+              <button
+                onClick={() => {
+                  const originalOverflow = document.body.style.overflow;
+                  document.body.style.overflow = "hidden";
+                  window.print();
+                  document.body.style.overflow = originalOverflow;
+                }}
+                className="px-4 py-2 rounded bg-blue-700 cursor-pointer text-white hover:bg-blue-600 transition"
+              >
+                🖨️ Print
+              </button>
               <button
                 onClick={() => setIsViewOpen(false)}
-                className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer w-full sm:w-auto"
+                className="px-4 py-2 rounded cursor-pointer bg-red-600 text-white hover:bg-red-700 transition"
               >
                 Close
               </button>
@@ -550,13 +583,13 @@ export default function AllUsers() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 rounded bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
+                className="px-4 py-2 border border-white/40 rounded bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 hover:cursor-pointer transition"
+                className="px-4 py-2 border border-white/40 rounded bg-red-600 hover:bg-red-700 hover:cursor-pointer transition"
               >
                 Delete
               </button>

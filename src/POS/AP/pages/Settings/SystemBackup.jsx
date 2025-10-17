@@ -96,7 +96,7 @@ export default function SystemBackup() {
       {/* ✅ Dark Toasts with 2s Duration */}
       <ToastContainer theme="dark" autoClose={2000} />
 
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg p-8 max-w-md text-center">
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex flex-col items-center  shadow-lg p-8 max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4">System Backup</h1>
         <p className="text-white/80 mb-6">
           Select a branch and create a secure system backup.
@@ -120,7 +120,7 @@ export default function SystemBackup() {
 
         {/* Create Backup Button */}
         <button
-          className="flex items-center justify-center gap-2 w-full bg-cyan-800/80 hover:bg-cyan-900 px-4 py-3 rounded-lg text-lg font-semibold transition cursor-pointer"
+          className="flex items-center justify-center border border-white/40 gap-2 w-1/2 bg-cyan-800/80 hover:bg-cyan-900 px-4 py-2 rounded-md text-lg font-semibold transition cursor-pointer"
           onClick={handleCreateBackup}
         >
           Backup
@@ -144,13 +144,13 @@ export default function SystemBackup() {
 
             <div className="flex justify-between gap-3">
               <button
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition w-1/2 cursor-pointer text-center"
+                className="flex border border-white/40 items-center justify-center gap-2 px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition w-1/2 cursor-pointer text-center"
                 onClick={() => handleDownload(latestBackup)}
               >
                 Download
               </button>
               <button
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition w-1/2 cursor-pointer text-center"
+                className="flex border border-white/40 items-center justify-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 transition w-1/2 cursor-pointer text-center"
                 onClick={() => handlePrint(latestBackup)}
               >
                 Print
@@ -158,7 +158,7 @@ export default function SystemBackup() {
             </div>
 
             <button
-              className="mt-5 w-full px-4 py-2 rounded bg-red-600 hover:bg-red-500 transition cursor-pointer"
+              className="mt-5 border border-white/40 w-full px-4 py-2 rounded bg-red-600 hover:bg-red-500 transition cursor-pointer"
               onClick={() => setIsDownloadModalOpen(false)}
             >
               Close

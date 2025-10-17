@@ -92,7 +92,7 @@ export default function AdminProfile() {
         </div>
         <button
           onClick={openModal}
-          className="mt-8 px-8 py-3 bg-cyan-800/80 hover:bg-cyan-900 rounded-xl shadow-lg hover:shadow-cyan-900/50 transition cursor-pointer text-lg font-medium"
+          className="mt-8 px-8 border border-white/40 py-2 bg-cyan-800/80 hover:bg-cyan-900 rounded-md shadow-lg hover:shadow-cyan-900/50 transition cursor-pointer text-lg font-medium"
         >
           Edit
         </button>
@@ -150,13 +150,13 @@ export default function AdminProfile() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2 rounded-lg cursor-pointer bg-red-600 hover:bg-red-700 transition shadow-md"
+                  className="px-5 py-2 border border-white/40 rounded-md cursor-pointer bg-red-600 hover:bg-red-700 transition shadow-md"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-cyan-800/80 hover:bg-cyan-900 cursor-pointer transition shadow-md"
+                  className="px-5 py-2 border border-white/40 rounded-md bg-cyan-800/80 hover:bg-cyan-900 cursor-pointer transition shadow-md"
                 >
                   Save
                 </button>

@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { X } from "lucide-react";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import CloseIcon from "@mui/icons-material/Close";
 
 const sampleCustomers = [
   {
@@ -32,11 +32,12 @@ const sampleCustomers = [
   },
 ];
 
-// ✅ Utility for date formatting
-const formatDateWithMonth = (dateString) => {
+const formatDate = (dateString) => {
+  if (!dateString) return "—";
   const date = new Date(dateString);
-  const options = { year: "numeric", month: "long", day: "numeric" };
-  return date.toLocaleDateString(undefined, options);
+  return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${date.getFullYear()}`;
 };
 
 export default function AllCustomers() {
@@ -51,32 +52,126 @@ export default function AllCustomers() {
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [form, setForm] = useState({});
 
   useEffect(() => {
     localStorage.setItem("all_customers_data", JSON.stringify(customers));
   }, [customers]);
 
-  const filteredCustomers = useMemo(() => {
+  const filtered = useMemo(() => {
     let arr = customers.slice();
     if (query.trim()) {
       const q = query.toLowerCase();
       arr = arr.filter((c) =>
-        [c.customerId, c.firstName, c.lastName, c.contact, c.cnic, c.city, c.address]
+        [
+          c.customerId,
+          c.firstName,
+          c.lastName,
+          c.contact,
+          c.cnic,
+          c.city,
+          c.address,
+        ]
           .join(" ")
           .toLowerCase()
           .includes(q)
       );
     }
-    if (statusFilter !== "All") {
+    if (statusFilter !== "All")
       arr = arr.filter((c) => c.status === statusFilter);
-    }
+    arr.sort((a, b) => a.customerId.localeCompare(b.customerId));
     return arr;
   }, [customers, query, statusFilter]);
 
-  const handleDelete = (id) => {
-    setCustomers((prev) => prev.filter((c) => c.customerId !== id));
-    toast.success("Customer deleted successfully!");
+  // ✅ Toast setup
+  const toastConfig = {
+    position: "top-right",
+    theme: "dark",
+    autoClose: 2000,
+  };
+  const notifySuccess = (msg) => toast.success(msg, toastConfig);
+  const notifyError = (msg) => toast.error(msg, toastConfig);
+
+  const initials = (c) =>
+    `${(c.firstName || "").charAt(0)}${(c.lastName || "").charAt(
+      0
+    )}`.toUpperCase();
+
+  const handleOpenEdit = (customer) => {
+    setForm(customer);
+    setEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "contact") {
+      let val = value.replace(/[^\d+]/g, "");
+      if (val && val[0] !== "+") val = "+" + val.replace(/\+/g, "");
+      setForm((s) => ({ ...s, contact: val }));
+      return;
+    }
+
+    if (name === "cnic") {
+      let digits = value.replace(/\D/g, "").slice(0, 13);
+      let formatted = digits;
+      if (digits.length > 5 && digits.length <= 12)
+        formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+      if (digits.length === 13)
+        formatted = `${digits.slice(0, 5)}-${digits.slice(
+          5,
+          12
+        )}-${digits.slice(12)}`;
+      setForm((s) => ({ ...s, cnic: formatted }));
+      return;
+    }
+
+    setForm((s) => ({ ...s, [name]: value }));
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!form.firstName?.trim()) return notifyError("First name is required");
+    if (!form.lastName?.trim()) return notifyError("Last name is required");
+    if (!form.contact?.trim()) return notifyError("Contact number is required");
+    if (!form.cnic?.trim()) return notifyError("CNIC is required");
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(form.cnic))
+      return notifyError("Invalid CNIC format (e.g., 12345-6789012-3)");
+
+    setCustomers((prev) =>
+      prev.map((c) => (c.customerId === form.customerId ? form : c))
+    );
+    setIsModalOpen(false);
+    notifySuccess(`${form.firstName} ${form.lastName} updated successfully.`);
+  };
+
+  const handleDelete = (customer) => {
+    setCustomerToDelete(customer);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!customerToDelete) return;
+    setCustomers((prev) =>
+      prev.filter((c) => c.customerId !== customerToDelete.customerId)
+    );
+    notifySuccess(
+      `Customer ${customerToDelete.firstName} ${customerToDelete.lastName} deleted.`
+    );
+    setIsDeleteModalOpen(false);
+    setCustomerToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setCustomerToDelete(null);
+    setIsDeleteModalOpen(false);
   };
 
   const handlePrint = () => {
@@ -87,85 +182,105 @@ export default function AllCustomers() {
   };
 
   return (
-    <div className="p-4 min-h-[95vh] text-white">
-      <ToastContainer />
+    <div className="p-2 min-h-screen text-white">
+      <ToastContainer position="top-right" theme="dark" autoClose={2000} />
+
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Heading */}
+        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold mb-2">All Customers</h1>
-          <p className="text-white/80">View all customers and their details.</p>
+          <h1 className="text-3xl font-bold text-white mb-2">All Customers</h1>
+          <p className="text-white/80">
+            View, edit, and manage customer accounts.
+          </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center gap-2 bg-black/30 p-2 rounded max-w-[90%]">
-            <SearchIcon />
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search Input */}
+          <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
+            <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
-              className="bg-transparent outline-none text-white"
+              className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label>Status:</label>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 justify-between md:justify-end">
+            <label className="text-sm text-white/70">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="p-2 bg-black/30 border border-white/20 rounded text-white"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white"
             >
-              <option className="bg-black/90">All</option>
-              <option className="bg-black/90">Active</option>
-              <option className="bg-black/90">Inactive</option>
-              <option className="bg-black/90">Suspended</option>
+              <option className="bg-black/95 text-white">All</option>
+              <option className="bg-black/95 text-white">Active</option>
+              <option className="bg-black/95 text-white">Inactive</option>
+              <option className="bg-black/95 text-white">Suspended</option>
             </select>
           </div>
         </div>
-
-        {/* Customers Table */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-x-auto">
-          <table className="w-full text-white min-w-[900px]">
-            <thead className="bg-white/20 text-left text-sm">
+        {/* Table */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
+          <table className="w-full text-white/90 min-w-[900px]">
+            <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
                 <th className="p-3">Name</th>
-                <th className="p-3">Contact</th>
                 <th className="p-3">CNIC</th>
+                <th className="p-3">Contact</th>
                 <th className="p-3">City</th>
-                <th className="p-3">Address</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.map((c) => (
+              {filtered.map((c) => (
                 <tr
                   key={c.customerId}
-                  className="border-t border-white/10 hover:bg-white/10"
+                  className="border-t border-white/5 hover:bg-white/5 transition"
                 >
                   <td className="p-3">{c.customerId}</td>
-                  <td className="p-3">{c.firstName} {c.lastName}</td>
-                  <td className="p-3">{c.contact}</td>
+                  <td className="p-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                      <span className="font-medium text-white">
+                        {initials(c)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-white">
+                        {c.firstName} {c.lastName}
+                      </div>
+                    </div>
+                  </td>
                   <td className="p-3">{c.cnic}</td>
+                  <td className="p-3">{c.contact}</td>
                   <td className="p-3">{c.city}</td>
-                  <td className="p-3">{c.address}</td>
                   <td className="p-3">{c.status}</td>
                   <td className="p-3 flex gap-2">
                     <button
-                      onClick={() => setSelectedCustomer(c)}
-                      className="p-2 rounded bg-blue-600 hover:bg-blue-500 hover:cursor-pointer"
+                      title="View"
+                      onClick={() => {
+                        setSelectedCustomer(c);
+                        setIsViewOpen(true);
+                      }}
+                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
                     >
                       <VisibilityIcon fontSize="small" />
                     </button>
                     <button
-                      onClick={() => toast.info("Edit functionality coming soon")}
-                      className="p-2 rounded bg-yellow-400 text-black hover:bg-yellow-300 hover:cursor-pointer"
+                      title="Edit"
+                      onClick={() => handleOpenEdit(c)}
+                      className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
                     >
                       <EditIcon fontSize="small" />
                     </button>
                     <button
-                      onClick={() => handleDelete(c.customerId)}
-                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 hover:cursor-pointer"
+                      title="Delete"
+                      onClick={() => handleDelete(c)}
+                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
                     >
                       <DeleteIcon fontSize="small" />
                     </button>
@@ -177,67 +292,198 @@ export default function AllCustomers() {
         </div>
       </div>
 
-      {/* ✅ CUSTOMER DETAILS MODAL (same as POS/Guarantor modal) */}
-      {selectedCustomer && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md z-50 p-2 sm:p-4">
-          <div className="bg-white/10 border border-white/30 backdrop-blur-xl rounded-2xl w-full max-w-[95%] sm:max-w-[600px] h-[85vh] shadow-xl text-white relative flex flex-col print:w-full print:h-auto print:bg-white print:text-black print:overflow-visible">
+      {/* ✅ Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
+            <h2 className="text-xl font-semibold mb-4">Edit Customer</h2>
+            <form onSubmit={handleSave} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  placeholder="First Name"
+                  className="p-2 rounded bg-black/30 border border-white/20 outline-none"
+                />
+                <input
+                  name="lastName"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  placeholder="Last Name"
+                  className="p-2 rounded bg-black/30 border border-white/20 outline-none"
+                />
+              </div>
+              <input
+                name="contact"
+                value={form.contact}
+                onChange={handleChange}
+                placeholder="Contact (+92...)"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
+              />
+              <input
+                name="cnic"
+                value={form.cnic}
+                onChange={handleChange}
+                placeholder="CNIC"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
+              />
+              <input
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="City"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
+              />
+              <input
+                name="address"
+                value={form.address || ""}
+                onChange={handleChange}
+                placeholder="Address"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
+              />
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
+              >
+                <option className="bg-black/90">Active</option>
+                <option className="bg-black/90">Inactive</option>
+                <option className="bg-black/90">Suspended</option>
+              </select>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ View Modal - Receipt Style */}
+      {isViewOpen && selectedCustomer && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
+          <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
             <button
-              className="absolute top-3 right-3 hover:cursor-pointer print:hidden cursor-pointer"
-              onClick={() => setSelectedCustomer(null)}
+              onClick={() => setIsViewOpen(false)}
+              className="absolute top-2 right-2 text-blacktransition p-1 cursor-pointer rounded-full print:hidden"
             >
-              <CloseIcon />
+              <X size={18} />
             </button>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-7 space-y-4 scrollbar-hide print:p-5">
-              <div className="text-center mb-6">
-                <h1 className="text-2xl sm:text-3xl font-bold">ZUBI Electronics</h1>
-                <p className="text-white/70 print:text-black text-sm sm:text-base">
-                  Pakistan | 📞 +92 300 1358167
-                </p>
-                <hr className="border-white/30 my-4 print:border-black/40" />
-                <h2 className="text-lg sm:text-xl font-semibold">CUSTOMER DETAILS</h2>
-                
-              </div>
+            {/* Header */}
+            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
+              <h2 className="text-xl font-bold tracking-wider">
+                ZUBI ELECTRONICS
+              </h2>
+              <p className="text-xs mt-1">
+                Contact: +92 300 1234567 | Email: info@zubielectronics.com
+              </p>
+              <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
+            </div>
 
-              <div className="space-y-2 text-sm sm:text-base leading-relaxed">
-                <p><strong>ID:</strong> {selectedCustomer.customerId}</p>
-                <p><strong>Name:</strong> {selectedCustomer.firstName} {selectedCustomer.lastName}</p>
-                <p><strong>Contact:</strong> {selectedCustomer.contact}</p>
-                <p><strong>CNIC:</strong> {selectedCustomer.cnic}</p>
-                <p><strong>City:</strong> {selectedCustomer.city}</p>
-                <p><strong>Address:</strong> {selectedCustomer.address}</p>
-                <p><strong>Status:</strong> {selectedCustomer.status}</p>
-                <p><strong>Date Added:</strong> {formatDateWithMonth(selectedCustomer.dateAdded)}</p>
+            {/* Body */}
+            <div className="space-y-2 leading-6">
+              <div className="flex justify-between">
+                <span>C-ID:</span>
+                <span>{selectedCustomer.customerId}</span>
               </div>
-
-              <div className="mt-8 text-center text-white/70 text-xs sm:text-sm print:text-black">
-                <p>Thank you for being a valued customer of ZUBI Electronics.</p>
-                <p className="text-white/50 mt-2 print:text-gray-600">
-                  This is a computer-generated document.
-                </p>
+              <div className="flex justify-between">
+                <span>Name:</span>
+                <span>
+                  {selectedCustomer.firstName} {selectedCustomer.lastName}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Contact:</span>
+                <span>{selectedCustomer.contact}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>CNIC:</span>
+                <span>{selectedCustomer.cnic}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>City:</span>
+                <span>{selectedCustomer.city}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Address:</span>
+                <span>{selectedCustomer.address || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span>{selectedCustomer.status}</span>
+              </div>
+              <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
+                <span>Date Added:</span>
+                <span>{formatDate(selectedCustomer.dateAdded)}</span>
               </div>
             </div>
 
-            <div className="p-3 sm:p-4 border-t border-white/20 flex flex-wrap justify-center gap-2 print:hidden">
-              <button
-                onClick={() => toast.success("Customer details saved successfully!")}
-                className="bg-green-700 hover:bg-green-600 px-3 sm:px-4 py-2 rounded-md font-semibold cursor-pointer text-sm sm:text-base"
-              >
-                💾 Save
-              </button>
+            {/* Footer */}
+            <div className="text-center border-t border-dashed border-black/90 mt-2 pt-6 text-xs">
+              <p>
+                Thank you for choosing <strong>ZUBI ELECTRONICS</strong>!
+              </p>
+              <p>This is a computer-generated receipt.</p>
+            </div>
 
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-5 print:hidden">
               <button
                 onClick={handlePrint}
-                className="bg-blue-700 hover:bg-blue-600 px-3 sm:px-4 py-2 rounded-md font-semibold cursor-pointer text-sm sm:text-base"
+                className="px-4 py-2 rounded bg-blue-700 cursor-pointer text-white hover:bg-blue-600 transition"
               >
                 🖨️ Print
               </button>
-
               <button
-                onClick={() => setSelectedCustomer(null)}
-                className="bg-red-700 hover:bg-red-600 px-3 sm:px-4 py-2 rounded-md font-semibold cursor-pointer text-sm sm:text-base"
+                onClick={() => setIsViewOpen(false)}
+                className="px-4 py-2 rounded cursor-pointer bg-red-600 text-white hover:bg-red-700 transition"
               >
-                ✖ Cancel
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Delete Modal */}
+      {isDeleteModalOpen && customerToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
+            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
+            <p className="mb-4">
+              Are you sure you want to delete{" "}
+              <strong>
+                {customerToDelete.firstName} {customerToDelete.lastName}
+              </strong>
+              ?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 hover:cursor-pointer transition"
+              >
+                Delete
               </button>
             </div>
           </div>
