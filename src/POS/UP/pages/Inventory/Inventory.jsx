@@ -3,17 +3,23 @@ import { X } from "lucide-react";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-const formatDate = (dateString) => {
+// ✅ Consistent Date Formatter
+const formatDateTime = (dateString) => {
   if (!dateString) return "—";
+  
   try {
     const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, "0")}-${(
-      date.getMonth() + 1
-    )
-      .toString()
-      .padStart(2, "0")}-${date.getFullYear()}`;
+    if (isNaN(date.getTime())) return "Invalid Date";
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   } catch (error) {
-    return dateString;
+    return "Invalid Date";
   }
 };
 
@@ -56,17 +62,24 @@ export default function Inventory() {
     return arr;
   }, [products, query]);
 
+  // Calculate total value of all filtered products
+  const totalValue = useMemo(() => {
+    return filtered
+      .reduce((sum, p) => sum + parseFloat(p.value || 0), 0)
+      .toFixed(2);
+  }, [filtered]);
+
+  // Calculate total quantity of all filtered products
+  const totalQuantity = useMemo(() => {
+    return filtered
+      .reduce((sum, p) => sum + parseInt(p.quantity || 0), 0);
+  }, [filtered]);
+
   const handlePrint = () => {
     const bodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.print();
     document.body.style.overflow = bodyOverflow;
-  };
-
-  const calculateTotalPurchasePrice = (product) => {
-    const price = parseFloat(product.price || 0);
-    const quantity = parseInt(product.quantity || 0);
-    return (price * quantity).toFixed(2);
   };
 
   return (
@@ -77,8 +90,24 @@ export default function Inventory() {
             Inventory & Stocks
           </h1>
           <p className="text-white/80">
-            View all stocks and inventory records.
+            View all stocks and inventory records with accumulated values.
           </p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-600/20 backdrop-blur-md border border-blue-400/30 rounded-lg p-4">
+            <h3 className="text-blue-300 text-sm font-semibold">Total Products</h3>
+            <p className="text-2xl font-bold text-white">{filtered.length}</p>
+          </div>
+          <div className="bg-green-600/20 backdrop-blur-md border border-green-400/30 rounded-lg p-4">
+            <h3 className="text-green-300 text-sm font-semibold">Total Quantity</h3>
+            <p className="text-2xl font-bold text-white">{totalQuantity} units</p>
+          </div>
+          <div className="bg-purple-600/20 backdrop-blur-md border border-purple-400/30 rounded-lg p-4">
+            <h3 className="text-purple-300 text-sm font-semibold">Total Inventory Value</h3>
+            <p className="text-2xl font-bold text-white">Rs {totalValue}/-</p>
+          </div>
         </div>
 
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -87,7 +116,7 @@ export default function Inventory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="Search products..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
@@ -103,6 +132,8 @@ export default function Inventory() {
                 <th className="p-3">Category</th>
                 <th className="p-3">Company</th>
                 <th className="p-3">Qty</th>
+                <th className="p-3">Purchase Price</th>
+                <th className="p-3">Sell Price</th>
                 <th className="p-3">Value</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -113,13 +144,15 @@ export default function Inventory() {
                   key={p.productId}
                   className="border-t border-white/5 hover:bg-white/5 transition"
                 >
-                  <td className="p-3">{p.productId}</td>
+                  <td className="p-3 font-mono">{p.productId}</td>
                   <td className="p-3">{p.name}</td>
                   <td className="p-3">{p.model}</td>
                   <td className="p-3">{p.category}</td>
                   <td className="p-3">{p.company}</td>
                   <td className="p-3">{p.quantity}</td>
-                  <td className="p-3">{p.value}</td>
+                  <td className="p-3">Rs {p.price}/-</td>
+                  <td className="p-3">Rs {p.sellPrice}/-</td>
+                  <td className="p-3">Rs {p.value}/-</td>
                   <td className="p-3 flex gap-2">
                     <button
                       title="View"
@@ -136,17 +169,29 @@ export default function Inventory() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="p-4 text-center text-white/70">
+                  <td colSpan="10" className="p-4 text-center text-white/70">
                     No products found.
                   </td>
                 </tr>
               )}
             </tbody>
+            {/* Footer row showing totals */}
+            {filtered.length > 0 && (
+              <tfoot className="bg-white/10 text-left text-md font-semibold">
+                <tr>
+                  <td className="p-3" colSpan="5">Total</td>
+                  <td className="p-3">{totalQuantity} units</td>
+                  <td className="p-3" colSpan="2"></td>
+                  <td className="p-3">Rs {totalValue}/-</td>
+                  <td className="p-3"></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
 
-      {/* --- Simplified View Modal (Product + Stock Info Only) --- */}
+      {/* --- View Modal --- */}
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
           <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
@@ -198,17 +243,28 @@ export default function Inventory() {
                 <span>Quantity in Stock:</span>
                 <span>{selectedProduct.quantity} piece(s)</span>
               </div>
-              <div className="flex justify-between font-bold border-t border-dashed border-black/90 pt-2">
-                <span>Total Purchase Price:</span>
-                <span>Rs {calculateTotalPurchasePrice(selectedProduct)}/-</span>
-              </div>
-              <div className="flex justify-between  pb-2">
+              
+              <div className="flex justify-between border-t border-dashed border-black/90 mt-4 py-2 font-bold">
                 <span>Total Inventory Value:</span>
                 <span>Rs {selectedProduct.value}/-</span>
               </div>
+
+              {/* Supplier Information */}
+              <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
+                <span>Supplier:</span>
+                <span>{selectedProduct.supplier}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Supplier Contact:</span>
+                <span>{selectedProduct.supplierContact}</span>
+              </div>
+              <div className="flex justify-between text-xs text-black/70 italic">
+                <span>Last Updated:</span>
+                <span>{formatDateTime(selectedProduct.updatedOn || selectedProduct.savedOn)}</span>
+              </div>
             </div>
 
-            <div className="text-center border-t border-dashed border-black/90 mt-2 pt-4  text-xs">
+            <div className="text-center border-t border-dashed border-black/90 pt-4 text-xs">
               <p>This is a computer-generated record.</p>
               <p>Contains product and stock details only.</p>
             </div>

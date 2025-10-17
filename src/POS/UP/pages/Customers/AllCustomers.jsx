@@ -7,46 +7,45 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-const sampleCustomers = [
-  {
-    customerId: "C-001",
-    firstName: "Alice",
-    lastName: "Johnson",
-    contact: "+923001234567",
-    cnic: "12345-1234567-1",
-    city: "New York",
-    address: "123 Main St",
-    status: "Active",
-    dateAdded: new Date().toISOString(),
-  },
-  {
-    customerId: "C-002",
-    firstName: "Bob",
-    lastName: "Smith",
-    contact: "+923009876543",
-    cnic: "54321-7654321-0",
-    city: "Los Angeles",
-    address: "456 Market St",
-    status: "Inactive",
-    dateAdded: new Date().toISOString(),
-  },
-];
+// Utility function to get a date at midnight local time
+const getLocalMidnight = (date = new Date()) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0); // Set to 00:00:00 in local time
+  return d;
+};
 
+/**
+ * Formats an ISO date string into a user-friendly date and time string.
+ * Uses local conventions for easy readability.
+ * @param {string | undefined} dateString - The ISO date string.
+ * @returns {string} - Formatted date and time (e.g., "17/10/2025 10:35 PM") or "—".
+ */
 const formatDate = (dateString) => {
   if (!dateString) return "—";
   const date = new Date(dateString);
-  return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}-${date.getFullYear()}`;
+
+  // Options for local formatting
+  const dateOptions = { year: "numeric", month: "numeric", day: "numeric" };
+  const timeOptions = { hour: "2-digit", minute: "2-digit", hour12: true };
+
+  // Format date (e.g., 17/10/2025) and time (e.g., 10:35 PM) using user's locale
+  const formattedDate = date.toLocaleDateString(undefined, dateOptions);
+  const formattedTime = date.toLocaleTimeString(undefined, timeOptions);
+
+  return `${formattedDate} ${formattedTime}`;
 };
+
+// ---
+// The main component
+// ---
 
 export default function AllCustomers() {
   const [customers, setCustomers] = useState(() => {
     try {
       const raw = localStorage.getItem("all_customers_data");
-      return raw ? JSON.parse(raw) : sampleCustomers;
+      return raw ? JSON.parse(raw) : [];
     } catch {
-      return sampleCustomers;
+      return [];
     }
   });
 
@@ -136,8 +135,10 @@ export default function AllCustomers() {
     setForm((s) => ({ ...s, [name]: value }));
   };
 
+  // ✅ Updated Save Handler
   const handleSave = (e) => {
     e.preventDefault();
+
     if (!form.firstName?.trim()) return notifyError("First name is required");
     if (!form.lastName?.trim()) return notifyError("Last name is required");
     if (!form.contact?.trim()) return notifyError("Contact number is required");
@@ -145,8 +146,29 @@ export default function AllCustomers() {
     if (!/^\d{5}-\d{7}-\d{1}$/.test(form.cnic))
       return notifyError("Invalid CNIC format (e.g., 12345-6789012-3)");
 
+    const original = customers.find((c) => c.customerId === form.customerId);
+
+    // Compare current vs. new data
+    const isChanged = Object.keys(form).some(
+      (key) => form[key] !== original[key]
+    );
+
+    if (!isChanged) {
+      // No change → just close modal, no toast
+      setIsModalOpen(false);
+      return;
+    }
+
+    // Add updated time (Current time in human-readable format)
+    // The previous code used to store the ISO string: new Date().toISOString()
+    // To show the current time easily, we store the *formatted* string for updatedAt.
+    const updatedForm = {
+      ...form,
+      updatedAt: formatDate(new Date().toISOString()),
+    };
+
     setCustomers((prev) =>
-      prev.map((c) => (c.customerId === form.customerId ? form : c))
+      prev.map((c) => (c.customerId === form.customerId ? updatedForm : c))
     );
     setIsModalOpen(false);
     notifySuccess(`${form.firstName} ${form.lastName} updated successfully.`);
@@ -196,7 +218,6 @@ export default function AllCustomers() {
 
         {/* Filters */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Search Input */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
@@ -207,7 +228,6 @@ export default function AllCustomers() {
             />
           </div>
 
-          {/* Status Filter */}
           <div className="flex items-center gap-2 justify-between md:justify-end">
             <label className="text-sm text-white/70">Status</label>
             <select
@@ -222,6 +242,7 @@ export default function AllCustomers() {
             </select>
           </div>
         </div>
+
         {/* Table */}
         <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
           <table className="w-full text-white/90 min-w-[900px]">
@@ -237,56 +258,66 @@ export default function AllCustomers() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c) => (
-                <tr
-                  key={c.customerId}
-                  className="border-t border-white/5 hover:bg-white/5 transition"
-                >
-                  <td className="p-3">{c.customerId}</td>
-                  <td className="p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                      <span className="font-medium text-white">
-                        {initials(c)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">
-                        {c.firstName} {c.lastName}
+              {filtered.length > 0 ? (
+                filtered.map((c) => (
+                  <tr
+                    key={c.customerId}
+                    className="border-t border-white/5 hover:bg-white/5 transition"
+                  >
+                    <td className="p-3">{c.customerId}</td>
+                    <td className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                        <span className="font-medium text-white">
+                          {initials(c)}
+                        </span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="p-3">{c.cnic}</td>
-                  <td className="p-3">{c.contact}</td>
-                  <td className="p-3">{c.city}</td>
-                  <td className="p-3">{c.status}</td>
-                  <td className="p-3 flex gap-2">
-                    <button
-                      title="View"
-                      onClick={() => {
-                        setSelectedCustomer(c);
-                        setIsViewOpen(true);
-                      }}
-                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
-                    >
-                      <VisibilityIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Edit"
-                      onClick={() => handleOpenEdit(c)}
-                      className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
-                    >
-                      <EditIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Delete"
-                      onClick={() => handleDelete(c)}
-                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </button>
+                      <div>
+                        <div className="font-medium text-white">
+                          {c.firstName} {c.lastName}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">{c.cnic}</td>
+                    <td className="p-3">{c.contact}</td>
+                    <td className="p-3">{c.city}</td>
+                    <td className="p-3">{c.status}</td>
+                    <td className="p-3 flex gap-2">
+                      <button
+                        title="View"
+                        onClick={() => {
+                          setSelectedCustomer(c);
+                          setIsViewOpen(true);
+                        }}
+                        className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </button>
+                      <button
+                        title="Edit"
+                        onClick={() => handleOpenEdit(c)}
+                        className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
+                      >
+                        <EditIcon fontSize="small" />
+                      </button>
+                      <button
+                        title="Delete"
+                        onClick={() => handleDelete(c)}
+                        className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="text-center py-6 text-white/60">
+                    {customers.length === 0
+                      ? "No customers added yet."
+                      : "No customers match your search."}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -296,7 +327,9 @@ export default function AllCustomers() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
-            <h2 className="text-xl font-semibold mb-4">Edit Customer</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Edit Customer: {form.customerId}
+            </h2>
             <form onSubmit={handleSave} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -355,17 +388,17 @@ export default function AllCustomers() {
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
+                  type="submit"
+                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                >
+                  Save
+                </button>
+                <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
-                >
-                  Save
                 </button>
               </div>
             </form>
@@ -373,7 +406,7 @@ export default function AllCustomers() {
         </div>
       )}
 
-      {/* ✅ View Modal - Receipt Style */}
+      {/* ✅ View Modal */}
       {isViewOpen && selectedCustomer && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
           <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
@@ -384,7 +417,6 @@ export default function AllCustomers() {
               <X size={18} />
             </button>
 
-            {/* Header */}
             <div className="text-center border-b border-dashed border-black pb-3 mb-3">
               <h2 className="text-xl font-bold tracking-wider">
                 ZUBI ELECTRONICS
@@ -395,7 +427,6 @@ export default function AllCustomers() {
               <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
             </div>
 
-            {/* Body */}
             <div className="space-y-2 leading-6">
               <div className="flex justify-between">
                 <span>C-ID:</span>
@@ -429,11 +460,19 @@ export default function AllCustomers() {
               </div>
               <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
                 <span>Date Added:</span>
+                {/* dateAdded is an ISO string, so we use formatDate */}
                 <span>{formatDate(selectedCustomer.dateAdded)}</span>
               </div>
+
+              {selectedCustomer.updatedAt && (
+                <div className="flex justify-between text-xs text-black/70 italic">
+                  <span>Last Updated:</span>
+                  {/* updatedAt is now the already-formatted string */}
+                  <span>{selectedCustomer.updatedAt}</span>
+                </div>
+              )}
             </div>
 
-            {/* Footer */}
             <div className="text-center border-t border-dashed border-black/90 mt-2 pt-6 text-xs">
               <p>
                 Thank you for choosing <strong>ZUBI ELECTRONICS</strong>!
@@ -441,7 +480,6 @@ export default function AllCustomers() {
               <p>This is a computer-generated receipt.</p>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-3 pt-5 print:hidden">
               <button
                 onClick={handlePrint}

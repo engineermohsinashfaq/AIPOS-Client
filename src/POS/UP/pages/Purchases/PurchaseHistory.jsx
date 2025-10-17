@@ -7,70 +7,120 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-/**
- * Formats a date string into DD-MM-YYYY format.
- * @param {string} dateString The date string to format.
- * @returns {string} The formatted date (DD-MM-YYYY) or '—'.
- */
-const formatDate = (dateString) => {
-  if (!dateString) return "—";
+// ✅ Robust Date Formatter that handles all date formats
+const formatDateTime = (dateInput) => {
+  if (!dateInput) return "—";
+  
   try {
-    const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${date.getFullYear()}`;
+    let date;
+    
+    // Handle different date formats
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      // Try to parse the date string - handle multiple formats
+      if (dateInput.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = dateInput.split(' ');
+        const datePart = parts[0];
+        const timePart = parts[1];
+        
+        if (datePart.includes('/')) {
+          const [day, month, year] = datePart.split('/');
+          if (timePart) {
+            const [hours, minutes, seconds] = timePart.split(':');
+            date = new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+          } else {
+            date = new Date(year, month - 1, day);
+          }
+        }
+      } else {
+        // Try standard Date parsing
+        date = new Date(dateInput);
+      }
+    } else {
+      date = new Date(dateInput);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "—";
+    }
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
-    return dateString; // Fallback if date parsing fails
+    console.error('Date formatting error:', error);
+    return "—";
+  }
+};
+
+// ✅ Short Date for Display (Table) - More robust version
+const formatShortDate = (dateString) => {
+  if (!dateString) return "—";
+  
+  try {
+    const fullDate = formatDateTime(dateString);
+    if (fullDate === "—") return "—";
+    
+    // Extract just the date part (DD/MM/YYYY)
+    return fullDate.split(' ')[0];
+  } catch (error) {
+    return "—";
   }
 };
 
 /**
- * Loads products array from localStorage.
- * @returns {Array<Object>} The array of products or an empty array.
+ * Loads purchase history data.
  */
-const loadProducts = () => {
+const loadPurchaseHistory = () => {
   try {
-    const raw = localStorage.getItem("products");
-    return raw ? JSON.parse(raw) : [];
+    const purchaseHistory =
+      JSON.parse(localStorage.getItem("purchaseHistory")) || [];
+
+    // Sort by date descending (newest first)
+    return purchaseHistory.sort((a, b) => {
+      const dateA = new Date(a.savedOn || a.updatedOn || 0);
+      const dateB = new Date(b.savedOn || b.updatedOn || 0);
+      return dateB - dateA; // Descending order
+    });
   } catch {
-    console.error("Error loading products from localStorage.");
+    console.error("Error loading purchase history from localStorage.");
     return [];
   }
 };
 
-/**
- * AllProducts component for managing, searching, editing, and deleting product inventory.
- */
 export default function PurchaseHistory() {
-  // State for the list of products loaded from localStorage
-  const [products, setProducts] = useState(loadProducts);
-
-  // UI state for search and modals
+  const [purchaseHistory, setPurchaseHistory] = useState(loadPurchaseHistory);
   const [query, setQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false); // Edit Modal visibility
-  const [isViewOpen, setIsViewOpen] = useState(false); // View Modal visibility
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Delete Modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [form, setForm] = useState({});
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
 
-  // Data state for modals
-  const [form, setForm] = useState({}); // Data for the edit form
-  const [selectedProduct, setSelectedProduct] = useState(null); // Product data for the view modal
-  const [productToDelete, setProductToDelete] = useState(null); // Product data for the delete modal
-
-  /**
-   * Effect to persist products to localStorage whenever the products state changes.
-   */
+  // 🟢 Refresh data automatically if storage updates
   useEffect(() => {
-    localStorage.setItem("products", JSON.stringify(products));
-  }, [products]);
+    const handleStorage = () => {
+      setPurchaseHistory(loadPurchaseHistory());
+    };
+    window.addEventListener("storage", handleStorage);
 
-  /**
-   * Memoized computation to filter and sort products based on the search query.
-   * Filters across multiple product fields (ID, Name, Model, Category, Company, Supplier, Contact).
-   * Sorts the final array by productId.
-   * @returns {Array<Object>} The filtered and sorted array of products.
-   */
+    // Also refresh when component mounts
+    setPurchaseHistory(loadPurchaseHistory());
+
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const filtered = useMemo(() => {
-    let arr = products.slice();
+    let arr = purchaseHistory.slice();
     if (query.trim()) {
       const q = query.toLowerCase();
       arr = arr.filter((p) =>
@@ -82,29 +132,22 @@ export default function PurchaseHistory() {
           p.company,
           p.supplier,
           p.supplierContact,
+          p.invoiceId,
+          p.type,
         ]
           .join(" ")
           .toLowerCase()
           .includes(q)
       );
     }
-    // Sort by productId (assuming PR-001, PR-002, etc. format)
-    arr.sort((a, b) => a.productId.localeCompare(b.productId));
     return arr;
-  }, [products, query]);
+  }, [purchaseHistory, query]);
 
-  // Toast utility configuration
   const toastConfig = { position: "top-right", theme: "dark", autoClose: 2000 };
   const notifySuccess = (msg) => toast.success(msg, toastConfig);
   const notifyError = (msg) => toast.error(msg, toastConfig);
 
-  /**
-   * Opens the edit modal, setting the form state with the selected product.
-   * It also removes the leading '+' from `supplierContact` for correct input display.
-   * @param {Object} product The product object to edit.
-   */
   const handleOpenEdit = (product) => {
-    // Remove the leading '+' for supplierContact, as the input will re-add it visually
     const contactWithoutPlus = product.supplierContact?.startsWith("+")
       ? product.supplierContact.substring(1)
       : product.supplierContact || "";
@@ -112,22 +155,15 @@ export default function PurchaseHistory() {
     setIsModalOpen(true);
   };
 
-  /**
-   * Handles input changes for the edit form, applying validation/formatting for numeric and contact fields.
-   * @param {Event} e The change event.
-   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     let val = value;
 
     if (["price", "sellPrice"].includes(name)) {
-      // Allow only digits and a single decimal point for price fields
       val = value.replace(/[^\d.]/g, "");
     } else if (name === "quantity") {
-      // Allow only digits for quantity
       val = value.replace(/\D/g, "");
     } else if (name === "supplierContact") {
-      // Allow only digits and limit length to 15 for contact number
       let digits = value.replace(/\D/g, "");
       if (digits.length > 15) digits = digits.slice(0, 15);
       val = digits;
@@ -136,25 +172,29 @@ export default function PurchaseHistory() {
     setForm((s) => ({ ...s, [name]: val }));
   };
 
-  /**
-   * Handles saving the edited product details.
-   * Performs validation, calculates `total` (Purchase Price * Quantity), and updates the products list.
-   * @param {Event} e The form submission event.
-   */
   const handleSave = (e) => {
     e.preventDefault();
 
-    // Basic required field validation
-    if (!form.name?.trim()) return notifyError("Name is required");
-    if (!form.model?.trim()) return notifyError("Model is required");
-    if (!form.category?.trim()) return notifyError("Category is required");
-    if (!form.company?.trim()) return notifyError("Company is required");
-    if (!form.supplier?.trim()) return notifyError("Supplier is required");
+    const originalProduct = purchaseHistory.find(
+      (p) => p.productId === form.productId && p.invoiceId === form.invoiceId
+    );
 
-    // Numeric and range validation
-    const price = parseFloat(form.price);
-    const sellPrice = parseFloat(form.sellPrice);
-    const quantity = parseInt(form.quantity);
+    const trimmedForm = Object.fromEntries(
+      Object.entries(form).map(([k, v]) =>
+        typeof v === "string" ? [k, v.trim()] : [k, v]
+      )
+    );
+
+    // 🧱 Validation
+    if (!trimmedForm.name) return notifyError("Name is required");
+    if (!trimmedForm.model) return notifyError("Model is required");
+    if (!trimmedForm.category) return notifyError("Category is required");
+    if (!trimmedForm.company) return notifyError("Company is required");
+    if (!trimmedForm.supplier) return notifyError("Supplier is required");
+
+    const price = parseFloat(trimmedForm.price);
+    const sellPrice = parseFloat(trimmedForm.sellPrice);
+    const quantity = parseInt(trimmedForm.quantity);
 
     if (isNaN(price) || price <= 0)
       return notifyError("Valid Purchase Price is required");
@@ -163,85 +203,98 @@ export default function PurchaseHistory() {
     if (isNaN(quantity) || quantity <= 0)
       return notifyError("Valid Quantity is required");
 
-    // Supplier Contact validation (must be 7-15 digits after '+')
-    const fullSupplierContact = "+" + form.supplierContact;
+    const fullSupplierContact = "+" + trimmedForm.supplierContact;
     if (!/^\+\d{7,15}$/.test(fullSupplierContact))
       return notifyError(
         "Supplier Contact must start with '+' followed by 7–15 digits"
       );
 
-    // Uniqueness check for model (excluding the current product being edited)
-    const modelExists = products.some(
-      (p) =>
-        p.productId !== form.productId &&
-        p.model?.toLowerCase() === form.model.toLowerCase()
-    );
-    if (modelExists) return notifyError("Model must be unique!");
-
-    // Calculate total inventory purchase value
     const total = (price * quantity).toFixed(2);
 
     const updatedProduct = {
-      ...form,
-      price: price.toFixed(2), // Ensure consistent storage format
-      sellPrice: sellPrice.toFixed(2), // Ensure consistent storage format
-      quantity: String(quantity), // Ensure quantity is stored as a string
-      total, // Store the calculated total purchase price for convenience
-      value: total, // 'value' is used in the main table for inventory value
-      supplierContact: fullSupplierContact, // Save with '+' prefix
-      updatedOn: new Date().toLocaleString(), // Add an update timestamp
+      ...trimmedForm,
+      price: price.toFixed(2),
+      sellPrice: sellPrice.toFixed(2),
+      quantity: String(quantity),
+      total,
+      value: total,
+      supplierContact: fullSupplierContact,
+      updatedAt: formatDateTime(new Date()),
     };
 
-    // Update the state by mapping the new product over the old one
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.productId === updatedProduct.productId ? updatedProduct : p
-      )
+    // Update purchase history
+    const updatedHistory = purchaseHistory.map((p) =>
+      p.productId === updatedProduct.productId &&
+      p.invoiceId === updatedProduct.invoiceId
+        ? updatedProduct
+        : p
     );
+
+    setPurchaseHistory(updatedHistory);
+    localStorage.setItem("purchaseHistory", JSON.stringify(updatedHistory));
+
+    // Also update products if this is the latest entry for this product
+    const products = JSON.parse(localStorage.getItem("products") || "[]");
+    const productEntries = purchaseHistory.filter(
+      (p) => p.productId === updatedProduct.productId
+    );
+    const latestEntry = productEntries.sort(
+      (a, b) => new Date(b.savedOn) - new Date(a.savedOn)
+    )[0];
+
+    if (latestEntry && latestEntry.invoiceId === updatedProduct.invoiceId) {
+      const updatedProducts = products.map((p) =>
+        p.productId === updatedProduct.productId
+          ? { ...p, ...updatedProduct }
+          : p
+      );
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
+    }
 
     setIsModalOpen(false);
     notifySuccess(`${updatedProduct.name} updated successfully.`);
   };
 
-  /**
-   * Opens the delete confirmation modal.
-   * @param {Object} product The product object to delete.
-   */
   const handleDelete = (product) => {
     setProductToDelete(product);
     setIsDeleteModalOpen(true);
   };
 
-  /**
-   * Confirms and executes the product deletion from the state.
-   */
   const confirmDelete = () => {
     if (!productToDelete) return;
-    setProducts((prev) =>
-      prev.filter((p) => p.productId !== productToDelete.productId)
+
+    const updatedHistory = purchaseHistory.filter(
+      (p) =>
+        !(
+          p.productId === productToDelete.productId &&
+          p.invoiceId === productToDelete.invoiceId
+        )
     );
+
+    setPurchaseHistory(updatedHistory);
+    localStorage.setItem("purchaseHistory", JSON.stringify(updatedHistory));
+
     notifySuccess(`${productToDelete.name} deleted successfully.`);
     setIsDeleteModalOpen(false);
     setProductToDelete(null);
   };
 
-  /**
-   * Cancels the product deletion process, closing the modal.
-   */
   const cancelDelete = () => {
     setProductToDelete(null);
     setIsDeleteModalOpen(false);
   };
 
-  /**
-   * Triggers the browser print function for the visible view modal content.
-   */
   const handlePrint = () => {
-    // Temporarily hide scrollbar for a cleaner print view
     const bodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.print();
     document.body.style.overflow = bodyOverflow;
+  };
+
+  const getPurchaseType = (product) => {
+    return product.type === "stock-addition"
+      ? "Stock Addition"
+      : "New Purchase";
   };
 
   return (
@@ -249,56 +302,72 @@ export default function PurchaseHistory() {
       <ToastContainer position="top-right" theme="dark" autoClose={2000} />
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Purchase History</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Purchase History
+          </h1>
           <p className="text-white/80">
-            View, edit, and manage all product inventory records.
+            View all purchase and stock addition records with invoice details.
           </p>
         </div>
 
-        {/* Filters */}
+        {/* Search Filter */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Search Input */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="Search by product, invoice, supplier..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
-
-         
+          <div className="text-white/80 text-sm flex items-center">
+            Total Records: {filtered.length}
+          </div>
         </div>
 
-        {/* Products Table */}
+        {/* Purchase History Table */}
         <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
           <table className="w-full text-white/90 min-w-[1200px]">
             <thead className="bg-white/10 text-left text-sm">
               <tr>
-                <th className="p-3">ID</th>
+                <th className="p-3">Invoice ID</th>
+                <th className="p-3">Product ID</th>
                 <th className="p-3">Name</th>
-                <th className="p-3">Model</th>
-                <th className="p-3">Category</th>
-                <th className="p-3">Company</th>
+                <th className="p-3">Type</th>
                 <th className="p-3">Qty</th>
-                <th className="p-3">Value</th>
+                <th className="p-3">Price</th>
+                <th className="p-3">Total</th>
+                <th className="p-3">Supplier</th>
+                <th className="p-3">Date</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => (
                 <tr
-                  key={p.productId}
+                  key={`${p.invoiceId}-${p.productId}`}
                   className="border-t border-white/5 hover:bg-white/5 transition"
                 >
-                  <td className="p-3">{p.productId}</td>
+                  <td className="p-3 font-mono">{p.invoiceId}</td>
+                  <td className="p-3 font-mono">{p.productId}</td>
                   <td className="p-3">{p.name}</td>
-                  <td className="p-3">{p.model}</td>
-                  <td className="p-3">{p.category}</td>
-                  <td className="p-3">{p.company}</td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${
+                        p.type === "stock-addition"
+                          ? "bg-blue-600/50"
+                          : "bg-green-600/50"
+                      }`}
+                    >
+                      {getPurchaseType(p)}
+                    </span>
+                  </td>
                   <td className="p-3">{p.quantity}</td>
-                  <td className="p-3">{p.value}</td>
+                  <td className="p-3">Rs {p.price}/-</td>
+                  <td className="p-3">Rs {p.total}/-</td>
+                  <td className="p-3">{p.supplier}</td>
+                  <td className="p-3 text-sm">{formatShortDate(p.savedOn)}</td>
                   <td className="p-3 flex gap-2">
                     <button
                       title="View"
@@ -329,8 +398,8 @@ export default function PurchaseHistory() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="11" className="p-4 text-center text-white/70">
-                    No products found.
+                  <td colSpan="10" className="p-4 text-center text-white/70">
+                    No purchase records found.
                   </td>
                 </tr>
               )}
@@ -343,9 +412,21 @@ export default function PurchaseHistory() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md p-2">
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
-            <h2 className="text-xl font-semibold mb-4">
-              Edit Product: {form.productId}
-            </h2>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">Edit Purchase Record</h2>
+              <div className="text-sm text-white/80 mt-2 space-y-1">
+                <p>
+                  <strong>Invoice ID:</strong> {form.invoiceId}
+                </p>
+                <p>
+                  <strong>Product ID:</strong> {form.productId}
+                </p>
+                <p>
+                  <strong>Type:</strong> {getPurchaseType(form)}
+                </p>
+              </div>
+            </div>
+
             <form onSubmit={handleSave} className="space-y-3">
               <input
                 name="name"
@@ -419,17 +500,17 @@ export default function PurchaseHistory() {
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
+                  type="submit"
+                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                >
+                  Save Changes
+                </button>
+                <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
-                >
-                  Save Changes
                 </button>
               </div>
             </form>
@@ -437,7 +518,7 @@ export default function PurchaseHistory() {
         </div>
       )}
 
-      {/* --- View Modal (Updated to include Total Purchase Price) --- */}
+      {/* --- View Modal --- */}
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
           <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
@@ -448,8 +529,7 @@ export default function PurchaseHistory() {
               <X size={18} />
             </button>
 
-            {/* Header */}
-            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
+            <div className="text-center border-b border-dashed border-black pb-2 mb-2">
               <h2 className="text-xl font-bold tracking-wider">
                 ZUBI ELECTRONICS
               </h2>
@@ -457,12 +537,17 @@ export default function PurchaseHistory() {
                 Contact: +92 300 1234567 | info@zubielectronics.com
               </p>
               <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
+              <p className="text-xs mt-2 pt-2 border-t border-dashed border-black">
+                {selectedProduct.invoiceId}
+              </p>
+              <p className="text-xs font-semibold mt-1">
+                {getPurchaseType(selectedProduct)}
+              </p>
             </div>
 
-            {/* Body */}
-            <div className="space-y-2 leading-6">
+            <div className="space-y-2 leading-4">
               <div className="flex justify-between">
-                <span>ID:</span>
+                <span>Product ID:</span>
                 <span>{selectedProduct.productId}</span>
               </div>
               <div className="flex justify-between">
@@ -482,7 +567,6 @@ export default function PurchaseHistory() {
                 <span>{selectedProduct.company}</span>
               </div>
 
-              {/* Purchase Details */}
               <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
                 <span>Purchase Price (Per Unit):</span>
                 <span>Rs {selectedProduct.price}/-</span>
@@ -492,24 +576,20 @@ export default function PurchaseHistory() {
                 <span>Rs {selectedProduct.sellPrice}/-</span>
               </div>
               <div className="flex justify-between">
-                <span>Quantity in Stock:</span>
+                <span>Quantity:</span>
                 <span>{selectedProduct.quantity} piece(s)</span>
               </div>
-              
-              {/* Added Total Purchase Price */}
+
               <div className="flex justify-between font-bold border-t border-dashed border-black/90 pt-2">
                 <span>Total Purchase Price:</span>
-                {/* Calculate total if 'total' property is missing for older records, otherwise use the stored 'total' */}
-                <span>Rs {selectedProduct.total || (parseFloat(selectedProduct.price) * parseInt(selectedProduct.quantity)).toFixed(2)}/-</span> 
+                <span>Rs {selectedProduct.total}/-</span>
               </div>
 
-              {/* Inventory Value */}
               <div className="flex justify-between border-b border-dashed border-black/90 pb-2">
-                <span>Total Inventory Value:</span>
+                <span>Inventory Value:</span>
                 <span>Rs {selectedProduct.value}/-</span>
               </div>
 
-              {/* Supplier Details */}
               <div className="flex justify-between pt-2">
                 <span>Supplier:</span>
                 <span>{selectedProduct.supplier}</span>
@@ -519,18 +599,27 @@ export default function PurchaseHistory() {
                 <span>{selectedProduct.supplierContact}</span>
               </div>
               <div className="flex justify-between">
-                <span>Purchased On:</span>
-                <span>{selectedProduct.savedOn || formatDate()}</span>
+                <span>Date:</span>
+                <span>
+                  {selectedProduct.savedOn &&
+                  !selectedProduct.savedOn.includes("Invalid")
+                    ? formatDateTime(selectedProduct.savedOn)
+                    : "Recently Added"}
+                </span>
               </div>
-              {selectedProduct.updatedOn && (
+              {selectedProduct.updatedAt && (
                 <div className="flex justify-between text-xs text-black/70 italic">
                   <span>Last Updated:</span>
-                  <span>{selectedProduct.updatedOn}</span>
+                  <span>
+                    {selectedProduct.updatedAt &&
+                    !selectedProduct.updatedAt.includes("Invalid")
+                      ? formatDateTime(selectedProduct.updatedAt)
+                      : "Recently Updated"}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Footer */}
             <div className="text-center border-t border-dashed border-black/90 mt-2 pt-6 text-xs">
               <p>
                 Thank you for choosing <strong>ZUBI ELECTRONICS</strong>!
@@ -562,9 +651,9 @@ export default function PurchaseHistory() {
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
             <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
             <p className="mb-4">
-              Are you sure you want to delete{" "}
-              <strong>{productToDelete.name}</strong> (ID:{" "}
-              {productToDelete.productId})?
+              Are you sure you want to delete purchase record for{" "}
+              <strong>{productToDelete.name}</strong> (Invoice:{" "}
+              {productToDelete.invoiceId})?
             </p>
             <div className="flex justify-end gap-3">
               <button
