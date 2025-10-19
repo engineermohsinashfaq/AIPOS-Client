@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+// |===============================| AllGuarantors Component |===============================|
+// Import necessary React hooks and external libraries
+import React, { useState, useMemo, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { X } from "lucide-react";
@@ -7,51 +9,174 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
+// Date formatting utility function - converts various date formats to standardized string
+const formatDateTime = (dateInput) => {
+  // Return dash for empty/null dates
+  if (!dateInput) return "—";
 
+  try {
+    let date;
 
-const formatDate = (dateString) => {
-  if (!dateString) return "—";
+    // Handle different date input types and formats
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === "string") {
+      // Parse custom date format (DD/MM/YYYY HH:MM:SS)
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
+        const datePart = parts[0];
+        const timePart = parts[1];
 
-  // Convert to local date safely (handles ISO or locale strings)
-  const date = new Date(dateString);
-  if (isNaN(date)) return "Invalid Date";
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
+          if (timePart) {
+            const [hours, minutes, seconds] = timePart.split(":");
+            date = new Date(
+              year,
+              month - 1,
+              day,
+              hours || 0,
+              minutes || 0,
+              seconds || 0
+            );
+          } else {
+            date = new Date(year, month - 1, day);
+          }
+        }
+      } else {
+        // Parse ISO string or other standard formats
+        date = new Date(dateInput);
+      }
+    } else {
+      // Handle numeric timestamps or other date types
+      date = new Date(dateInput);
+    }
 
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
+    // Validate the parsed date
+    if (isNaN(date.getTime())) {
+      return "—";
+    }
 
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
+    // Format date components with leading zeros
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
 
-  return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+    // Return formatted date string (DD/MM/YYYY HH:MM:SS)
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return "—";
+  }
 };
 
-export default function AllGuarantors() {
-  const [guarantors, setGuarantors] = useState(() => {
+// Short date formatter - extracts only the date portion
+const formatShortDate = (dateString) => {
+  if (!dateString) return "—";
+
   try {
-    const raw = localStorage.getItem("all_guarantors_data");
-    return raw ? JSON.parse(raw) : []; // ✅ Return empty array if nothing found
-  } catch {
-    return []; // ✅ Safe fallback
+    const fullDate = formatDateTime(dateString);
+    if (fullDate === "—") return "—";
+    return fullDate.split(" ")[0]; // Return only date part (before space)
+  } catch (error) {
+    return "—";
   }
-});
+};
 
+// Main AllGuarantors component function
+export default function AllGuarantors() {
+  // State management for guarantors data with localStorage initialization and date fixing
+  const [guarantors, setGuarantors] = useState(() => {
+    try {
+      const raw = localStorage.getItem("all_guarantors_data");
+      const data = raw ? JSON.parse(raw) : [];
+      
+      // Fix date format for existing guarantors with incomplete dates
+      const fixedData = data.map(guarantor => {
+        if (guarantor.dateAdded && !guarantor.dateAdded.includes(':')) {
+          return {
+            ...guarantor,
+            dateAdded: formatDateTime(new Date())
+          };
+        }
+        return guarantor;
+      });
+      
+      // Update localStorage if dates were fixed
+      if (data.length > 0 && fixedData.some((g, i) => g.dateAdded !== data[i].dateAdded)) {
+        localStorage.setItem("all_guarantors_data", JSON.stringify(fixedData));
+      }
+      
+      return fixedData;
+    } catch {
+      return [];
+    }
+  });
 
+  // State for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // State for view modal visibility
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // State for edit mode
   const [editing, setEditing] = useState(false);
+  
+  // State for search query
   const [query, setQuery] = useState("");
+  
+  // State for selected guarantor details
   const [selectedGuarantor, setSelectedGuarantor] = useState(null);
-  const [guarantorToDelete, setGuarantorToDelete] = useState(null);
+  
+  // State for form data
   const [form, setForm] = useState({});
+  
+  // State for tracking original guarantor data before edits
+  const [originalGuarantor, setOriginalGuarantor] = useState(null);
+  
+  // State for tracking form changes
+  const [formChanges, setFormChanges] = useState({});
 
+  // Effect hook to persist guarantors data to localStorage
   useEffect(() => {
     localStorage.setItem("all_guarantors_data", JSON.stringify(guarantors));
   }, [guarantors]);
 
+  // Memoized form modification checker - tracks changes between original and current form
+  const isFormModified = useMemo(() => {
+    if (!originalGuarantor || !form) return false;
+
+    // Fields to compare for changes
+    const fieldsToCompare = [
+      "contact",
+      "city",
+      "address",
+    ];
+
+    const changes = {};
+    let hasChanges = false;
+
+    // Compare each field for changes
+    fieldsToCompare.forEach((field) => {
+      const originalValue = String(originalGuarantor[field] || "").trim();
+      const formValue = String(form[field] || "").trim();
+      if (originalValue !== formValue) {
+        changes[field] = {
+          from: originalValue,
+          to: formValue
+        };
+        hasChanges = true;
+      }
+    });
+
+    setFormChanges(changes);
+    return hasChanges;
+  }, [form, originalGuarantor]);
+
+  // Toast notification configuration
   const toastConfig = {
     position: "top-right",
     theme: "dark",
@@ -60,20 +185,36 @@ export default function AllGuarantors() {
   const notifySuccess = (msg) => toast.success(msg, toastConfig);
   const notifyError = (msg) => toast.error(msg, toastConfig);
 
+  // Generate guarantor initials from first and last name
   const initials = (g) =>
     `${(g.firstName || "").charAt(0)}${(g.lastName || "").charAt(
       0
     )}`.toUpperCase();
 
+  // Field name mapper for display purposes
+  const getFieldDisplayName = (field) => {
+    const fieldNames = {
+      contact: "Contact",
+      city: "City",
+      address: "Address",
+    };
+    return fieldNames[field] || field;
+  };
+
+  // Open edit modal with guarantor data
   const handleOpenEdit = (guarantor) => {
     setForm(guarantor);
+    setOriginalGuarantor(guarantor);
+    setFormChanges({});
     setEditing(true);
     setIsModalOpen(true);
   };
 
+  // Form input change handler with special handling for contact field
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Special handling for contact field - enforce + prefix
     if (name === "contact") {
       let val = value.replace(/[^\d+]/g, "");
       if (val && val[0] !== "+") val = "+" + val.replace(/\+/g, "");
@@ -81,108 +222,54 @@ export default function AllGuarantors() {
       return;
     }
 
-    if (name === "cnic") {
-      let digits = value.replace(/\D/g, "").slice(0, 13);
-      let formatted = digits;
-      if (digits.length > 5 && digits.length <= 12)
-        formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
-      if (digits.length === 13)
-        formatted = `${digits.slice(0, 5)}-${digits.slice(
-          5,
-          12
-        )}-${digits.slice(12)}`;
-      setForm((s) => ({ ...s, cnic: formatted }));
-      return;
-    }
-
+    // Default handling for other fields
     setForm((s) => ({ ...s, [name]: value }));
   };
 
+  // Save form changes handler
   const handleSave = (e) => {
     e.preventDefault();
 
-    if (!form.firstName?.trim()) return notifyError("First name is required");
-    if (!form.lastName?.trim()) return notifyError("Last name is required");
+    // Validate required fields
     if (!form.contact?.trim()) return notifyError("Contact number is required");
-    if (!form.cnic?.trim()) return notifyError("CNIC is required");
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(form.cnic))
-      return notifyError("Invalid CNIC format (e.g., 12345-6789012-3)");
 
-    // 🧠 Detect if any field actually changed (using .trim() for text fields)
-    const current = guarantors.find((g) => g.guarantorId === form.guarantorId);
+    // Generate update message based on changed fields
+    const changedFields = Object.keys(formChanges);
+    const updateMessage = changedFields.length > 0 
+      ? `Updated: ${changedFields.map(field => getFieldDisplayName(field)).join(', ')}`
+      : "Record updated";
 
-    // Check if the current data and the new data (form) are different
-    const hasChanged = Object.keys(form).some((key) => {
-      const formValue = String(form[key] || "");
-      const currentValue = String(current[key] || "");
-
-      // Only compare the actual content for string fields by using .trim()
-      if (
-        key !== "guarantorId" && // Don't trim/compare ID this way
-        key !== "dateAdded" && // Don't trim/compare date strings this way
-        typeof current[key] === "string" &&
-        typeof form[key] === "string"
-      ) {
-        // Compare trimmed values for fields like name, contact, city, address, cnic
-        return formValue.trim() !== currentValue.trim();
-      }
-
-      // For other keys (like ID, date strings), compare directly
-      // Note: address can be null/undefined on the initial guarantor, so we use String(g.address || "") above
-      return formValue !== currentValue;
-    });
-
-    if (!hasChanged) {
-      // Close modal silently (no toast)
-      setIsModalOpen(false);
-      return;
-    }
-
-    // ✅ Store the current precise time as ISO string for lastUpdated
+    // Update guarantors state with modified data
     setGuarantors((prev) =>
       prev.map((g) =>
         g.guarantorId === form.guarantorId
           ? {
               ...form,
-              // Ensure all string fields are saved trimmed of extra space
-              firstName: form.firstName.trim(),
-              lastName: form.lastName.trim(),
               contact: form.contact.trim(),
-              cnic: form.cnic.trim(),
               city: form.city.trim(),
               address: form.address ? form.address.trim() : "",
-              lastUpdated: new Date().toISOString(),
+              updatedAt: formatDateTime(new Date()),
+              lastUpdateMessage: updateMessage,
             }
           : g
       )
     );
 
+    // Close modal and reset states
     setIsModalOpen(false);
-    notifySuccess(`${form.firstName} ${form.lastName} updated successfully.`);
+    setOriginalGuarantor(null);
+    setFormChanges({});
+    notifySuccess(`Guarantor updated successfully!`);
   };
 
-  const handleDelete = (guarantor) => {
-    setGuarantorToDelete(guarantor);
-    setIsDeleteModalOpen(true);
+  // Close modal handler
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setOriginalGuarantor(null);
+    setFormChanges({});
   };
 
-  const confirmDelete = () => {
-    if (!guarantorToDelete) return;
-    setGuarantors((prev) =>
-      prev.filter((g) => g.guarantorId !== guarantorToDelete.guarantorId)
-    );
-    notifySuccess(
-      `Guarantor ${guarantorToDelete.firstName} ${guarantorToDelete.lastName} deleted.`
-    );
-    setIsDeleteModalOpen(false);
-    setGuarantorToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setGuarantorToDelete(null);
-    setIsDeleteModalOpen(false);
-  };
-
+  // Print functionality handler
   const handlePrint = () => {
     const bodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -190,30 +277,87 @@ export default function AllGuarantors() {
     document.body.style.overflow = bodyOverflow;
   };
 
-  // ✅ Filter guarantors based on search
-  const filteredGuarantors = guarantors.filter((g) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
+  // Memoized filtered guarantors based on search query
+  const filteredGuarantors = useMemo(() => {
+    let arr = guarantors.filter((g) => {
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
 
-    const combined = [
-      g.guarantorId,
-      g.firstName,
-      g.lastName,
-      g.contact,
-      g.cnic,
-      g.city,
-      g.address,
-    ]
-      .map((v) => String(v || "").toLowerCase())
-      .join(" ");
+      // Search across multiple guarantor fields
+      const combined = [
+        g.guarantorId,
+        g.firstName,
+        g.lastName,
+        g.contact,
+        g.cnic,
+        g.city,
+        g.address,
+      ]
+        .map((v) => String(v || "").toLowerCase())
+        .join(" ");
 
-    return combined.includes(q);
-  });
+      return combined.includes(q);
+    });
+    
+    // Sort by date added (newest first)
+    return arr.sort((a, b) => {
+      const dateA = new Date(a.dateAdded);
+      const dateB = new Date(b.dateAdded);
+      return dateB - dateA;
+    });
+  }, [guarantors, query]);
 
+  // Effect hook to fix existing guarantor dates on component mount
+  useEffect(() => {
+    const fixExistingGuarantorDates = () => {
+      const raw = localStorage.getItem("all_guarantors_data");
+      if (!raw) return;
+
+      try {
+        const data = JSON.parse(raw);
+        let needsFix = false;
+        
+        // Fix dates that are missing time component
+        const fixedData = data.map(guarantor => {
+          if (guarantor.dateAdded && 
+              (guarantor.dateAdded.length <= 10 ||
+               !guarantor.dateAdded.includes(':'))) {
+            
+            const originalDate = new Date(guarantor.dateAdded);
+            if (!isNaN(originalDate.getTime())) {
+              needsFix = true;
+              return {
+                ...guarantor,
+                dateAdded: formatDateTime(originalDate)
+              };
+            }
+          }
+          return guarantor;
+        });
+
+        // Update localStorage and state if fixes were applied
+        if (needsFix) {
+          localStorage.setItem("all_guarantors_data", JSON.stringify(fixedData));
+          setGuarantors(fixedData);
+        }
+      } catch (error) {
+        console.error("Error fixing guarantor dates:", error);
+      }
+    };
+
+    fixExistingGuarantorDates();
+  }, []);
+
+  // Component render method
   return (
+    // Main container with responsive padding and dark background
     <div className="p-2 min-h-screen text-white">
+      {/* Toast notifications container */}
       <ToastContainer position="top-right" theme="dark" autoClose={2000} />
-      <div className="max-w-7xl mx-auto space-y-6">
+      
+      {/* Content wrapper with max width constraint */}
+      <div className="max-w-8xl mx-auto space-y-6">
+        {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold mb-2">All Guarantors</h1>
           <p className="text-white/80">
@@ -221,22 +365,30 @@ export default function AllGuarantors() {
           </p>
         </div>
 
-        {/* 🔍 Search Filter */}
+        {/* Search and statistics panel */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by ID, name, CNIC, or city..."
+              placeholder="Search"
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
+          
+          {/* Record count display */}
+          <div className="text-white/80 text-lg flex items-center">
+            Total Records: {filteredGuarantors.length}
+          </div>
         </div>
 
-        {/* ✅ Filtered Table */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
+        {/* Main data table container */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide ">
+          {/* Guarantors table */}
           <table className="w-full text-white/90 min-w-[900px]">
+            {/* Table header with column labels */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
@@ -244,17 +396,24 @@ export default function AllGuarantors() {
                 <th className="p-3">Contact</th>
                 <th className="p-3">CNIC</th>
                 <th className="p-3">City</th>
+                <th className="p-3">Date Added</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
+            
+            {/* Table body with guarantor records */}
             <tbody>
+              {/* Map through filtered guarantor records */}
               {filteredGuarantors.length > 0 ? (
                 filteredGuarantors.map((g) => (
                   <tr
                     key={g.guarantorId}
-                    className="border-t border-white/5 hover:bg-white/5 transition"
+                    className="border-t border-white/15 hover:bg-white/5 transition"
                   >
+                    {/* Guarantor ID column */}
                     <td className="p-3">{g.guarantorId}</td>
+                    
+                    {/* Guarantor name with avatar */}
                     <td className="p-3 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
                         <span className="font-medium text-white">
@@ -262,23 +421,37 @@ export default function AllGuarantors() {
                         </span>
                       </div>
                       <div>
-                        {g.firstName} {g.lastName}
+                        {g.firstName.toUpperCase()} {g.lastName.toUpperCase()}
                       </div>
                     </td>
+                    
+                    {/* Contact column */}
                     <td className="p-3">{g.contact}</td>
+                    
+                    {/* CNIC column */}
                     <td className="p-3">{g.cnic}</td>
-                    <td className="p-3">{g.city}</td>
+                    
+                    {/* City column */}
+                    <td className="p-3">{g.city.toUpperCase()}</td>
+                    
+                    {/* Date added column with short format */}
+                    <td className="p-3 text-sm">{formatShortDate(g.dateAdded)}</td>
+                    
+                    {/* Actions column with view and edit buttons */}
                     <td className="p-3 flex gap-2">
+                      {/* View button */}
                       <button
                         title="View"
                         onClick={() => {
                           setSelectedGuarantor(g);
                           setIsViewOpen(true);
                         }}
-                        className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
+                        className="p-2 rounded bg-cyan-900 text-white hover:bg-cyan-950 transition-colors cursor-pointer"
                       >
                         <VisibilityIcon fontSize="small" />
                       </button>
+                      
+                      {/* Edit button */}
                       <button
                         title="Edit"
                         onClick={() => handleOpenEdit(g)}
@@ -286,20 +459,16 @@ export default function AllGuarantors() {
                       >
                         <EditIcon fontSize="small" />
                       </button>
-                      <button
-                        title="Delete"
-                        onClick={() => handleDelete(g)}
-                        className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
+                // Empty state message
                 <tr>
-                  <td colSpan="6" className="text-center py-6 text-white/60">
-                    No guarantors found.
+                  <td colSpan="7" className="text-center py-6 text-white/60">
+                    {guarantors.length === 0
+                      ? "No guarantors added yet."
+                      : "No guarantors match your search."}
                   </td>
                 </tr>
               )}
@@ -308,30 +477,80 @@ export default function AllGuarantors() {
         </div>
       </div>
 
-      {/* ✏️ Edit Modal */}
+      {/* Edit Guarantor Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md p-2">
+          {/* Modal content container */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
-            <h2 className="text-xl font-semibold mb-4">
-               Edit Guarantor: {form.guarantorId}
-            </h2>
+            {/* Modal header with guarantor info */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">Edit Guarantor</h2>
+              <div className="text-sm text-white/80 mt-2 space-y-1">
+                <p>
+                  <strong>Guarantor ID:</strong> {form.guarantorId}
+                </p>
+                <p>
+                  <strong>Date Added:</strong> {formatDateTime(form.dateAdded)}
+                </p>
+                
+                {/* Changes detection display */}
+                {isFormModified && (
+                  <div className="mt-3 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
+                    <p className="font-medium text-yellow-300">Changes detected:</p>
+                    <ul className="text-xs mt-1 space-y-1">
+                      {Object.entries(formChanges).map(([field, change]) => (
+                        <li key={field} className="flex justify-between">
+                          <span>{getFieldDisplayName(field)}:</span>
+                          <span className="text-yellow-200">
+                            "{change.from}" → "{change.to}"
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Edit form */}
             <form onSubmit={handleSave} className="space-y-3">
+              {/* Read-only name fields */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   name="firstName"
-                  value={form.firstName}
-                  onChange={handleChange}
+                  value={form.firstName.toUpperCase()}
+                  readOnly
                   placeholder="First Name"
-                  className="p-2 rounded bg-black/30 border border-white/20 outline-none"
+                  className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
                 <input
                   name="lastName"
-                  value={form.lastName}
-                  onChange={handleChange}
+                  value={form.lastName.toUpperCase()}
+                  readOnly
                   placeholder="Last Name"
-                  className="p-2 rounded bg-black/30 border border-white/20 outline-none"
+                  className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
               </div>
+              
+              {/* Read-only guarantor ID */}
+              <input
+                name="guarantorId"
+                value={form.guarantorId}
+                readOnly
+                placeholder="Guarantor ID"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
+              />
+              
+              {/* Read-only CNIC */}
+              <input
+                name="cnic"
+                value={form.cnic}
+                readOnly
+                placeholder="CNIC"
+                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
+              />
+              
+              {/* Editable contact field */}
               <input
                 name="contact"
                 value={form.contact}
@@ -339,38 +558,44 @@ export default function AllGuarantors() {
                 placeholder="Contact (+92...)"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
-              <input
-                name="cnic"
-                value={form.cnic}
-                onChange={handleChange}
-                placeholder="CNIC"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
+              
+              {/* Editable city field */}
               <input
                 name="city"
-                value={form.city}
+                value={form.city.toUpperCase()}
                 onChange={handleChange}
                 placeholder="City"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
+              
+              {/* Editable address field */}
               <input
                 name="address"
-                value={form.address || ""}
+                value={form.address.toUpperCase() || ""}
                 onChange={handleChange}
                 placeholder="Address"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
+              {/* Form action buttons */}
               <div className="flex justify-end gap-3 pt-4">
+                {/* Save button (disabled if no changes) */}
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
+                  disabled={!isFormModified}
+                  className={`px-4 py-2 rounded border border-white/40 transition hover:cursor-pointer ${
+                    isFormModified
+                      ? "bg-cyan-800/80 hover:bg-cyan-900"
+                      : "bg-gray-600/50 cursor-not-allowed opacity-50"
+                  }`}
                 >
-                  Save
+                  Save Changes
                 </button>
+                
+                {/* Cancel button */}
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
                   Cancel
@@ -381,120 +606,122 @@ export default function AllGuarantors() {
         </div>
       )}
 
-      {/* 👁️ View Modal */}
+      {/* View Guarantor Details Modal */}
       {isViewOpen && selectedGuarantor && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
-          <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
-            <button
-              onClick={() => setIsViewOpen(false)}
-              className="absolute top-2 right-2 text-black transition p-1 cursor-pointer rounded-full print:hidden"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
-              <h2 className="text-xl font-bold tracking-wider">
-                ZUBI ELECTRONICS
-              </h2>
-              <p className="text-xs mt-1">
-                Contact: +92 300 1234567 | Email: info@zubielectronics.com
-              </p>
-              <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
-            </div>
-
-            <div className="space-y-2 leading-6">
-              <div className="flex justify-between">
-                <span>G-ID:</span>
-                <span>{selectedGuarantor.guarantorId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Name:</span>
-                <span>
-                  {selectedGuarantor.firstName} {selectedGuarantor.lastName}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Contact:</span>
-                <span>{selectedGuarantor.contact}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>CNIC:</span>
-                <span>{selectedGuarantor.cnic}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>City:</span>
-                <span>{selectedGuarantor.city}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Address:</span>
-                <span>{selectedGuarantor.address || "—"}</span>
-              </div>
-
-              <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
-                <span>Date Added:</span>
-                {/* Use formatDate to display human-readable date and time (00:00:00) */}
-                <span>{formatDate(selectedGuarantor.dateAdded)}</span>
-              </div>
-
-              {selectedGuarantor.lastUpdated && (
-                <div className="flex justify-between text-xs text-black/70 italic">
-                  <span>Last Updated:</span>
-                  {/* Use formatDate to display human-readable current time */}
-                  <span>{formatDate(selectedGuarantor.lastUpdated)}</span>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
+          {/* Modal content container */}
+          <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
+            
+            {/* Modal body content */}
+            <div className="p-4 space-y-3">
+              {/* Header section with company info */}
+              <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
+                <h2 className="text-xl font-bold tracking-wider text-gray-900">
+                  ZUBI ELECTRONICS
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Guarantor Information
+                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Guarantor ID: {selectedGuarantor.guarantorId}
+                  </p>
                 </div>
-              )}
+              </div>
+
+              {/* Guarantor details section */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">First Name:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.firstName.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Last Name:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.lastName.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Contact:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.contact}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">CNIC:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.cnic}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">City:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.city.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Address:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedGuarantor.address.toUpperCase() || "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timestamp and update history section */}
+              <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span>Date Added:</span>
+                  <span className="text-right">
+                    {formatDateTime(selectedGuarantor.dateAdded)}
+                  </span>
+                </div>
+                {/* Show update timestamp if available */}
+                {selectedGuarantor.updatedAt && (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <span>Last Updated:</span>
+                    <span className="text-right">
+                      {formatDateTime(selectedGuarantor.updatedAt)}
+                    </span>
+                  </div>
+                )}
+                {/* Show update message if available */}
+                {selectedGuarantor.lastUpdateMessage && (
+                  <div className="col-span-2 mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
+                    <span className="font-medium">Update Note: </span>
+                    {selectedGuarantor.lastUpdateMessage}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer disclaimer */}
+              <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
+                <p>This is a computer-generated guarantor record.</p>
+                <p>Contains personal and contact information only.</p>
+              </div>
             </div>
 
-            <div className="text-center border-t border-dashed border-black/90 mt-2 pt-6 text-xs">
-              <p>
-                Thank you for choosing <strong>ZUBI ELECTRONICS</strong>!
-              </p>
-              <p>This is a computer-generated receipt.</p>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-5 print:hidden">
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 rounded bg-blue-700 cursor-pointer text-white hover:bg-blue-600 transition"
-              >
-                🖨️ Print
-              </button>
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="px-4 py-2 rounded cursor-pointer bg-red-600 text-white hover:bg-red-700 transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ❌ Delete Modal */}
-      {isDeleteModalOpen && guarantorToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
-            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
-            <p className="mb-4">
-              Are you sure you want to delete{" "}
-              <strong>
-                {guarantorToDelete.firstName} {guarantorToDelete.lastName}
-              </strong>
-              ?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={cancelDelete}
-                className="px-4 py-2 rounded border border-white/40 bg-cyan-900/50 hover:bg-cyan-900 transition hover:cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded border border-white/40 bg-red-700 hover:bg-red-800 transition hover:cursor-pointer"
-              >
-                Delete
-              </button>
+            {/* Modal action buttons (sticky footer) */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 rounded-b-lg p-2 print:hidden">
+              <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                {/* Print button */}
+                <button
+                  onClick={handlePrint}
+                  className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
+                >
+                  <span>🖨️</span>
+                  <span>Print</span>
+                </button>
+                
+                {/* Close modal button */}
+                <button
+                  onClick={() => setIsViewOpen(false)}
+                  className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

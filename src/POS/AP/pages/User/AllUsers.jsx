@@ -231,14 +231,14 @@ export default function AllUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md overflow-x-auto">
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md overflow-x-auto scrollbar-hide">
           <table className="w-full text-white/90 min-w-[900px]">
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
                 <th className="p-3">User</th>
                 <th className="p-3">Email</th>
-                <th className="p-3">Role</th>
+                <th className="p-3">Role</th> 
                 <th className="p-3">Branch</th>
                 <th className="p-3">Location</th>
                 <th className="p-3">Status</th>

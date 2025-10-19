@@ -1,49 +1,90 @@
+// |===============================| AddPurchase Component |===============================|
+// Import necessary React hooks and external libraries
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
+import { useNavigate } from "react-router-dom";
 
-const loadProducts = () => {
-  const stored = localStorage.getItem("products");
-  return stored ? JSON.parse(stored) : [];
+// Define empty product object template for form initialization
+const emptyProduct = {
+  productId: "",
+  invoiceId: "",
+  name: "",
+  model: "",
+  category: "",
+  company: "",
+  price: "",
+  quantity: "",
+  supplier: "",
+  supplierContact: "",
+  total: "",
+  value: "",
 };
 
-// ✅ Improved Invoice ID Generator
+// Product ID generator function - creates sequential IDs based on existing data
+const generateProductId = () => {
+  // Retrieve existing products from localStorage or initialize empty array
+  const existing = JSON.parse(localStorage.getItem("products") || "[]");
+  
+  // Find the highest existing product ID number
+  const lastSavedId = existing.reduce((max, prod) => {
+    const num = parseInt(prod.productId?.replace("P-", ""), 10);
+    return !isNaN(num) && num > max ? num : max;
+  }, 0);
+  
+  // Generate next sequential ID
+  const nextId = lastSavedId + 1;
+  
+  // Return formatted product ID (e.g., P-001)
+  return `P-${String(nextId).padStart(3, "0")}`;
+};
+
+// Invoice ID generator function - creates sequential invoice IDs across products and purchase history
 const generateInvoiceId = () => {
+  // Retrieve existing products and purchase history
   const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
-  const existingHistory = JSON.parse(
-    localStorage.getItem("purchaseHistory") || "[]"
-  );
+  const existingHistory = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
+  
+  // Extract all invoice IDs from both sources
   const allInvoices = [...existingProducts, ...existingHistory]
     .map((item) => item.invoiceId)
     .filter((id) => id && id.startsWith("Inv-"));
 
+  // Return first invoice ID if no existing invoices
   if (allInvoices.length === 0) return "Inv-001";
 
+  // Find the highest existing invoice number
   const lastSavedNum = allInvoices.reduce((max, id) => {
     const num = parseInt(id.replace("Inv-", ""), 10);
     return !isNaN(num) && num > max ? num : max;
   }, 0);
 
+  // Generate next sequential invoice ID
   const nextNum = lastSavedNum + 1;
   return `Inv-${String(nextNum).padStart(3, "0")}`;
 };
 
-// ✅ Robust Date Formatter that handles all date formats
+// Load products from localStorage utility function
+const loadProducts = () => {
+  const stored = localStorage.getItem("products");
+  return stored ? JSON.parse(stored) : [];
+};
+
+// Date formatting utility function - converts various date formats to standardized string
 const formatDateTime = (dateInput) => {
+  // Return dash for empty/null dates
   if (!dateInput) return "—";
   
   try {
     let date;
     
-    // Handle different date formats
+    // Handle different date input types and formats
     if (dateInput instanceof Date) {
       date = dateInput;
     } else if (typeof dateInput === 'string') {
-      // Try to parse the date string - handle multiple formats
+      // Parse custom date format (DD/MM/YYYY HH:MM:SS)
       if (dateInput.includes('/')) {
-        // Handle DD/MM/YYYY format
         const parts = dateInput.split(' ');
         const datePart = parts[0];
         const timePart = parts[1];
@@ -58,18 +99,20 @@ const formatDateTime = (dateInput) => {
           }
         }
       } else {
-        // Try standard Date parsing
+        // Parse ISO string or other standard formats
         date = new Date(dateInput);
       }
     } else {
+      // Handle numeric timestamps or other date types
       date = new Date(dateInput);
     }
     
-    // Check if date is valid
+    // Validate the parsed date
     if (isNaN(date.getTime())) {
       return "—";
     }
     
+    // Format date components with leading zeros
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -77,6 +120,7 @@ const formatDateTime = (dateInput) => {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
     
+    // Return formatted date string (DD/MM/YYYY HH:MM:SS)
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
     console.error('Date formatting error:', error);
@@ -84,7 +128,7 @@ const formatDateTime = (dateInput) => {
   }
 };
 
-// ✅ Short Date for Display (Table) - More robust version
+// Short date formatter - extracts only the date portion for table display
 const formatShortDate = (dateString) => {
   if (!dateString) return "—";
   
@@ -99,333 +143,391 @@ const formatShortDate = (dateString) => {
   }
 };
 
-export default function AddStock() {
-  const navigate = useNavigate();
+// Main AddPurchase component function
+export default function AddPurchase({ onSave }) {
+  // State management for product form data
+  const [product, setProduct] = useState(emptyProduct);
+  
+  // State for existing products list
   const [products, setProducts] = useState(loadProducts());
-  const [selectedId, setSelectedId] = useState("");
-  const [product, setProduct] = useState(null);
-  const [additionalQty, setAdditionalQty] = useState("");
-  const [newInvoiceId, setNewInvoiceId] = useState("");
+  
+  // Navigation hook for programmatic routing
+  const navigate = useNavigate();
 
-  // 🟢 Generate new invoice ID when component mounts
+  // Effect hook to generate product and invoice IDs on component mount
   useEffect(() => {
-    setNewInvoiceId(generateInvoiceId());
+    setProduct((prev) => ({
+      ...prev,
+      productId: generateProductId(),
+      invoiceId: generateInvoiceId(),
+    }));
   }, []);
 
-  // 🟢 When selecting a product, remove '+' from supplierContact before showing
+  // Effect hook to auto-calculate total value based on price and quantity
   useEffect(() => {
-    if (!selectedId) return;
-    const found = products.find((p) => p.productId === selectedId);
-    if (found) {
-      setProduct({
-        ...found,
-        supplierContact: found.supplierContact
-          ? found.supplierContact.replace(/^\+/, "")
-          : "",
-      });
-      setAdditionalQty(""); // Reset additional qty on selection
-    } else {
-      setProduct(null);
-      toast.error("Product not found!", { theme: "dark", autoClose: 2000 });
-    }
-  }, [selectedId, products]);
-
-  // 💰 Auto-calculate total based on current + additional qty
-  useEffect(() => {
-    if (!product) return;
     const price = parseFloat(product.price) || 0;
-    const currentQty = parseInt(product.quantity) || 0;
-    const addQty = parseInt(additionalQty) || 0;
-    const newTotalQty = currentQty + addQty;
-    const total = (price * newTotalQty).toFixed(2);
-    const additionTotal = (price * addQty).toFixed(2);
-    setProduct((prev) => ({ 
-      ...prev, 
-      total, 
-      value: total,
-      additionTotal 
-    }));
-  }, [product?.price, product?.quantity, additionalQty]);
+    const qty = parseInt(product.quantity) || 0;
+    const total = (price * qty).toFixed(2);
+    setProduct((prev) => ({ ...prev, total, value: total }));
+  }, [product.price, product.quantity]);
 
+  // Form input change handler with special formatting for numeric fields
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "price" || name === "sellPrice") {
-      const val = value.replace(/[^\d.]/g, "");
-      setProduct((prev) => ({ ...prev, [name]: val }));
+    // Special handling for price field - only allow numbers and decimal point
+    if (name === "price") {
+      setProduct((prev) => ({ ...prev, [name]: value.replace(/[^\d.]/g, "") }));
       return;
     }
 
-    if (name === "additionalQty") {
-      const val = value.replace(/\D/g, "");
-      setAdditionalQty(val);
+    // Special handling for quantity field - only allow digits
+    if (name === "quantity") {
+      setProduct((prev) => ({ ...prev, [name]: value.replace(/\D/g, "") }));
       return;
     }
 
+    // Special handling for supplier contact field - only allow digits and limit length
     if (name === "supplierContact") {
-      let digits = value.replace(/\D/g, "");
-      if (digits.length > 15) digits = digits.slice(0, 15);
+      let digits = value.replace(/\D/g, "").slice(0, 15);
       setProduct((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
+    // Convert to lowercase for text fields
+    if (name === "name" || name === "model" || name === "category" || name === "company" || name === "supplier") {
+      setProduct((prev) => ({ ...prev, [name]: value.toLowerCase() }));
+      return;
+    }
+
+    // Default handling for all other fields
     setProduct((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  // Form submission handler with comprehensive validation
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!product) return toast.error("No product selected!", { theme: "dark" });
-
+    
+    // Toast notification configuration
     const toastOptions = { theme: "dark", autoClose: 2000 };
 
-    if (
-      !product.price ||
-      isNaN(product.price) ||
-      parseFloat(product.price) <= 0
-    )
-      return toast.error("Valid Purchase Price is required", toastOptions);
-    if (
-      !product.sellPrice ||
-      isNaN(product.sellPrice) ||
-      parseFloat(product.sellPrice) <= 0
-    )
-      return toast.error("Valid Sell Price is required", toastOptions);
-    if (!additionalQty || isNaN(additionalQty) || parseInt(additionalQty) <= 0)
-      return toast.error("Valid Additional Quantity is required", toastOptions);
+    // Validate Product ID format
+    if (!/^P-\d+$/.test(product.productId))
+      return toast.error("Invalid Product ID", toastOptions);
+    
+    // Validate Invoice ID format
+    if (!/^Inv-\d+$/.test(product.invoiceId))
+      return toast.error("Invalid or missing Invoice ID", toastOptions);
+    
+    // Validate Name (required field)
+    if (!product.name.trim())
+      return toast.error("Name is required", toastOptions);
+    
+    // Validate Model (required field)
+    if (!product.model.trim())
+      return toast.error("Model is required", toastOptions);
+    
+    // Validate Category (required field)
+    if (!product.category.trim())
+      return toast.error("Category is required", toastOptions);
+    
+    // Validate Company (required field)
+    if (!product.company.trim())
+      return toast.error("Company is required", toastOptions);
+    
+    // Validate Purchase Price (must be positive number)
+    if (!product.price || parseFloat(product.price) <= 0)
+      return toast.error("Valid Purchase Price required", toastOptions);
+    
+    // Validate Quantity (must be positive integer)
+    if (!product.quantity || parseInt(product.quantity) <= 0)
+      return toast.error("Valid Quantity required", toastOptions);
+    
+    // Validate Supplier (required field)
     if (!product.supplier.trim())
       return toast.error("Supplier is required", toastOptions);
 
-    // 🟢 Add "+" before saving supplier contact
+    // Validate Supplier Contact format with country code
     const fullSupplierContact = "+" + product.supplierContact;
     if (!/^\+\d{7,15}$/.test(fullSupplierContact))
       return toast.error(
-        "Supplier Contact must start with '+' followed by 7–15 digits",
+        "Supplier Contact must start with '+' and 7–15 digits",
         toastOptions
       );
 
-    // Calculate new total quantity
-    const currentQty = parseInt(product.quantity) || 0;
-    const addQty = parseInt(additionalQty) || 0;
-    const newTotalQty = currentQty + addQty;
+    // Check for duplicate model numbers
+    if (
+      products.some(
+        (p) => p.model?.toLowerCase() === product.model.toLowerCase()
+      )
+    )
+      return toast.error("Model must be unique!", toastOptions);
 
-    // --- Update product list (add to existing qty and totals) ---
-    const updatedProducts = products.map((p) =>
-      p.productId === product.productId
-        ? {
-            ...p,
-            price: product.price,
-            sellPrice: product.sellPrice,
-            quantity: newTotalQty.toString(),
-            supplier: product.supplier,
-            supplierContact: fullSupplierContact,
-            total: (parseFloat(product.price) * newTotalQty).toFixed(2),
-            value: (parseFloat(product.price) * newTotalQty).toFixed(2),
-            updatedOn: formatDateTime(new Date()),
-          }
-        : p
-    );
+    // Prepare product data for saving with consistent timestamp
+    const timestamp = formatDateTime(new Date());
+    const newProduct = {
+      ...product,
+      name: product.name.toLowerCase(),
+      model: product.model.toLowerCase(),
+      category: product.category.toLowerCase(),
+      company: product.company.toLowerCase(),
+      supplier: product.supplier.toLowerCase(),
+      supplierContact: fullSupplierContact,
+      savedOn: timestamp,
+      updatedOn: timestamp,
+      type: "new-purchase" // Mark as new purchase type
+    };
 
+    // Update products in localStorage
+    const updatedProducts = [...products, newProduct];
     localStorage.setItem("products", JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
 
-    // --- UPDATE Purchase History ---
-    const existingHistory =
-      JSON.parse(localStorage.getItem("purchaseHistory")) || [];
+    // Add to purchase history for tracking
+    const existingHistory = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
+    localStorage.setItem("purchaseHistory", JSON.stringify([...existingHistory, newProduct]));
 
-    const newPurchaseEntry = {
-      ...product,
-      productId: product.productId,
-      invoiceId: newInvoiceId,
-      quantity: additionalQty,
-      price: product.price,
-      sellPrice: product.sellPrice,
-      supplierContact: fullSupplierContact,
-      total: (parseFloat(product.price) * parseInt(additionalQty)).toFixed(2),
-      value: (parseFloat(product.price) * parseInt(additionalQty)).toFixed(2),
-      savedOn: formatDateTime(new Date()),
-      name: product.name,
-      model: product.model,
-      category: product.category,
-      company: product.company,
-      supplier: product.supplier,
-      type: "stock-addition"
-    };
+    // Generate next invoice ID for next purchase
+    const nextInvoiceId = generateInvoiceId();
 
-    const updatedHistory = [...existingHistory, newPurchaseEntry];
-    localStorage.setItem("purchaseHistory", JSON.stringify(updatedHistory));
-
-    toast.success(`Stock added with Invoice ${newInvoiceId}`, {
+    // Show success message and navigate after delay
+    toast.success(`Product saved with Invoice ${product.invoiceId}`, {
       ...toastOptions,
-      onClose: () => navigate("/up-purchase-history"),
+      onClose: () => {
+        // Reset form with new IDs
+        setProduct({
+          ...emptyProduct,
+          productId: generateProductId(),
+          invoiceId: nextInvoiceId,
+        });
+        navigate("/up-inventory");
+      },
     });
+
+    // Call parent component's save callback if provided
+    onSave?.(newProduct);
   };
 
+  // Form clear/reset handler
+  const handleClear = () => {
+    // Reset form with new generated IDs
+    setProduct((prev) => ({
+      ...emptyProduct,
+      productId: generateProductId(),
+      invoiceId: generateInvoiceId(),
+    }));
+    toast.info("Form cleared", { theme: "dark", autoClose: 1500 });
+  };
+
+  // Component render method
   return (
+    // Main container with padding and full height
     <div className="px-4 py-2 min-h-[100%]">
+      {/* Toast notifications container */}
       <ToastContainer theme="dark" autoClose={2000} />
-      <div className="w-8xl mx-auto space-y-3">
+      
+      {/* Content wrapper with max width constraint */}
+      <div className="max-w-8xl mx-auto space-y-3">
+        {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold text-white">Add Stock</h1>
+          <h1 className="text-3xl font-bold text-white">Add Purchase</h1>
           <p className="text-white/80">
-            Select a Product ID to update stock and pricing details.
+            Fill in the product details below to record a purchase.
           </p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-5 text-white shadow-lg mt-6">
-          {/* Product Selector */}
-          <div className="mb-4">
-            <label
-              htmlFor="productId"
-              className="block mb-1 text-sm text-white/80"
-            >
-              Select Product ID
-            </label>
-            <select
-              id="productId"
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
-            >
-              <option value="">-- Select Product ID --</option>
-              {products.map((p) => (
-                <option key={p.productId} value={p.productId}>
-                  {p.productId} — {p.name} (Current Stock: {p.quantity})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {!product ? (
-            <p className="text-center text-white/70 italic">
-              Select a Product ID to view details.
-            </p>
-          ) : (
-            <form onSubmit={handleSave} className="space-y-3">
-              {/* Invoice ID Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Invoice No
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {newInvoiceId}
-                  </h2>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Product ID
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {product.productId}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Read-only Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Name
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {product.name}
-                  </h2>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Model
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {product.model}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Category
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {product.category}
-                  </h2>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Company
-                  </label>
-                  <h2 className="w-full p-2 rounded-md bg-black/40 border border-white/30 text-white font-semibold">
-                    {product.company}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Editable Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Purchase Price
-                  </label>
-                  <input
-                    type="text"
-                    name="price"
-                    value={product.price}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Sell Price
-                  </label>
-                  <input
-                    type="text"
-                    name="sellPrice"
-                    value={product.sellPrice}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Quantity Section */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm text-white/80">
-                    Current Stock: <span className="text-cyan-400 font-semibold">{product.quantity} pcs</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="additionalQty"
-                    value={additionalQty}
-                    onChange={handleChange}
-                    placeholder="Enter additional quantity to add"
-                    className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
-                  />
-                  <p className="text-xs text-white/60 mt-2">
-                    Adding <strong>{additionalQty || 0}</strong> units to existing <strong>{product.quantity}</strong> units ={" "}
-                    <strong className="text-cyan-400">
-                      {parseInt(product.quantity) + parseInt(additionalQty || 0)} total units
-                    </strong>
-                  </p>
-                </div>
-              </div>
-              
+        {/* Main form container with glassmorphism effect */}
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-4 text-white shadow-lg mt-6">
+          {/* Form element with submit handler */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* All form fields organized in responsive grid layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Invoice Number field (read-only) */}
               <div>
                 <label className="block mb-1 text-sm text-white/80">
+                  Invoice No
+                </label>
+                <input
+                  type="text"
+                  name="invoiceId"
+                  value={product.invoiceId}
+                  readOnly
+                  className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+                />
+              </div>
+
+              {/* Product ID field (read-only) */}
+              <div>
+                <label className="block mb-1 text-sm text-white/80">
+                  Product ID
+                </label>
+                <input
+                  type="text"
+                  name="productId"
+                  value={product.productId}
+                  readOnly
+                  className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+                />
+              </div>
+
+              {/* Product Name input */}
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter product name"
+                  value={product.name}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Product Model input */}
+              <div>
+                <label
+                  htmlFor="model"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Model
+                </label>
+                <input
+                  type="text"
+                  id="model"
+                  name="model"
+                  placeholder="Enter model"
+                  value={product.model}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Product Category input */}
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Category
+                </label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  placeholder="Enter category"
+                  value={product.category}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Quantity input */}
+              <div>
+                <label
+                  htmlFor="quantity"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Quantity
+                </label>
+                <input
+                  type="text"
+                  id="quantity"
+                  name="quantity"
+                  placeholder="Enter quantity"
+                  value={product.quantity}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Purchase Price input */}
+              <div>
+                <label
+                  htmlFor="price"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Purchase Price
+                </label>
+                <input
+                  type="text"
+                  id="price"
+                  name="price"
+                  placeholder="Enter purchase price"
+                  value={product.price}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Total Value field (read-only, auto-calculated) */}
+              <div>
+                <label
+                  htmlFor="value"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Value
+                </label>
+                <input
+                  type="text"
+                  id="value"
+                  name="value"
+                  value={product.value}
+                  placeholder="0.0"
+                  readOnly
+                  className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
+                />
+              </div>
+
+              {/* Supplier Name input */}
+              <div>
+                <label
+                  htmlFor="supplier"
+                  className="block mb-1 text-sm text-white/80"
+                >
                   Supplier
                 </label>
                 <input
                   type="text"
+                  id="supplier"
                   name="supplier"
+                  placeholder="Enter supplier name"
                   value={product.supplier}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
 
+              {/* Company Name input */}
               <div>
-                <label className="block mb-1 text-sm text-white/80">
+                <label
+                  htmlFor="company"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Company
+                </label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  placeholder="Enter company name"
+                  value={product.company}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
+                />
+              </div>
+
+              {/* Supplier Contact input with country code prefix */}
+              <div className="md:col-span-2">
+                <label
+                  htmlFor="supplierContact"
+                  className="block mb-1 text-sm text-white/80"
+                >
                   Supplier Contact
                 </label>
                 <div className="relative">
@@ -434,39 +536,39 @@ export default function AddStock() {
                   </span>
                   <input
                     type="text"
+                    id="supplierContact"
                     name="supplierContact"
+                    placeholder="923001234567"
+                    maxLength={15}
                     value={product.supplierContact}
                     onChange={handleChange}
                     className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Summary Section */}
-              <div className="border-t border-white/20 pt-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/80">This Addition Value:</span>
-                  <span className="font-semibold">
-                    Rs {((parseFloat(product.price) || 0) * (parseInt(additionalQty) || 0)).toFixed(2)}/-
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-white/80">New Total Inventory Value:</span>
-                  <span className="text-lg font-bold text-white">
-                    Rs: {product.total || "0.00"}/-
-                  </span>
-                </div>
-              </div>
-
+            {/* Form action buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              {/* Save button with icon */}
               <button
                 type="submit"
-                className="w-full py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2 mt-4"
+                className="w-full sm:w-1/2 py-3 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-3"
               >
                 <AddIcon />
-                Save Stock Addition
+                Save
               </button>
-            </form>
-          )}
+
+              {/* Clear form button */}
+              <button
+                type="button"
+                onClick={handleClear}
+                className="w-full sm:w-1/2 py-3 rounded-md bg-red-700/80 hover:bg-red-800 transition cursor-pointer font-semibold flex justify-center items-center gap-3"
+              >
+                Clear
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

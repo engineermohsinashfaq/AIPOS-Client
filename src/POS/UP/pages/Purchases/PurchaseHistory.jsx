@@ -1,94 +1,122 @@
+// |===============================| PurchaseHistory Component |===============================|
+// Import necessary React hooks and external libraries
 import React, { useState, useMemo, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { X } from "lucide-react";
 import SearchIcon from "@mui/icons-material/Search";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-// ✅ Robust Date Formatter that handles all date formats
+// Date formatting utility function - converts various date formats to standardized string
 const formatDateTime = (dateInput) => {
+  // Return dash for empty/null dates
   if (!dateInput) return "—";
-  
+
   try {
     let date;
-    
-    // Handle different date formats
+
+    // Handle different date input types and formats
     if (dateInput instanceof Date) {
       date = dateInput;
-    } else if (typeof dateInput === 'string') {
-      // Try to parse the date string - handle multiple formats
-      if (dateInput.includes('/')) {
-        // Handle DD/MM/YYYY format
-        const parts = dateInput.split(' ');
+    } else if (typeof dateInput === "string") {
+      // Parse custom date format (DD/MM/YYYY HH:MM:SS)
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
         const datePart = parts[0];
         const timePart = parts[1];
-        
-        if (datePart.includes('/')) {
-          const [day, month, year] = datePart.split('/');
+
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
           if (timePart) {
-            const [hours, minutes, seconds] = timePart.split(':');
-            date = new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+            const [hours, minutes, seconds] = timePart.split(":");
+            date = new Date(
+              year,
+              month - 1,
+              day,
+              hours || 0,
+              minutes || 0,
+              seconds || 0
+            );
           } else {
             date = new Date(year, month - 1, day);
           }
         }
       } else {
-        // Try standard Date parsing
+        // Parse ISO string or other standard formats
         date = new Date(dateInput);
       }
     } else {
+      // Handle numeric timestamps or other date types
       date = new Date(dateInput);
     }
-    
-    // Check if date is valid
+
+    // Validate the parsed date
     if (isNaN(date.getTime())) {
       return "—";
     }
-    
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+
+    // Format date components with leading zeros
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    // Return formatted date string (DD/MM/YYYY HH:MM:SS)
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
-    console.error('Date formatting error:', error);
+    console.error("Date formatting error:", error);
     return "—";
   }
 };
 
-// ✅ Short Date for Display (Table) - More robust version
+// Short date formatter - extracts only the date portion
 const formatShortDate = (dateString) => {
   if (!dateString) return "—";
-  
+
   try {
     const fullDate = formatDateTime(dateString);
     if (fullDate === "—") return "—";
-    
-    // Extract just the date part (DD/MM/YYYY)
-    return fullDate.split(' ')[0];
+    return fullDate.split(" ")[0]; // Return only date part (before space)
   } catch (error) {
     return "—";
   }
 };
 
-/**
- * Loads purchase history data.
- */
+// Load purchase history from localStorage with sorting by date
 const loadPurchaseHistory = () => {
   try {
+    // Retrieve purchase history from localStorage or initialize empty array
     const purchaseHistory =
       JSON.parse(localStorage.getItem("purchaseHistory")) || [];
 
-    // Sort by date descending (newest first)
+    // Sort purchase history by date (newest first)
     return purchaseHistory.sort((a, b) => {
-      const dateA = new Date(a.savedOn || a.updatedOn || 0);
-      const dateB = new Date(b.savedOn || b.updatedOn || 0);
-      return dateB - dateA; // Descending order
+      // Helper function to extract timestamp from various date fields
+      const getTimestamp = (item) => {
+        const dateFields = [
+          "savedOn",
+          "updatedOn",
+          "updatedAt",
+          "createdAt",
+          "date",
+        ];
+        for (let field of dateFields) {
+          if (item[field]) {
+            const timestamp = new Date(item[field]).getTime();
+            if (!isNaN(timestamp)) {
+              return timestamp;
+            }
+          }
+        }
+        return 0;
+      };
+
+      const timestampA = getTimestamp(a);
+      const timestampB = getTimestamp(b);
+
+      // Sort descending (newest first)
+      return timestampB - timestampA;
     });
   } catch {
     console.error("Error loading purchase history from localStorage.");
@@ -96,34 +124,44 @@ const loadPurchaseHistory = () => {
   }
 };
 
+// Main PurchaseHistory component function
 export default function PurchaseHistory() {
+  // State management for purchase history data
   const [purchaseHistory, setPurchaseHistory] = useState(loadPurchaseHistory);
-  const [query, setQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [form, setForm] = useState({});
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [productToDelete, setProductToDelete] = useState(null);
 
-  // 🟢 Refresh data automatically if storage updates
+  // State for search query
+  const [query, setQuery] = useState("");
+
+  // State for modal visibility
+  const [isViewOpen, setIsViewOpen] = useState(false);
+
+  // State for currently selected product details
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Effect hook to handle localStorage changes and initial data loading
   useEffect(() => {
+    // Event handler for storage changes (other tabs/windows)
     const handleStorage = () => {
       setPurchaseHistory(loadPurchaseHistory());
     };
     window.addEventListener("storage", handleStorage);
 
-    // Also refresh when component mounts
+    // Load initial data
     setPurchaseHistory(loadPurchaseHistory());
 
+    // Cleanup event listener on component unmount
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
+  // Memoized filtered purchase history based on search query
   const filtered = useMemo(() => {
     let arr = purchaseHistory.slice();
+
+    // Apply search filter if query exists
     if (query.trim()) {
       const q = query.toLowerCase();
       arr = arr.filter((p) =>
+        // Search across multiple product fields
         [
           p.productId,
           p.name,
@@ -143,147 +181,7 @@ export default function PurchaseHistory() {
     return arr;
   }, [purchaseHistory, query]);
 
-  const toastConfig = { position: "top-right", theme: "dark", autoClose: 2000 };
-  const notifySuccess = (msg) => toast.success(msg, toastConfig);
-  const notifyError = (msg) => toast.error(msg, toastConfig);
-
-  const handleOpenEdit = (product) => {
-    const contactWithoutPlus = product.supplierContact?.startsWith("+")
-      ? product.supplierContact.substring(1)
-      : product.supplierContact || "";
-    setForm({ ...product, supplierContact: contactWithoutPlus });
-    setIsModalOpen(true);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    let val = value;
-
-    if (["price", "sellPrice"].includes(name)) {
-      val = value.replace(/[^\d.]/g, "");
-    } else if (name === "quantity") {
-      val = value.replace(/\D/g, "");
-    } else if (name === "supplierContact") {
-      let digits = value.replace(/\D/g, "");
-      if (digits.length > 15) digits = digits.slice(0, 15);
-      val = digits;
-    }
-
-    setForm((s) => ({ ...s, [name]: val }));
-  };
-
-  const handleSave = (e) => {
-    e.preventDefault();
-
-    const originalProduct = purchaseHistory.find(
-      (p) => p.productId === form.productId && p.invoiceId === form.invoiceId
-    );
-
-    const trimmedForm = Object.fromEntries(
-      Object.entries(form).map(([k, v]) =>
-        typeof v === "string" ? [k, v.trim()] : [k, v]
-      )
-    );
-
-    // 🧱 Validation
-    if (!trimmedForm.name) return notifyError("Name is required");
-    if (!trimmedForm.model) return notifyError("Model is required");
-    if (!trimmedForm.category) return notifyError("Category is required");
-    if (!trimmedForm.company) return notifyError("Company is required");
-    if (!trimmedForm.supplier) return notifyError("Supplier is required");
-
-    const price = parseFloat(trimmedForm.price);
-    const sellPrice = parseFloat(trimmedForm.sellPrice);
-    const quantity = parseInt(trimmedForm.quantity);
-
-    if (isNaN(price) || price <= 0)
-      return notifyError("Valid Purchase Price is required");
-    if (isNaN(sellPrice) || sellPrice <= 0)
-      return notifyError("Valid Sell Price is required");
-    if (isNaN(quantity) || quantity <= 0)
-      return notifyError("Valid Quantity is required");
-
-    const fullSupplierContact = "+" + trimmedForm.supplierContact;
-    if (!/^\+\d{7,15}$/.test(fullSupplierContact))
-      return notifyError(
-        "Supplier Contact must start with '+' followed by 7–15 digits"
-      );
-
-    const total = (price * quantity).toFixed(2);
-
-    const updatedProduct = {
-      ...trimmedForm,
-      price: price.toFixed(2),
-      sellPrice: sellPrice.toFixed(2),
-      quantity: String(quantity),
-      total,
-      value: total,
-      supplierContact: fullSupplierContact,
-      updatedAt: formatDateTime(new Date()),
-    };
-
-    // Update purchase history
-    const updatedHistory = purchaseHistory.map((p) =>
-      p.productId === updatedProduct.productId &&
-      p.invoiceId === updatedProduct.invoiceId
-        ? updatedProduct
-        : p
-    );
-
-    setPurchaseHistory(updatedHistory);
-    localStorage.setItem("purchaseHistory", JSON.stringify(updatedHistory));
-
-    // Also update products if this is the latest entry for this product
-    const products = JSON.parse(localStorage.getItem("products") || "[]");
-    const productEntries = purchaseHistory.filter(
-      (p) => p.productId === updatedProduct.productId
-    );
-    const latestEntry = productEntries.sort(
-      (a, b) => new Date(b.savedOn) - new Date(a.savedOn)
-    )[0];
-
-    if (latestEntry && latestEntry.invoiceId === updatedProduct.invoiceId) {
-      const updatedProducts = products.map((p) =>
-        p.productId === updatedProduct.productId
-          ? { ...p, ...updatedProduct }
-          : p
-      );
-      localStorage.setItem("products", JSON.stringify(updatedProducts));
-    }
-
-    setIsModalOpen(false);
-    notifySuccess(`${updatedProduct.name} updated successfully.`);
-  };
-
-  const handleDelete = (product) => {
-    setProductToDelete(product);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (!productToDelete) return;
-
-    const updatedHistory = purchaseHistory.filter(
-      (p) =>
-        !(
-          p.productId === productToDelete.productId &&
-          p.invoiceId === productToDelete.invoiceId
-        )
-    );
-
-    setPurchaseHistory(updatedHistory);
-    localStorage.setItem("purchaseHistory", JSON.stringify(updatedHistory));
-
-    notifySuccess(`${productToDelete.name} deleted successfully.`);
-    setIsDeleteModalOpen(false);
-    setProductToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setProductToDelete(null);
-    setIsDeleteModalOpen(false);
-  };
-
+  // Print functionality handler
   const handlePrint = () => {
     const bodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -291,16 +189,23 @@ export default function PurchaseHistory() {
     document.body.style.overflow = bodyOverflow;
   };
 
+  // Purchase type display formatter
   const getPurchaseType = (product) => {
     return product.type === "stock-addition"
       ? "Stock Addition"
       : "New Purchase";
   };
 
+  // Component render method
   return (
+    // Main container with responsive padding and dark background
     <div className="p-2 min-h-screen text-white">
+      {/* Toast notifications container */}
       <ToastContainer position="top-right" theme="dark" autoClose={2000} />
-      <div className="max-w-7xl mx-auto space-y-6">
+
+      {/* Content wrapper with max width constraint */}
+      <div className="max-w-8xl mx-auto space-y-6">
+        {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
             Purchase History
@@ -310,25 +215,30 @@ export default function PurchaseHistory() {
           </p>
         </div>
 
-        {/* Search Filter */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Search and statistics panel */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3 ">
+          {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by product, invoice, supplier..."
+              placeholder="Search"
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
-          <div className="text-white/80 text-sm flex items-center">
+
+          {/* Record count display */}
+          <div className="text-white/80 text-lg flex items-center">
             Total Records: {filtered.length}
           </div>
         </div>
 
-        {/* Purchase History Table */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto">
+        {/* Main data table container */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide ">
+          {/* Purchase history table */}
           <table className="w-full text-white/90 min-w-[1200px]">
+            {/* Table header with column labels */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">Invoice ID</th>
@@ -337,37 +247,61 @@ export default function PurchaseHistory() {
                 <th className="p-3">Type</th>
                 <th className="p-3">Qty</th>
                 <th className="p-3">Price</th>
-                <th className="p-3">Total</th>
                 <th className="p-3">Supplier</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
+
+            {/* Table body with purchase records */}
             <tbody>
+              {/* Map through filtered purchase records */}
               {filtered.map((p) => (
                 <tr
-                  key={`${p.invoiceId}-${p.productId}`}
-                  className="border-t border-white/5 hover:bg-white/5 transition"
+                  key={`${p.invoiceId}-${p.productId}`} // Unique key for each row
+                  className={`border-t border-white/5 transition 
+        ${
+          // Different hover colors based on purchase type
+          p.type === "stock-addition"
+            ? "hover:bg-blue-600/50"
+            : "hover:bg-green-600/50"
+        }`}
                 >
+                  {/* Invoice ID column */}
                   <td className="p-3 font-mono">{p.invoiceId}</td>
+
+                  {/* Product ID column */}
                   <td className="p-3 font-mono">{p.productId}</td>
-                  <td className="p-3">{p.name}</td>
+
+                  {/* Product name column */}
+                  <td className="p-3">{p.name.toUpperCase()}</td>
+
+                  {/* Purchase type with colored badge */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
+                      className={`px-2 py-1  text-xs border rounded-full border-white/30 ${
                         p.type === "stock-addition"
-                          ? "bg-blue-600/50"
-                          : "bg-green-600/50"
+                          ? "bg-blue-600"
+                          : "bg-green-600"
                       }`}
                     >
                       {getPurchaseType(p)}
                     </span>
                   </td>
+
+                  {/* Quantity column */}
                   <td className="p-3">{p.quantity}</td>
+
+                  {/* Price column */}
                   <td className="p-3">Rs {p.price}/-</td>
-                  <td className="p-3">Rs {p.total}/-</td>
-                  <td className="p-3">{p.supplier}</td>
+
+                  {/* Supplier column */}
+                  <td className="p-3">{p.supplier.toUpperCase()}</td>
+
+                  {/* Date column with short format */}
                   <td className="p-3 text-sm">{formatShortDate(p.savedOn)}</td>
+
+                  {/* Actions column with view button */}
                   <td className="p-3 flex gap-2">
                     <button
                       title="View"
@@ -375,27 +309,15 @@ export default function PurchaseHistory() {
                         setSelectedProduct(p);
                         setIsViewOpen(true);
                       }}
-                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
+                      className="p-2 rounded bg-cyan-900 text-white hover:bg-cyan-950 transition-colors cursor-pointer"
                     >
                       <VisibilityIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Edit"
-                      onClick={() => handleOpenEdit(p)}
-                      className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
-                    >
-                      <EditIcon fontSize="small" />
-                    </button>
-                    <button
-                      title="Delete"
-                      onClick={() => handleDelete(p)}
-                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                    >
-                      <DeleteIcon fontSize="small" />
                     </button>
                   </td>
                 </tr>
               ))}
+
+              {/* Empty state message */}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan="10" className="p-4 text-center text-white/70">
@@ -408,266 +330,167 @@ export default function PurchaseHistory() {
         </div>
       </div>
 
-      {/* --- Edit Modal --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md p-2">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold">Edit Purchase Record</h2>
-              <div className="text-sm text-white/80 mt-2 space-y-1">
-                <p>
-                  <strong>Invoice ID:</strong> {form.invoiceId}
-                </p>
-                <p>
-                  <strong>Product ID:</strong> {form.productId}
-                </p>
-                <p>
-                  <strong>Type:</strong> {getPurchaseType(form)}
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-3">
-              <input
-                name="name"
-                value={form.name || ""}
-                onChange={handleChange}
-                placeholder="Name"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="model"
-                value={form.model || ""}
-                onChange={handleChange}
-                placeholder="Model"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="category"
-                value={form.category || ""}
-                onChange={handleChange}
-                placeholder="Category"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="company"
-                value={form.company || ""}
-                onChange={handleChange}
-                placeholder="Company"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="price"
-                value={form.price || ""}
-                onChange={handleChange}
-                placeholder="Purchase Price"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="sellPrice"
-                value={form.sellPrice || ""}
-                onChange={handleChange}
-                placeholder="Sell Price"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="quantity"
-                value={form.quantity || ""}
-                onChange={handleChange}
-                placeholder="Quantity"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <input
-                name="supplier"
-                value={form.supplier || ""}
-                onChange={handleChange}
-                placeholder="Supplier"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              />
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 select-none">
-                  +
-                </span>
-                <input
-                  type="text"
-                  name="supplierContact"
-                  value={form.supplierContact || ""}
-                  onChange={handleChange}
-                  placeholder="Supplier Contact (e.g. 923001234567)"
-                  className="w-full pl-6 p-2 rounded bg-black/30 border border-white/20 outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 transition hover:cursor-pointer"
-                >
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* --- View Modal --- */}
+      {/* Product details modal */}
       {isViewOpen && selectedProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/10 z-50 p-2 backdrop-blur-md print:p-0">
-          <div className="bg-white text-black rounded-md shadow-xl w-full max-w-md p-6 relative font-mono text-sm border border-white/30">
-            <button
-              onClick={() => setIsViewOpen(false)}
-              className="absolute top-2 right-2 text-black transition p-1 cursor-pointer rounded-full print:hidden"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center border-b border-dashed border-black pb-2 mb-2">
-              <h2 className="text-xl font-bold tracking-wider">
-                ZUBI ELECTRONICS
-              </h2>
-              <p className="text-xs mt-1">
-                Contact: +92 300 1234567 | info@zubielectronics.com
-              </p>
-              <p className="text-xs">123 Market Road, Lahore, Pakistan</p>
-              <p className="text-xs mt-2 pt-2 border-t border-dashed border-black">
-                {selectedProduct.invoiceId}
-              </p>
-              <p className="text-xs font-semibold mt-1">
-                {getPurchaseType(selectedProduct)}
-              </p>
-            </div>
-
-            <div className="space-y-2 leading-4">
-              <div className="flex justify-between">
-                <span>Product ID:</span>
-                <span>{selectedProduct.productId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Name:</span>
-                <span>{selectedProduct.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Model:</span>
-                <span>{selectedProduct.model}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Category:</span>
-                <span>{selectedProduct.category}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Company:</span>
-                <span>{selectedProduct.company}</span>
-              </div>
-
-              <div className="flex justify-between border-t border-dashed border-black/90 mt-2 pt-2">
-                <span>Purchase Price (Per Unit):</span>
-                <span>Rs {selectedProduct.price}/-</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Sell Price (Per Unit):</span>
-                <span>Rs {selectedProduct.sellPrice}/-</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Quantity:</span>
-                <span>{selectedProduct.quantity} piece(s)</span>
-              </div>
-
-              <div className="flex justify-between font-bold border-t border-dashed border-black/90 pt-2">
-                <span>Total Purchase Price:</span>
-                <span>Rs {selectedProduct.total}/-</span>
-              </div>
-
-              <div className="flex justify-between border-b border-dashed border-black/90 pb-2">
-                <span>Inventory Value:</span>
-                <span>Rs {selectedProduct.value}/-</span>
-              </div>
-
-              <div className="flex justify-between pt-2">
-                <span>Supplier:</span>
-                <span>{selectedProduct.supplier}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Supplier Contact:</span>
-                <span>{selectedProduct.supplierContact}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Date:</span>
-                <span>
-                  {selectedProduct.savedOn &&
-                  !selectedProduct.savedOn.includes("Invalid")
-                    ? formatDateTime(selectedProduct.savedOn)
-                    : "Recently Added"}
-                </span>
-              </div>
-              {selectedProduct.updatedAt && (
-                <div className="flex justify-between text-xs text-black/70 italic">
-                  <span>Last Updated:</span>
-                  <span>
-                    {selectedProduct.updatedAt &&
-                    !selectedProduct.updatedAt.includes("Invalid")
-                      ? formatDateTime(selectedProduct.updatedAt)
-                      : "Recently Updated"}
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
+          {/* Modal content container */}
+          <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
+            {/* Modal body content */}
+            <div className="p-4 space-y-3">
+              {/* Header section with company info */}
+              <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
+                <h2 className="text-xl font-bold tracking-wider text-gray-900">
+                  ZUBI ELECTRONICS
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Purchase & Invoice Details
+                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Invoice: {selectedProduct.invoiceId}
+                  </p>
+                  {/* Purchase type badge */}
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${
+                      selectedProduct.type === "stock-addition"
+                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-green-200 text-green-800 border border-green-200"
+                    }`}
+                  >
+                    {getPurchaseType(selectedProduct)}
                   </span>
                 </div>
-              )}
+              </div>
+
+              {/* Product details section */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Product ID:</span>
+                  <span className="text-gray-900 text-right font-mono">
+                    {selectedProduct.productId}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.name.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Model:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.model.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.category.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Purchase details section */}
+              <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Quantity:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.quantity} piece(s)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">
+                    Purchase Price:
+                  </span>
+                  <span className="text-gray-900 text-right">
+                    Rs {selectedProduct.price}/-
+                  </span>
+                </div>
+              </div>
+
+              {/* Total value highlight section */}
+              <div className="bg-blue-200 border border-blue-200 rounded-md p-2 mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-bold text-blue-900">
+                    Purchase Value:
+                  </span>
+                  <span className="font-bold text-blue-900 text-right">
+                    Rs {selectedProduct.total}/-
+                  </span>
+                </div>
+              </div>
+
+              {/* Supplier information section */}
+              <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Company:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.company.toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">Supplier:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.supplier.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">
+                    Supplier Contact:
+                  </span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.supplierContact}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timestamp information */}
+              <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span>Purchase Date:</span>
+                  <span className="text-right">
+                    {formatDateTime(selectedProduct.savedOn)}
+                  </span>
+                </div>
+                {/* Show update timestamp if available */}
+                {selectedProduct.updatedAt && (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <span>Last Updated:</span>
+                    <span className="text-right">
+                      {formatDateTime(selectedProduct.updatedAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer disclaimer */}
+              <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
+                <p>This is a computer-generated purchase record.</p>
+                <p>Contains invoice and purchase details only.</p>
+              </div>
             </div>
 
-            <div className="text-center border-t border-dashed border-black/90 mt-2 pt-6 text-xs">
-              <p>
-                Thank you for choosing <strong>ZUBI ELECTRONICS</strong>!
-              </p>
-              <p>This is a computer-generated record.</p>
-            </div>
+            {/* Modal action buttons (sticky footer) */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 rounded-b-lg p-2 print:hidden">
+              <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                {/* Print button */}
+                <button
+                  onClick={handlePrint}
+                  className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
+                >
+                  <span>🖨️</span>
+                  <span>Print</span>
+                </button>
 
-            <div className="flex justify-end gap-3 pt-5 print:hidden">
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 rounded bg-blue-700 cursor-pointer text-white hover:bg-blue-600 transition"
-              >
-                🖨️ Print
-              </button>
-              <button
-                onClick={() => setIsViewOpen(false)}
-                className="px-4 py-2 rounded cursor-pointer bg-red-600 text-white hover:bg-red-700 transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- Delete Modal --- */}
-      {isDeleteModalOpen && productToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-sm text-white">
-            <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
-            <p className="mb-4">
-              Are you sure you want to delete purchase record for{" "}
-              <strong>{productToDelete.name}</strong> (Invoice:{" "}
-              {productToDelete.invoiceId})?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={cancelDelete}
-                className="px-4 py-2 rounded border border-white/40 bg-cyan-800/80 hover:bg-cyan-900 hover:cursor-pointer transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 hover:cursor-pointer transition"
-              >
-                Delete
-              </button>
+                {/* Close modal button */}
+                <button
+                  onClick={() => setIsViewOpen(false)}
+                  className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

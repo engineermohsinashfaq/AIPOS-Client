@@ -1,9 +1,12 @@
+// |===============================| AddCustomer Component |===============================|
+// Import necessary React and third-party libraries
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useNavigate } from "react-router-dom";
 
+// Define empty customer object template for form initialization
 const emptyCustomer = {
   customerId: "",
   firstName: "",
@@ -15,46 +18,63 @@ const emptyCustomer = {
   address: "",
 };
 
-// ✅ Improved ID Generator — Based on last saved customer
+// Customer ID generator function - creates sequential IDs based on existing data
 const generateCustomerId = () => {
+  // Retrieve existing customers from localStorage or initialize empty array
   const existing = JSON.parse(
     localStorage.getItem("all_customers_data") || "[]"
   );
+  
+  // Find the highest existing customer ID number
   const lastSavedId = existing.reduce((max, cust) => {
     const num = parseInt(cust.customerId?.replace("C-", ""), 10);
     return !isNaN(num) && num > max ? num : max;
   }, 0);
+  
+  // Generate next sequential ID and store it
   const nextId = lastSavedId + 1;
   localStorage.setItem("lastCustomerId", nextId);
+  
+  // Return formatted customer ID (e.g., C-001)
   return `C-${String(nextId).padStart(3, "0")}`;
 };
 
+// Main AddCustomer component function
 export default function AddCustomer({ onSave }) {
+  // State management for customer form data
   const [customer, setCustomer] = useState(emptyCustomer);
+  
+  // Navigation hook for programmatic routing
   const navigate = useNavigate();
 
+  // Effect hook to generate customer ID on component mount
   useEffect(() => {
+    // Only generate ID if not already set
     if (!customer.customerId) {
       const newId = generateCustomerId();
       setCustomer((prev) => ({ ...prev, customerId: newId }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Form input change handler with special formatting for contact and CNIC fields
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Special handling for contact field - only allow digits
     if (name === "contact") {
       let digits = value.replace(/\D/g, "");
       setCustomer((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
+    // Special handling for CNIC field - format with dashes
     if (name === "cnic") {
       let digits = value.replace(/\D/g, "");
+      // Limit to 13 digits maximum
       if (digits.length > 13) digits = digits.slice(0, 13);
 
       let formatted = "";
+      // Apply CNIC formatting rules: 12345-1234567-1
       if (digits.length <= 5) formatted = digits;
       else if (digits.length <= 12)
         formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
@@ -68,12 +88,15 @@ export default function AddCustomer({ onSave }) {
       return;
     }
 
+    // Default handling for all other fields
     setCustomer((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Form submission handler with comprehensive validation
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validate Customer ID format
     if (!/^C-\d+$/.test(customer.customerId))
       return toast.error("Invalid Customer ID format", {
         position: "top-right",
@@ -81,6 +104,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Validate First Name (required field)
     if (!customer.firstName.trim())
       return toast.error("First Name is required", {
         position: "top-right",
@@ -88,6 +112,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Validate Last Name (required field)
     if (!customer.lastName.trim())
       return toast.error("Last Name is required", {
         position: "top-right",
@@ -95,6 +120,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Validate Contact format with country code
     const fullContact = "+" + customer.contact;
     if (!/^\+\d{7,15}$/.test(fullContact))
       return toast.error(
@@ -102,6 +128,7 @@ export default function AddCustomer({ onSave }) {
         { position: "top-right", autoClose: 2000, theme: "dark" }
       );
 
+    // Validate CNIC format (Pakistan standard)
     if (!/^\d{5}-\d{7}-\d{1}$/.test(customer.cnic))
       return toast.error("CNIC must be in format 12345-1234567-1", {
         position: "top-right",
@@ -109,6 +136,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Validate City (required field)
     if (!customer.city.trim())
       return toast.error("City is required", {
         position: "top-right",
@@ -116,6 +144,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Validate Address (required field)
     if (!customer.address.trim())
       return toast.error("Address is required", {
         position: "top-right",
@@ -123,6 +152,7 @@ export default function AddCustomer({ onSave }) {
         theme: "dark",
       });
 
+    // Check for duplicate CNIC in existing customers
     const existing = JSON.parse(
       localStorage.getItem("all_customers_data") || "[]"
     );
@@ -136,28 +166,35 @@ export default function AddCustomer({ onSave }) {
       });
     }
 
+    // Prepare customer data for saving with additional metadata
     const savedCustomer = {
       ...customer,
-      contact: fullContact,
-      dateAdded: new Date().toISOString(),
+      contact: fullContact, // Store with country code prefix
+      dateAdded: new Date().toISOString(), // Add timestamp
     };
 
+    // Update localStorage with new customer data
     const updated = [...existing, savedCustomer];
     localStorage.setItem("all_customers_data", JSON.stringify(updated));
 
+    // Call parent component's save callback if provided
     if (onSave) onSave(savedCustomer);
 
+    // Show success message and navigate after delay
     toast.success("Customer added successfully!", {
       position: "top-right",
       autoClose: 2000,
       theme: "dark",
-      onClose: () => navigate("/up-all-customers"),
+      onClose: () => navigate("/up-all-customers"), // Navigate to customers list
     });
 
+    // Reset form with new customer ID
     setCustomer({ ...emptyCustomer, customerId: generateCustomerId() });
   };
 
+  // Form clear/reset handler
   const handleClear = () => {
+    // Reset form but preserve the current customer ID
     setCustomer((prev) => ({
       ...emptyCustomer,
       customerId: prev.customerId,
@@ -169,8 +206,11 @@ export default function AddCustomer({ onSave }) {
     });
   };
 
+  // Component render method
   return (
+    // Main container with padding and full height
     <div className="px-4 py-2 min-h-[100%]">
+      {/* Toast notifications container */}
       <ToastContainer
         position="top-right"
         autoClose={2000}
@@ -182,7 +222,9 @@ export default function AddCustomer({ onSave }) {
         theme="dark"
       />
 
-      <div className="mx-auto space-y-3 w-[100%]">
+      {/* Content wrapper */}
+      <div className="mx-auto space-y-3 max-w-8xl">
+        {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white">Add Customer</h1>
           <p className="text-white/80">
@@ -190,9 +232,12 @@ export default function AddCustomer({ onSave }) {
           </p>
         </div>
 
+        {/* Main form container with glassmorphism effect */}
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8 text-white shadow-lg mt-8">
+          {/* Form element with submit handler */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Customer ID */}
+            
+            {/* Customer ID field (read-only) */}
             <div>
               <label
                 htmlFor="customerId"
@@ -210,8 +255,9 @@ export default function AddCustomer({ onSave }) {
               />
             </div>
 
-            {/* First & Last Name */}
+            {/* First and Last Name fields in responsive grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* First Name input */}
               <div>
                 <label
                   htmlFor="firstName"
@@ -230,6 +276,7 @@ export default function AddCustomer({ onSave }) {
                 />
               </div>
 
+              {/* Last Name input */}
               <div>
                 <label
                   htmlFor="lastName"
@@ -249,8 +296,9 @@ export default function AddCustomer({ onSave }) {
               </div>
             </div>
 
-            {/* Contact & CNIC */}
+            {/* Contact and CNIC fields in responsive grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Contact input with country code prefix */}
               <div>
                 <label
                   htmlFor="contact"
@@ -275,6 +323,7 @@ export default function AddCustomer({ onSave }) {
                 </div>
               </div>
 
+              {/* CNIC input with automatic formatting */}
               <div>
                 <label
                   htmlFor="cnic"
@@ -295,8 +344,9 @@ export default function AddCustomer({ onSave }) {
               </div>
             </div>
 
-            {/* City & Status */}
+            {/* City and Status fields in responsive grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* City input */}
               <div>
                 <label
                   htmlFor="city"
@@ -315,6 +365,7 @@ export default function AddCustomer({ onSave }) {
                 />
               </div>
 
+              {/* Status dropdown selector */}
               <div>
                 <label
                   htmlFor="status"
@@ -336,7 +387,7 @@ export default function AddCustomer({ onSave }) {
               </div>
             </div>
 
-            {/* Address */}
+            {/* Address textarea field */}
             <div>
               <label
                 htmlFor="address"
@@ -355,8 +406,9 @@ export default function AddCustomer({ onSave }) {
               />
             </div>
 
-            {/* Buttons */}
+            {/* Form action buttons */}
             <div className="flex flex-col md:flex-row gap-3">
+              {/* Save button with icon */}
               <button
                 type="submit"
                 className="flex-1 py-3 border border-white/40 rounded-md bg-cyan-800/80 hover:bg-cyan-900 transition cursor-pointer font-semibold flex justify-center items-center gap-2"
@@ -365,6 +417,7 @@ export default function AddCustomer({ onSave }) {
                 Save
               </button>
 
+              {/* Clear form button */}
               <button
                 type="button"
                 onClick={handleClear}
