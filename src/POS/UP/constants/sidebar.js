@@ -16,7 +16,6 @@ import {
   CreditCard,
   Info,
   Backup,
-  Notifications,
   AdminPanelSettings,
   Group,
 } from "@mui/icons-material";
@@ -85,13 +84,10 @@ export const menuItems = [
         label: "Purchase History",
         path: "/up-purchase-history",
       },
-      {
-        icon: Group,
-        label: "Suppliers",
-        path: "/up-suppliers",
-      },
+
     ],
   },
+
   {
     icon: Inventory,
     label: "Stocks",
@@ -107,6 +103,47 @@ export const menuItems = [
         path: "/up-inventory",
       },
 
+    ],
+  },
+  {
+    icon: Group,
+    label: "Suppliers",
+    children: [
+
+      {
+        icon: Group,
+        label: "Suppliers",
+        path: "/up-suppliers",
+      },
+    ],
+  },
+  {
+    icon: CreditCard,
+    label: "Installments",
+    children: [
+
+      {
+        icon: List,
+        label: "Installment Management",
+        path: "/up-installment-management",
+      },
+      {
+        icon: List,
+        label: "Installment History",
+        path: "/up-installment-history",
+      },
+    ],
+  },
+  {
+    icon: Receipt,
+    label: "Sales",
+    children: [
+
+      {
+        icon: Receipt,
+        label: "Sales History",
+        path: "/up-sales-history",
+      },
     ],
   },
 

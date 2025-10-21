@@ -24,17 +24,17 @@ const generateCustomerId = () => {
   const existing = JSON.parse(
     localStorage.getItem("all_customers_data") || "[]"
   );
-  
+
   // Find the highest existing customer ID number
   const lastSavedId = existing.reduce((max, cust) => {
     const num = parseInt(cust.customerId?.replace("C-", ""), 10);
     return !isNaN(num) && num > max ? num : max;
   }, 0);
-  
+
   // Generate next sequential ID and store it
   const nextId = lastSavedId + 1;
   localStorage.setItem("lastCustomerId", nextId);
-  
+
   // Return formatted customer ID (e.g., C-001)
   return `C-${String(nextId).padStart(3, "0")}`;
 };
@@ -43,7 +43,7 @@ const generateCustomerId = () => {
 export default function AddCustomer({ onSave }) {
   // State management for customer form data
   const [customer, setCustomer] = useState(emptyCustomer);
-  
+
   // Navigation hook for programmatic routing
   const navigate = useNavigate();
 
@@ -236,7 +236,6 @@ export default function AddCustomer({ onSave }) {
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8 text-white shadow-lg mt-8">
           {/* Form element with submit handler */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            
             {/* Customer ID field (read-only) */}
             <div>
               <label
@@ -270,7 +269,7 @@ export default function AddCustomer({ onSave }) {
                   name="firstName"
                   id="firstName"
                   placeholder="First Name"
-                  value={customer.firstName}
+                  value={customer.firstName.toUpperCase()}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
                 />
@@ -289,7 +288,7 @@ export default function AddCustomer({ onSave }) {
                   name="lastName"
                   id="lastName"
                   placeholder="Last Name"
-                  value={customer.lastName}
+                  value={customer.lastName.toUpperCase()}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
                 />
@@ -359,7 +358,7 @@ export default function AddCustomer({ onSave }) {
                   name="city"
                   id="city"
                   placeholder="City"
-                  value={customer.city}
+                  value={customer.city.toUpperCase()}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
                 />
@@ -399,7 +398,7 @@ export default function AddCustomer({ onSave }) {
                 name="address"
                 id="address"
                 placeholder="Enter full residential address"
-                value={customer.address}
+                value={customer.address.toUpperCase()}
                 onChange={handleChange}
                 rows="3"
                 className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"

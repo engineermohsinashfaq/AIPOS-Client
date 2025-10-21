@@ -83,40 +83,75 @@ const formatShortDate = (dateString) => {
   }
 };
 
-// Load purchase history from localStorage with sorting by date
+// Enhanced date parser for consistent sorting
+const parseDateForSorting = (dateInput) => {
+  if (!dateInput) return new Date(0); // Return epoch for invalid dates
+  
+  try {
+    // Handle multiple date formats
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+    
+    if (typeof dateInput === "string") {
+      // Handle DD/MM/YYYY HH:MM:SS format
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
+        const datePart = parts[0];
+        const timePart = parts[1] || "00:00:00";
+        
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
+          const [hours, minutes, seconds] = timePart.split(":");
+          return new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+            parseInt(hours) || 0,
+            parseInt(minutes) || 0,
+            parseInt(seconds) || 0
+          );
+        }
+      }
+      
+      // Handle ISO format and other standard formats
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    
+    // Fallback for other types (timestamps, etc.)
+    return new Date(dateInput);
+  } catch (error) {
+    console.error("Date parsing error for sorting:", error, dateInput);
+    return new Date(0);
+  }
+};
+
+// Load purchase history from localStorage with enhanced sorting by date - LATEST ON TOP
 const loadPurchaseHistory = () => {
   try {
     // Retrieve purchase history from localStorage or initialize empty array
     const purchaseHistory =
       JSON.parse(localStorage.getItem("purchaseHistory")) || [];
 
-    // Sort purchase history by date (newest first)
+    // Enhanced sort purchase history by date (newest first) - LATEST PURCHASES ON TOP
     return purchaseHistory.sort((a, b) => {
-      // Helper function to extract timestamp from various date fields
-      const getTimestamp = (item) => {
-        const dateFields = [
-          "savedOn",
-          "updatedOn",
-          "updatedAt",
-          "createdAt",
-          "date",
-        ];
-        for (let field of dateFields) {
-          if (item[field]) {
-            const timestamp = new Date(item[field]).getTime();
-            if (!isNaN(timestamp)) {
-              return timestamp;
-            }
-          }
-        }
+      try {
+        // Extract dates from multiple possible fields with fallbacks
+        const dateA = parseDateForSorting(a.timestamp || a.savedOn || a.updatedOn || a.updatedAt || a.createdAt || a.date);
+        const dateB = parseDateForSorting(b.timestamp || b.savedOn || b.updatedOn || b.updatedAt || b.createdAt || b.date);
+        
+        const timestampA = dateA.getTime();
+        const timestampB = dateB.getTime();
+
+        // Sort descending (newest first) - LATEST PURCHASES ON TOP
+        return timestampB - timestampA;
+      } catch (error) {
+        console.error("Sorting error for items:", a, b, error);
         return 0;
-      };
-
-      const timestampA = getTimestamp(a);
-      const timestampB = getTimestamp(b);
-
-      // Sort descending (newest first)
-      return timestampB - timestampA;
+      }
     });
   } catch {
     console.error("Error loading purchase history from localStorage.");
@@ -153,9 +188,9 @@ export default function PurchaseHistory() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Memoized filtered purchase history based on search query
+  // Memoized filtered purchase history based on search query - PRESERVE SORTING
   const filtered = useMemo(() => {
-    let arr = purchaseHistory.slice();
+    let arr = purchaseHistory.slice(); // Start with already sorted array
 
     // Apply search filter if query exists
     if (query.trim()) {
@@ -178,6 +213,8 @@ export default function PurchaseHistory() {
           .includes(q)
       );
     }
+    
+    // Return filtered results - they maintain the original sort order (latest first)
     return arr;
   }, [purchaseHistory, query]);
 
@@ -211,7 +248,7 @@ export default function PurchaseHistory() {
             Purchase History
           </h1>
           <p className="text-white/80">
-            View all purchase and stock addition records with invoice details.
+            View all purchase and stock addition records with invoice details. Latest purchases shown first.
           </p>
         </div>
 
@@ -223,7 +260,7 @@ export default function PurchaseHistory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="Search by invoice, product, supplier..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
@@ -253,7 +290,7 @@ export default function PurchaseHistory() {
               </tr>
             </thead>
 
-            {/* Table body with purchase records */}
+            {/* Table body with purchase records - LATEST PURCHASES ON TOP */}
             <tbody>
               {/* Map through filtered purchase records */}
               {filtered.map((p) => (

@@ -299,7 +299,7 @@ export default function AllCustomers() {
       <ToastContainer position="top-right" theme="dark" autoClose={2000} />
 
       {/* Content wrapper with max width constraint */}
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">All Customers</h1>

@@ -74,7 +74,7 @@ export default function AddGuarantor({ onSave }) {
 
     // Convert to lowercase for firstName, lastName, city, and address fields
     if (name === "firstName" || name === "lastName" || name === "city" || name === "address") {
-      updatedValue = value.toLowerCase();
+      updatedValue = value. toUpperCase();
     }
 
     // Update guarantor state with new value
@@ -136,10 +136,10 @@ export default function AddGuarantor({ onSave }) {
     // Prepare guarantor data for saving with additional metadata
     const savedGuarantor = {
       ...guarantor,
-      firstName: guarantor.firstName.toLowerCase(),
-      lastName: guarantor.lastName.toLowerCase(),
-      city: guarantor.city.toLowerCase(),
-      address: guarantor.address.toLowerCase(),
+      firstName: guarantor.firstName. toUpperCase(),
+      lastName: guarantor.lastName. toUpperCase(),
+      city: guarantor.city. toUpperCase(),
+      address: guarantor.address. toUpperCase(),
       contact: fullContact, // Store with country code prefix
       dateAdded: new Date().toLocaleDateString("en-GB", {
         day: "2-digit",

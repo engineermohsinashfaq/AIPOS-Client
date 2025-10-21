@@ -21,14 +21,13 @@ const findActiveParentLabel = (menuItems, pathname) => {
 
     // If it has children (is an accordion)
     if (item.children) {
-      if (item.children.some(child => pathname.startsWith(child.path))) {
+      if (item.children.some((child) => pathname.startsWith(child.path))) {
         return item.label; // Return the parent's label if an active child is found
       }
     }
   }
   return "Dashboard"; // Default to a known single-link item or an empty string
 };
-
 
 // |===============================| Sidebar Component |===============================|
 const Sidebar = () => {
@@ -58,17 +57,20 @@ const Sidebar = () => {
   const isParentActive = (children) => {
     return children.some((child) => child.path && isActive(child.path));
   };
-  
+
   // |===============================| Auto-Expand on Load/Path Change |===============================|
   useEffect(() => {
-    const activeParentLabel = findActiveParentLabel(filteredMenuItems, location.pathname);
-    
+    const activeParentLabel = findActiveParentLabel(
+      filteredMenuItems,
+      location.pathname
+    );
+
     // Set only the active parent as expanded
     if (activeParentLabel && activeParentLabel !== "Dashboard") {
-        setExpandedItems([activeParentLabel]);
+      setExpandedItems([activeParentLabel]);
     } else {
-        // If no parent or "Dashboard" is active (Dashboard is a single link, not an accordion)
-        setExpandedItems([]);
+      // If no parent or "Dashboard" is active (Dashboard is a single link, not an accordion)
+      setExpandedItems([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]); // Re-run when the route changes
@@ -153,15 +155,15 @@ const Sidebar = () => {
           </div>
 
           {/* |===============================| Sidebar Menu |===============================| */}
-          <nav className="flex-1 p-2 space-y-2 overflow-y-auto scrollbar-hide">
+          <nav className="flex-1 p-2 space-y-1 overflow-y-auto scrollbar-hide">
             {filteredMenuItems.map((item) => {
               // Now we check if the label is the ONLY item in the array
               const isExpanded = expandedItems.includes(item.label);
-              
+
               const hasActiveChild =
                 item.children && isParentActive(item.children);
 
-              const Icon = item.icon; 
+              const Icon = item.icon;
 
               return (
                 <div key={item.label}>

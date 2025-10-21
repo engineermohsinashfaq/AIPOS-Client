@@ -3,7 +3,7 @@ import React from "react";
 import AppRoutes from "./routes/AppRoutes";
 import UnderDevelopment from "./pages/UnderDevelopment/UnderDevelopment";
 import ServerDisabled from "./pages/ServerDisabled/ServerDisabled";
-import bg_image from "./assets/common-images/background.webp"; 
+import bg_image from "./assets/common-images/background.png"; 
 
 import "./CSS/App.css";
 

@@ -26,16 +26,16 @@ const emptyProduct = {
 const generateProductId = () => {
   // Retrieve existing products from localStorage or initialize empty array
   const existing = JSON.parse(localStorage.getItem("products") || "[]");
-  
+
   // Find the highest existing product ID number
   const lastSavedId = existing.reduce((max, prod) => {
     const num = parseInt(prod.productId?.replace("P-", ""), 10);
     return !isNaN(num) && num > max ? num : max;
   }, 0);
-  
+
   // Generate next sequential ID
   const nextId = lastSavedId + 1;
-  
+
   // Return formatted product ID (e.g., P-001)
   return `P-${String(nextId).padStart(3, "0")}`;
 };
@@ -44,8 +44,10 @@ const generateProductId = () => {
 const generateInvoiceId = () => {
   // Retrieve existing products and purchase history
   const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
-  const existingHistory = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
-  
+  const existingHistory = JSON.parse(
+    localStorage.getItem("purchaseHistory") || "[]"
+  );
+
   // Extract all invoice IDs from both sources
   const allInvoices = [...existingProducts, ...existingHistory]
     .map((item) => item.invoiceId)
@@ -75,25 +77,32 @@ const loadProducts = () => {
 const formatDateTime = (dateInput) => {
   // Return dash for empty/null dates
   if (!dateInput) return "—";
-  
+
   try {
     let date;
-    
+
     // Handle different date input types and formats
     if (dateInput instanceof Date) {
       date = dateInput;
-    } else if (typeof dateInput === 'string') {
+    } else if (typeof dateInput === "string") {
       // Parse custom date format (DD/MM/YYYY HH:MM:SS)
-      if (dateInput.includes('/')) {
-        const parts = dateInput.split(' ');
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
         const datePart = parts[0];
         const timePart = parts[1];
-        
-        if (datePart.includes('/')) {
-          const [day, month, year] = datePart.split('/');
+
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
           if (timePart) {
-            const [hours, minutes, seconds] = timePart.split(':');
-            date = new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+            const [hours, minutes, seconds] = timePart.split(":");
+            date = new Date(
+              year,
+              month - 1,
+              day,
+              hours || 0,
+              minutes || 0,
+              seconds || 0
+            );
           } else {
             date = new Date(year, month - 1, day);
           }
@@ -106,24 +115,24 @@ const formatDateTime = (dateInput) => {
       // Handle numeric timestamps or other date types
       date = new Date(dateInput);
     }
-    
+
     // Validate the parsed date
     if (isNaN(date.getTime())) {
       return "—";
     }
-    
+
     // Format date components with leading zeros
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
     // Return formatted date string (DD/MM/YYYY HH:MM:SS)
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
-    console.error('Date formatting error:', error);
+    console.error("Date formatting error:", error);
     return "—";
   }
 };
@@ -131,13 +140,13 @@ const formatDateTime = (dateInput) => {
 // Short date formatter - extracts only the date portion for table display
 const formatShortDate = (dateString) => {
   if (!dateString) return "—";
-  
+
   try {
     const fullDate = formatDateTime(dateString);
     if (fullDate === "—") return "—";
-    
+
     // Extract just the date part (DD/MM/YYYY)
-    return fullDate.split(' ')[0];
+    return fullDate.split(" ")[0];
   } catch (error) {
     return "—";
   }
@@ -147,10 +156,10 @@ const formatShortDate = (dateString) => {
 export default function AddPurchase({ onSave }) {
   // State management for product form data
   const [product, setProduct] = useState(emptyProduct);
-  
+
   // State for existing products list
   const [products, setProducts] = useState(loadProducts());
-  
+
   // Navigation hook for programmatic routing
   const navigate = useNavigate();
 
@@ -195,8 +204,14 @@ export default function AddPurchase({ onSave }) {
     }
 
     // Convert to lowercase for text fields
-    if (name === "name" || name === "model" || name === "category" || name === "company" || name === "supplier") {
-      setProduct((prev) => ({ ...prev, [name]: value.toLowerCase() }));
+    if (
+      name === "name" ||
+      name === "model" ||
+      name === "category" ||
+      name === "company" ||
+      name === "supplier"
+    ) {
+      setProduct((prev) => ({ ...prev, [name]: value.toUpperCase() }));
       return;
     }
 
@@ -207,47 +222,40 @@ export default function AddPurchase({ onSave }) {
   // Form submission handler with comprehensive validation
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Toast notification configuration
+
     const toastOptions = { theme: "dark", autoClose: 2000 };
 
-    // Validate Product ID format
+    // Validate Product ID
     if (!/^P-\d+$/.test(product.productId))
       return toast.error("Invalid Product ID", toastOptions);
-    
-    // Validate Invoice ID format
+
+    // Validate Invoice ID
     if (!/^Inv-\d+$/.test(product.invoiceId))
       return toast.error("Invalid or missing Invoice ID", toastOptions);
-    
-    // Validate Name (required field)
-    if (!product.name.trim())
-      return toast.error("Name is required", toastOptions);
-    
-    // Validate Model (required field)
-    if (!product.model.trim())
-      return toast.error("Model is required", toastOptions);
-    
-    // Validate Category (required field)
-    if (!product.category.trim())
-      return toast.error("Category is required", toastOptions);
-    
-    // Validate Company (required field)
-    if (!product.company.trim())
-      return toast.error("Company is required", toastOptions);
-    
-    // Validate Purchase Price (must be positive number)
+
+    // Required fields
+    const requiredFields = [
+      { key: "name", label: "Name" },
+      { key: "model", label: "Model" },
+      { key: "category", label: "Category" },
+      { key: "company", label: "Company" },
+      { key: "supplier", label: "Supplier" },
+    ];
+
+    for (const field of requiredFields) {
+      if (!product[field.key].trim())
+        return toast.error(`${field.label} is required`, toastOptions);
+    }
+
+    // Price validation
     if (!product.price || parseFloat(product.price) <= 0)
       return toast.error("Valid Purchase Price required", toastOptions);
-    
-    // Validate Quantity (must be positive integer)
+
+    // Quantity validation
     if (!product.quantity || parseInt(product.quantity) <= 0)
       return toast.error("Valid Quantity required", toastOptions);
-    
-    // Validate Supplier (required field)
-    if (!product.supplier.trim())
-      return toast.error("Supplier is required", toastOptions);
 
-    // Validate Supplier Contact format with country code
+    // Supplier contact validation
     const fullSupplierContact = "+" + product.supplierContact;
     if (!/^\+\d{7,15}$/.test(fullSupplierContact))
       return toast.error(
@@ -255,56 +263,88 @@ export default function AddPurchase({ onSave }) {
         toastOptions
       );
 
-    // Check for duplicate model numbers
+    // Unique model validation
     if (
       products.some(
-        (p) => p.model?.toLowerCase() === product.model.toLowerCase()
+        (p) => p.model?.toUpperCase() === product.model.toUpperCase()
       )
     )
       return toast.error("Model must be unique!", toastOptions);
 
-    // Prepare product data for saving with consistent timestamp
+    // Check if supplier already exists (same supplier, company, and contact)
+    const existingSupplier = products.find(
+      (p) =>
+        p.supplier?.toUpperCase() === product.supplier.toUpperCase() &&
+        p.company?.toUpperCase() === product.company.toUpperCase() &&
+        p.supplierContact === fullSupplierContact
+    );
+
     const timestamp = formatDateTime(new Date());
+
+    // If supplier exists, reuse supplier details (to ensure data consistency)
+    const supplierData = existingSupplier
+      ? {
+          supplier: existingSupplier.supplier,
+          company: existingSupplier.company,
+          supplierContact: existingSupplier.supplierContact,
+        }
+      : {
+          supplier: product.supplier.toUpperCase(),
+          company: product.company.toUpperCase(),
+          supplierContact: fullSupplierContact,
+        };
+
     const newProduct = {
       ...product,
-      name: product.name.toLowerCase(),
-      model: product.model.toLowerCase(),
-      category: product.category.toLowerCase(),
-      company: product.company.toLowerCase(),
-      supplier: product.supplier.toLowerCase(),
-      supplierContact: fullSupplierContact,
+      ...supplierData,
+      name: product.name.toUpperCase(),
+      model: product.model.toUpperCase(),
+      category: product.category.toUpperCase(),
+      price: parseFloat(product.price),
+      quantity: parseInt(product.quantity),
       savedOn: timestamp,
       updatedOn: timestamp,
-      type: "new-purchase" // Mark as new purchase type
+      type: "new-purchase",
     };
 
-    // Update products in localStorage
+    // Update localStorage
     const updatedProducts = [...products, newProduct];
     localStorage.setItem("products", JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
 
-    // Add to purchase history for tracking
-    const existingHistory = JSON.parse(localStorage.getItem("purchaseHistory") || "[]");
-    localStorage.setItem("purchaseHistory", JSON.stringify([...existingHistory, newProduct]));
+    // Add to purchase history
+    const existingHistory = JSON.parse(
+      localStorage.getItem("purchaseHistory") || "[]"
+    );
+    localStorage.setItem(
+      "purchaseHistory",
+      JSON.stringify([...existingHistory, newProduct])
+    );
 
-    // Generate next invoice ID for next purchase
+    // Generate next IDs
     const nextInvoiceId = generateInvoiceId();
 
-    // Show success message and navigate after delay
-    toast.success(`Product saved with Invoice ${product.invoiceId}`, {
-      ...toastOptions,
-      onClose: () => {
-        // Reset form with new IDs
-        setProduct({
-          ...emptyProduct,
-          productId: generateProductId(),
-          invoiceId: nextInvoiceId,
-        });
-        navigate("/up-inventory");
-      },
-    });
+    // ✅ Show unified success message
+    toast.success(
+      existingSupplier
+        ? `Supplier Exist — product saved with Invoice ${product.invoiceId}`
+        : `Product saved with Invoice ${product.invoiceId}`,
+      {
+        ...toastOptions,
+        onClose: () => {
+          setProduct({
+            ...emptyProduct,
+            productId: generateProductId(),
+            invoiceId: nextInvoiceId,
+          });
 
-    // Call parent component's save callback if provided
+          // Navigate depending on case
+          navigate(existingSupplier ? "/up-pos" : "/up-inventory");
+        },
+      }
+    );
+
+    // Optional callback
     onSave?.(newProduct);
   };
 
@@ -325,7 +365,7 @@ export default function AddPurchase({ onSave }) {
     <div className="px-4 py-2 min-h-[100%]">
       {/* Toast notifications container */}
       <ToastContainer theme="dark" autoClose={2000} />
-      
+
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto space-y-3">
         {/* Page header section */}
