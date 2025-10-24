@@ -97,20 +97,20 @@ const formatShortDate = (dateString) => {
 // Enhanced date parser for consistent sorting
 const parseDateForSorting = (dateInput) => {
   if (!dateInput) return new Date(0); // Return epoch for invalid dates
-  
+
   try {
     // Handle multiple date formats
     if (dateInput instanceof Date) {
       return dateInput;
     }
-    
+
     if (typeof dateInput === "string") {
       // Handle DD/MM/YYYY HH:MM:SS format
       if (dateInput.includes("/")) {
         const parts = dateInput.split(" ");
         const datePart = parts[0];
         const timePart = parts[1] || "00:00:00";
-        
+
         if (datePart.includes("/")) {
           const [day, month, year] = datePart.split("/");
           const [hours, minutes, seconds] = timePart.split(":");
@@ -124,14 +124,14 @@ const parseDateForSorting = (dateInput) => {
           );
         }
       }
-      
+
       // Handle ISO format and other standard formats
       const parsed = new Date(dateInput);
       if (!isNaN(parsed.getTime())) {
         return parsed;
       }
     }
-    
+
     // Fallback for other types (timestamps, etc.)
     return new Date(dateInput);
   } catch (error) {
@@ -150,9 +150,13 @@ const loadSalesHistory = () => {
     return salesHistory.sort((a, b) => {
       try {
         // Extract dates from multiple possible fields with fallbacks
-        const dateA = parseDateForSorting(a.timestamp || a.savedOn || a.date || a.createdAt);
-        const dateB = parseDateForSorting(b.timestamp || b.savedOn || b.date || b.createdAt);
-        
+        const dateA = parseDateForSorting(
+          a.timestamp || a.savedOn || a.date || a.createdAt
+        );
+        const dateB = parseDateForSorting(
+          b.timestamp || b.savedOn || b.date || b.createdAt
+        );
+
         const timestampA = dateA.getTime();
         const timestampB = dateB.getTime();
 
@@ -225,14 +229,20 @@ const getDisplayQuantity = (sale) => {
   if (sale.quantity !== undefined && sale.quantity !== null) {
     return sale.quantity;
   }
-  
+
   // OLD: Check for quantitySold field (from older sales)
   if (sale.quantitySold !== undefined && sale.quantitySold !== null) {
     return sale.quantitySold;
   }
-  
+
   // Default to 1 if no quantity field found
   return 1;
+};
+
+// Helper function to convert text to uppercase
+const toUpperCase = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  return text.toUpperCase();
 };
 
 // Main SalesHistory component function
@@ -272,23 +282,21 @@ export default function SalesHistory() {
     if (query.trim()) {
       const q = query.toLowerCase();
       arr = arr.filter((sale) =>
-        // Search across multiple sale fields
+        // Search across remaining table row fields only
         [
           sale.invoiceId,
-          sale.productId,
           sale.productName,
           sale.productModel,
           sale.productCategory,
           sale.type,
           sale.paymentMethod,
-          sale.customer,
         ]
           .join(" ")
           .toLowerCase()
           .includes(q)
       );
     }
-    
+
     // Return filtered results - they maintain the original sort order
     return arr;
   }, [salesHistory, query]);
@@ -305,12 +313,12 @@ export default function SalesHistory() {
   const getSaleType = (sale) => {
     // First check if type is explicitly set
     if (sale.type) {
-      return sale.type === "cash-sale" ? "Cash Sale" : "Installment Sale";
+      return sale.type === "cash-sale" ? "CASH SALE" : "INSTALLMENT SALE";
     }
 
     // Fallback to invoice-based detection
     const detectedType = getSaleTypeFromInvoice(sale.invoiceId);
-    return detectedType === "cash-sale" ? "Cash Sale" : "Installment Sale";
+    return detectedType === "cash-sale" ? "CASH SALE" : "INSTALLMENT SALE";
   };
 
   // Sale type badge color formatter
@@ -346,80 +354,71 @@ export default function SalesHistory() {
         <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
           {sale.customerId && (
             <div className="grid grid-cols-2 gap-2">
-              <span className="font-medium text-gray-700">Customer ID:</span>
+              <span className="font-medium text-gray-700">CUSTOMER ID:</span>
               <span className="text-gray-900 text-right font-mono">
-                {sale.customerId}
+                {toUpperCase(sale.customerId)} {toUpperCase(sale.customer || "—")}
               </span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            <span className="font-medium text-gray-700">Customer:</span>
-            <span className="text-gray-900 text-right">
-              {sale.customer || "—"}
-            </span>
-          </div>
+
           {sale.guarantorId && (
             <div className="grid grid-cols-2 gap-2">
-              <span className="font-medium text-gray-700">Guarantor ID:</span>
+              <span className="font-medium text-gray-700">GUARANTOR ID:</span>
               <span className="text-gray-900 text-right font-mono">
-                {sale.guarantorId}
+                {toUpperCase(sale.guarantorId)} {toUpperCase(sale.guarantor || "—")}
               </span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            <span className="font-medium text-gray-700">Guarantor:</span>
-            <span className="text-gray-900 text-right">
-              {sale.guarantor || "—"}
-            </span>
-          </div>
-          
         </div>
 
         {/* Installment Plan Details */}
         <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <span className="font-medium text-gray-700">Payment Plan:</span>
+            <span className="font-medium text-gray-700">PAYMENT PLAN:</span>
             <span className="text-gray-900 text-right">
-              {sale.planMonths || 0} months
+              {sale.planMonths || 0} MONTHS
             </span>
           </div>
-          
+
           {sale.advancePaymentAmount > 0 && (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <span className="font-medium text-gray-700">Advance Payment:</span>
+                <span className="font-medium text-gray-700">
+                  ADVANCE PAYMENT:
+                </span>
                 <span className="text-gray-900 text-right">
                   {formatCurrency(sale.advancePaymentAmount)}/-
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <span className="font-medium text-gray-700">Remaining Amount:</span>
+                <span className="font-medium text-gray-700">
+                  REMAINING AMOUNT:
+                </span>
                 <span className="text-gray-900 text-right font-semibold">
                   {formatCurrency(sale.remainingAmount || 0)}/-
                 </span>
               </div>
             </>
           )}
-          
+
           <div className="grid grid-cols-2 gap-2 border-t border-dashed border-gray-300 pt-2 mt-2">
-            <span className="font-medium text-gray-700">Monthly Payment:</span>
+            <span className="font-medium text-gray-700">MONTHLY PAYMENT:</span>
             <span className="text-gray-900 text-right font-semibold">
               {formatCurrency(sale.monthlyPayment || 0)}/-
             </span>
           </div>
-
         </div>
 
         {/* Payment Timeline Summary */}
         {sale.paymentTimeline && sale.paymentTimeline.length > 0 && (
           <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
             <h4 className="font-medium text-gray-700 mb-2">
-              Payment Schedule:
+              PAYMENT SCHEDULE:
             </h4>
             <div className="text-xs text-gray-600 space-y-1">
               {sale.paymentTimeline.slice(0, 3).map((payment, index) => (
                 <div key={index} className="flex justify-between">
-                  <span>Payment {payment.paymentNumber}:</span>
+                  <span>PAYMENT {payment.paymentNumber}:</span>
                   <span>
                     {payment.dueDate} - {formatCurrency(payment.paymentAmount)}
                   </span>
@@ -427,7 +426,7 @@ export default function SalesHistory() {
               ))}
               {sale.paymentTimeline.length > 3 && (
                 <div className="text-center text-gray-500 italic">
-                  ... and {sale.paymentTimeline.length - 3} more payments
+                  ... AND {sale.paymentTimeline.length - 3} MORE PAYMENTS
                 </div>
               )}
             </div>
@@ -447,10 +446,8 @@ export default function SalesHistory() {
         <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
           {sale.customer && (
             <div className="grid grid-cols-2 gap-2">
-              <span className="font-medium text-gray-700">Customer:</span>
-              <span className="text-gray-900 text-right">
-                {sale.customer}
-              </span>
+              <span className="font-medium text-gray-700">CUSTOMER:</span>
+              <span className="text-gray-900 text-right">{toUpperCase(sale.customer)}</span>
             </div>
           )}
         </div>
@@ -469,9 +466,10 @@ export default function SalesHistory() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Sales History</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">SALES HISTORY</h1>
           <p className="text-white/80">
-            View all cash and installment sales records with invoice details. Latest receipts shown first.
+            VIEW ALL CASH AND INSTALLMENT SALES RECORDS WITH INVOICE DETAILS.
+            LATEST RECEIPTS SHOWN FIRST.
           </p>
         </div>
 
@@ -483,35 +481,31 @@ export default function SalesHistory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by invoice, product, customer..."
+              placeholder="SEARCH BY INVOICE, PRODUCT, MODEL, CATEGORY, SALE TYPE, PAYMENT METHOD..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
           {/* Record count display */}
           <div className="text-white/80 text-lg flex items-center">
-            Total Records: {filtered.length}
+            TOTAL RECORDS: {filtered.length}
           </div>
         </div>
 
         {/* Main data table container */}
         <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide ">
           {/* Sales history table */}
-          <table className="w-full text-white/90 min-w-[1200px]">
-            {/* Table header with column labels */}
+          <table className="w-full text-white/90 min-w-[800px]">
+            {/* Table header with column labels - REMOVED: Customer, Qty, Unit Price, Discount */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
-                <th className="p-3">Invoice</th>
-                <th className="p-3">P-ID</th>
-                <th className="p-3">Product</th>
-                <th className="p-3">Sale Type</th>
-                <th className="p-3">Payment Method</th>
-                <th className="p-3">Qty</th>
-                <th className="p-3">Unit Price</th>
-                <th className="p-3">Discount</th>
-                <th className="p-3">Final Total</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">INVOICE</th>
+                <th className="p-3">PRODUCT</th>
+                <th className="p-3">SALE TYPE</th>
+                <th className="p-3">PAYMENT METHOD</th>
+                <th className="p-3">FINAL TOTAL</th>
+                <th className="p-3">DATE</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
@@ -530,13 +524,10 @@ export default function SalesHistory() {
         }`}
                 >
                   {/* Invoice ID column */}
-                  <td className="p-3 font-mono">{sale.invoiceId}</td>
-
-                  {/* Product ID column */}
-                  <td className="p-3 font-mono">{sale.productId}</td>
+                  <td className="p-3 font-mono">{toUpperCase(sale.invoiceId)}</td>
 
                   {/* Product name column */}
-                  <td className="p-3">{sale.productName?.toUpperCase()}</td>
+                  <td className="p-3">{toUpperCase(sale.productName)}</td>
 
                   {/* Sale Type with colored badge */}
                   <td className="p-3">
@@ -556,23 +547,14 @@ export default function SalesHistory() {
                         sale
                       )}`}
                     >
-                      {getPaymentMethodDisplay(sale)}
+                      {toUpperCase(getPaymentMethodDisplay(sale))}
                     </span>
                   </td>
 
-                  {/* Quantity sold column - UPDATED: Uses getDisplayQuantity function */}
-                  <td className="p-3">{getDisplayQuantity(sale)}</td>
-
-                  {/* Unit price column */}
-                  <td className="p-3">{formatCurrency(sale.salePrice)}</td>
-
-                  {/* Discount column */}
-                  <td className="p-3">
-                    {sale.discount > 0 ? `${sale.discount}%` : "0%"}
-                  </td>
-
                   {/* Final total column */}
-                  <td className="p-3 font-semibold">{formatCurrency(sale.finalTotal)}</td>
+                  <td className="p-3 font-semibold">
+                    {formatCurrency(sale.finalTotal)}
+                  </td>
 
                   {/* Date column with short format */}
                   <td className="p-3 text-sm">
@@ -582,7 +564,7 @@ export default function SalesHistory() {
                   {/* Actions column with view button */}
                   <td className="p-3 flex gap-2">
                     <button
-                      title="View"
+                      title="VIEW"
                       onClick={() => {
                         setSelectedSale(sale);
                         setIsViewOpen(true);
@@ -598,8 +580,8 @@ export default function SalesHistory() {
               {/* Empty state message */}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="11" className="p-4 text-center text-white/70">
-                    No sales records found.
+                  <td colSpan="7" className="p-4 text-center text-white/70">
+                    NO SALES RECORDS FOUND.
                   </td>
                 </tr>
               )}
@@ -621,10 +603,9 @@ export default function SalesHistory() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {isInstallmentSale(selectedSale) 
-                    ? "Installment Sale Receipt" 
-                    : "Sales Invoice Details"
-                  }
+                  {isInstallmentSale(selectedSale)
+                    ? "INSTALLMENT SALE RECEIPT"
+                    : "SALES INVOICE DETAILS"}
                 </p>
                 {/* Timestamp information */}
                 <p className="text-xs text-gray-600">
@@ -633,7 +614,7 @@ export default function SalesHistory() {
 
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Invoice: {selectedSale.invoiceId}
+                    INVOICE: {toUpperCase(selectedSale.invoiceId)}
                   </p>
                   {/* Sale Type badge */}
                   <span
@@ -649,27 +630,27 @@ export default function SalesHistory() {
               {/* Product details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Product ID:</span>
+                  <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.productId}
+                    {toUpperCase(selectedSale.productId)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productName?.toUpperCase()}
+                    {toUpperCase(selectedSale.productName)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Model:</span>
+                  <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productModel?.toUpperCase()}
+                    {toUpperCase(selectedSale.productModel)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productCategory?.toUpperCase()}
+                    {toUpperCase(selectedSale.productCategory)}
                   </span>
                 </div>
               </div>
@@ -678,23 +659,27 @@ export default function SalesHistory() {
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 {/* UPDATED: Quantity display using getDisplayQuantity function */}
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Quantity:</span>
+                  <span className="font-medium text-gray-700">QUANTITY:</span>
                   <span className="text-gray-900 text-right">
-                    {getDisplayQuantity(selectedSale)} piece(s)
+                    {getDisplayQuantity(selectedSale)} PIECE(S)
                   </span>
                 </div>
-                
+
                 {/* UPDATED: Show unit price for installment sales with quantity */}
                 {isInstallmentSale(selectedSale) && selectedSale.unitPrice ? (
                   <>
                     <div className="grid grid-cols-2 gap-2">
-                      <span className="font-medium text-gray-700">Unit Price:</span>
+                      <span className="font-medium text-gray-700">
+                        UNIT PRICE:
+                      </span>
                       <span className="text-gray-900 text-right">
                         {formatCurrency(selectedSale.unitPrice)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <span className="font-medium text-gray-700">Total Price:</span>
+                      <span className="font-medium text-gray-700">
+                        TOTAL PRICE:
+                      </span>
                       <span className="text-gray-900 text-right font-semibold">
                         {formatCurrency(selectedSale.salePrice)}
                       </span>
@@ -702,28 +687,45 @@ export default function SalesHistory() {
                   </>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <span className="font-medium text-gray-700">Unit Price:</span>
+                    <span className="font-medium text-gray-700">
+                      UNIT PRICE:
+                    </span>
                     <span className="text-gray-900 text-right">
                       {formatCurrency(selectedSale.salePrice)}
                     </span>
                   </div>
                 )}
-                
+
                 {selectedSale.discount > 0 && (
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-gray-700">
-                        Discount:
+                        DISCOUNT:
                       </span>
                       <span className="text-gray-900 text-right">
-                        {selectedSale.discount}% ({formatCurrency(selectedSale.discountAmount || 0)})
+                        {selectedSale.discount}% (
+                        {formatCurrency(selectedSale.discountAmount || 0)})
                       </span>
                     </div>
                   </>
                 )}
+
+                {/* FIXED: Markup display for installment sales - Show for all sales types if markup exists */}
+                {((selectedSale.markup && selectedSale.markup > 0) ||
+                  (selectedSale.markupAmount &&
+                    selectedSale.markupAmount > 0)) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-gray-700">MARKUP:</span>
+                    <span className="text-gray-900 text-right">
+                      {selectedSale.markup || 0}% (
+                      {formatCurrency(selectedSale.markupAmount || 0)})
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Payment Method:
+                    PAYMENT METHOD:
                   </span>
                   <span className="text-gray-900 text-right">
                     <span
@@ -731,22 +733,21 @@ export default function SalesHistory() {
                         selectedSale
                       )}`}
                     >
-                      {getPaymentMethodDisplay(selectedSale)}
+                      {toUpperCase(getPaymentMethodDisplay(selectedSale))}
                     </span>
                   </span>
                 </div>
               </div>
 
               {/* Render type-specific details */}
-              {isInstallmentSale(selectedSale) 
+              {isInstallmentSale(selectedSale)
                 ? renderInstallmentDetails(selectedSale)
-                : renderCashSaleDetails(selectedSale)
-              }
+                : renderCashSaleDetails(selectedSale)}
 
               {/* Total value highlight section */}
               <div className="bg-green-100 border border-green-200 rounded-md p-2 mb-6 ">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-bold text-green-900">Final Total:</span>
+                  <span className="font-bold text-green-900">FINAL TOTAL:</span>
                   <span className="font-bold text-green-900 text-right">
                     {formatCurrency(selectedSale.finalTotal)}
                   </span>
@@ -755,8 +756,8 @@ export default function SalesHistory() {
 
               {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>Thank you for your business!</p>
-                <p>This is a computer-generated sales receipt.</p>
+                <p>THANK YOU FOR YOUR BUSINESS!</p>
+                <p>THIS IS A COMPUTER-GENERATED SALES RECEIPT.</p>
               </div>
             </div>
 
@@ -769,7 +770,7 @@ export default function SalesHistory() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
 
                 {/* Close modal button */}
@@ -777,7 +778,7 @@ export default function SalesHistory() {
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

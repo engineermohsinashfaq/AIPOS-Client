@@ -194,11 +194,11 @@ export default function AllGuarantors() {
   // Field name mapper for display purposes
   const getFieldDisplayName = (field) => {
     const fieldNames = {
-      contact: "Contact",
-      city: "City",
-      address: "Address",
+      contact: "CONTACT",
+      city: "CITY",
+      address: "ADDRESS",
     };
-    return fieldNames[field] || field;
+    return fieldNames[field] || field.toUpperCase();
   };
 
   // Open edit modal with guarantor data
@@ -231,13 +231,13 @@ export default function AllGuarantors() {
     e.preventDefault();
 
     // Validate required fields
-    if (!form.contact?.trim()) return notifyError("Contact number is required");
+    if (!form.contact?.trim()) return notifyError("CONTACT NUMBER IS REQUIRED");
 
     // Generate update message based on changed fields
     const changedFields = Object.keys(formChanges);
     const updateMessage = changedFields.length > 0 
-      ? `Updated: ${changedFields.map(field => getFieldDisplayName(field)).join(', ')}`
-      : "Record updated";
+      ? `UPDATED: ${changedFields.map(field => getFieldDisplayName(field)).join(', ')}`
+      : "RECORD UPDATED";
 
     // Update guarantors state with modified data
     setGuarantors((prev) =>
@@ -259,7 +259,7 @@ export default function AllGuarantors() {
     setIsModalOpen(false);
     setOriginalGuarantor(null);
     setFormChanges({});
-    notifySuccess(`Guarantor updated successfully!`);
+    notifySuccess(`GUARANTOR UPDATED SUCCESSFULLY!`);
   };
 
   // Close modal handler
@@ -359,9 +359,9 @@ export default function AllGuarantors() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold mb-2">All Guarantors</h1>
+          <h1 className="text-3xl font-bold mb-2">ALL GUARANTORS</h1>
           <p className="text-white/80">
-            View, edit, and manage guarantor accounts.
+            VIEW, EDIT, AND MANAGE GUARANTOR ACCOUNTS.
           </p>
         </div>
 
@@ -373,14 +373,14 @@ export default function AllGuarantors() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="SEARCH"
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
           
           {/* Record count display */}
           <div className="text-white/80 text-lg flex items-center">
-            Total Records: {filteredGuarantors.length}
+            TOTAL RECORDS: {filteredGuarantors.length}
           </div>
         </div>
 
@@ -392,12 +392,12 @@ export default function AllGuarantors() {
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Contact</th>
+                <th className="p-3">NAME</th>
+                <th className="p-3">CONTACT</th>
                 <th className="p-3">CNIC</th>
-                <th className="p-3">City</th>
-                <th className="p-3">Date Added</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">CITY</th>
+                <th className="p-3">DATE ADDED</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
             
@@ -411,7 +411,7 @@ export default function AllGuarantors() {
                     className="border-t border-white/15 hover:bg-white/5 transition"
                   >
                     {/* Guarantor ID column */}
-                    <td className="p-3">{g.guarantorId}</td>
+                    <td className="p-3">{g.guarantorId.toUpperCase()}</td>
                     
                     {/* Guarantor name with avatar */}
                     <td className="p-3 flex items-center gap-3">
@@ -426,10 +426,10 @@ export default function AllGuarantors() {
                     </td>
                     
                     {/* Contact column */}
-                    <td className="p-3">{g.contact}</td>
+                    <td className="p-3">{g.contact.toUpperCase()}</td>
                     
                     {/* CNIC column */}
-                    <td className="p-3">{g.cnic}</td>
+                    <td className="p-3">{g.cnic.toUpperCase()}</td>
                     
                     {/* City column */}
                     <td className="p-3">{g.city.toUpperCase()}</td>
@@ -441,7 +441,7 @@ export default function AllGuarantors() {
                     <td className="p-3 flex gap-2">
                       {/* View button */}
                       <button
-                        title="View"
+                        title="VIEW"
                         onClick={() => {
                           setSelectedGuarantor(g);
                           setIsViewOpen(true);
@@ -453,7 +453,7 @@ export default function AllGuarantors() {
                       
                       {/* Edit button */}
                       <button
-                        title="Edit"
+                        title="EDIT"
                         onClick={() => handleOpenEdit(g)}
                         className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
                       >
@@ -467,8 +467,8 @@ export default function AllGuarantors() {
                 <tr>
                   <td colSpan="7" className="text-center py-6 text-white/60">
                     {guarantors.length === 0
-                      ? "No guarantors added yet."
-                      : "No guarantors match your search."}
+                      ? "NO GUARANTORS ADDED YET."
+                      : "NO GUARANTORS MATCH YOUR SEARCH."}
                   </td>
                 </tr>
               )}
@@ -484,25 +484,25 @@ export default function AllGuarantors() {
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
             {/* Modal header with guarantor info */}
             <div className="mb-4">
-              <h2 className="text-xl font-semibold">Edit Guarantor</h2>
+              <h2 className="text-xl font-semibold">EDIT GUARANTOR</h2>
               <div className="text-sm text-white/80 mt-2 space-y-1">
                 <p>
-                  <strong>Guarantor ID:</strong> {form.guarantorId}
+                  <strong>GUARANTOR ID:</strong> {form.guarantorId.toUpperCase()}
                 </p>
                 <p>
-                  <strong>Date Added:</strong> {formatDateTime(form.dateAdded)}
+                  <strong>DATE ADDED:</strong> {formatDateTime(form.dateAdded)}
                 </p>
                 
                 {/* Changes detection display */}
                 {isFormModified && (
                   <div className="mt-3 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
-                    <p className="font-medium text-yellow-300">Changes detected:</p>
+                    <p className="font-medium text-yellow-300">CHANGES DETECTED:</p>
                     <ul className="text-xs mt-1 space-y-1">
                       {Object.entries(formChanges).map(([field, change]) => (
                         <li key={field} className="flex justify-between">
                           <span>{getFieldDisplayName(field)}:</span>
                           <span className="text-yellow-200">
-                            "{change.from}" → "{change.to}"
+                            "{change.from.toUpperCase()}" → "{change.to.toUpperCase()}"
                           </span>
                         </li>
                       ))}
@@ -520,14 +520,14 @@ export default function AllGuarantors() {
                   name="firstName"
                   value={form.firstName.toUpperCase()}
                   readOnly
-                  placeholder="First Name"
+                  placeholder="FIRST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
                 <input
                   name="lastName"
                   value={form.lastName.toUpperCase()}
                   readOnly
-                  placeholder="Last Name"
+                  placeholder="LAST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
               </div>
@@ -535,16 +535,16 @@ export default function AllGuarantors() {
               {/* Read-only guarantor ID */}
               <input
                 name="guarantorId"
-                value={form.guarantorId}
+                value={form.guarantorId.toUpperCase()}
                 readOnly
-                placeholder="Guarantor ID"
+                placeholder="GUARANTOR ID"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
               
               {/* Read-only CNIC */}
               <input
                 name="cnic"
-                value={form.cnic}
+                value={form.cnic.toUpperCase()}
                 readOnly
                 placeholder="CNIC"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
@@ -555,7 +555,7 @@ export default function AllGuarantors() {
                 name="contact"
                 value={form.contact}
                 onChange={handleChange}
-                placeholder="Contact (+92...)"
+                placeholder="CONTACT (+92...)"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
               
@@ -564,7 +564,7 @@ export default function AllGuarantors() {
                 name="city"
                 value={form.city.toUpperCase()}
                 onChange={handleChange}
-                placeholder="City"
+                placeholder="CITY"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
               
@@ -573,7 +573,7 @@ export default function AllGuarantors() {
                 name="address"
                 value={form.address.toUpperCase() || ""}
                 onChange={handleChange}
-                placeholder="Address"
+                placeholder="ADDRESS"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
@@ -589,7 +589,7 @@ export default function AllGuarantors() {
                       : "bg-gray-600/50 cursor-not-allowed opacity-50"
                   }`}
                 >
-                  Save Changes
+                  SAVE CHANGES
                 </button>
                 
                 {/* Cancel button */}
@@ -598,7 +598,7 @@ export default function AllGuarantors() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
-                  Cancel
+                  CANCEL
                 </button>
               </div>
             </form>
@@ -620,11 +620,11 @@ export default function AllGuarantors() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Guarantor Information
+                  GUARANTOR INFORMATION
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Guarantor ID: {selectedGuarantor.guarantorId}
+                    GUARANTOR ID: {selectedGuarantor.guarantorId.toUpperCase()}
                   </p>
                 </div>
               </div>
@@ -632,37 +632,37 @@ export default function AllGuarantors() {
               {/* Guarantor details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">First Name:</span>
+                  <span className="font-medium text-gray-700">FIRST NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedGuarantor.firstName.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Last Name:</span>
+                  <span className="font-medium text-gray-700">LAST NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedGuarantor.lastName.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Contact:</span>
+                  <span className="font-medium text-gray-700">CONTACT:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedGuarantor.contact}
+                    {selectedGuarantor.contact.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CNIC:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedGuarantor.cnic}
+                    {selectedGuarantor.cnic.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">City:</span>
+                  <span className="font-medium text-gray-700">CITY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedGuarantor.city.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Address:</span>
+                  <span className="font-medium text-gray-700">ADDRESS:</span>
                   <span className="text-gray-900 text-right">
                     {selectedGuarantor.address.toUpperCase() || "—"}
                   </span>
@@ -672,7 +672,7 @@ export default function AllGuarantors() {
               {/* Timestamp and update history section */}
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Date Added:</span>
+                  <span>DATE ADDED:</span>
                   <span className="text-right">
                     {formatDateTime(selectedGuarantor.dateAdded)}
                   </span>
@@ -680,7 +680,7 @@ export default function AllGuarantors() {
                 {/* Show update timestamp if available */}
                 {selectedGuarantor.updatedAt && (
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <span>Last Updated:</span>
+                    <span>LAST UPDATED:</span>
                     <span className="text-right">
                       {formatDateTime(selectedGuarantor.updatedAt)}
                     </span>
@@ -689,16 +689,16 @@ export default function AllGuarantors() {
                 {/* Show update message if available */}
                 {selectedGuarantor.lastUpdateMessage && (
                   <div className="col-span-2 mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
-                    <span className="font-medium">Update Note: </span>
-                    {selectedGuarantor.lastUpdateMessage}
+                    <span className="font-medium">UPDATE NOTE: </span>
+                    {selectedGuarantor.lastUpdateMessage.toUpperCase()}
                   </div>
                 )}
               </div>
 
               {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>This is a computer-generated guarantor record.</p>
-                <p>Contains personal and contact information only.</p>
+                <p>THIS IS A COMPUTER-GENERATED GUARANTOR RECORD.</p>
+                <p>CONTAINS PERSONAL AND CONTACT INFORMATION ONLY.</p>
               </div>
             </div>
 
@@ -711,7 +711,7 @@ export default function AllGuarantors() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
                 
                 {/* Close modal button */}
@@ -719,7 +719,7 @@ export default function AllGuarantors() {
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

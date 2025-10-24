@@ -1,18 +1,11 @@
-// |===============================| Import Components |===============================|
 import React, { useState, useEffect, useMemo } from "react";
+import { createRoot } from "react-dom/client";
 import { Calendar, TrendingUp, User } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import "react-toastify/dist/ReactToastify.css";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import AddIcon from "@mui/icons-material/Add";
 
-// |===============================| Installment Management Component |===============================|
 const InstallmentManagement = () => {
-  const navigate = useNavigate();
-
-  // State for installment data
   const [installmentSales, setInstallmentSales] = useState([]);
   const [selectedSale, setSelectedSale] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -25,8 +18,8 @@ const InstallmentManagement = () => {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({});
   const [guarantorDetails, setGuarantorDetails] = useState({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Load installment sales from localStorage
   useEffect(() => {
     loadInstallmentSales();
     loadCustomerAndGuarantorDetails();
@@ -39,6 +32,7 @@ const InstallmentManagement = () => {
       const installmentSales = salesHistory.filter(
         (sale) => sale.type === "installment-sale"
       );
+
       setInstallmentSales(installmentSales);
     } catch (error) {
       console.error("Error loading installment sales:", error);
@@ -46,17 +40,22 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Load customer and guarantor details
+  const generatePaymentReceiptId = () => {
+    const installmentHistory =
+      JSON.parse(localStorage.getItem("installmentHistory")) || [];
+    const nextReceiptNumber = installmentHistory.length + 1;
+    return String(nextReceiptNumber).padStart(6, "0");
+  };
+
   const loadCustomerAndGuarantorDetails = () => {
     try {
-      // Load customers
       const customersData =
         JSON.parse(localStorage.getItem("all_customers_data")) || [];
       const customerMap = {};
       customersData.forEach((customer) => {
         customerMap[customer.customerId] = {
-          firstName: customer.firstName,
-          lastName: customer.lastName,
+          firstName: customer.firstName.toLowerCase(),
+          lastName: customer.lastName.toLowerCase(),
           contact: customer.contact,
           cnic: customer.cnic,
           city: customer.city,
@@ -65,14 +64,13 @@ const InstallmentManagement = () => {
       });
       setCustomerDetails(customerMap);
 
-      // Load guarantors
       const guarantorsData =
         JSON.parse(localStorage.getItem("all_guarantors_data")) || [];
       const guarantorMap = {};
       guarantorsData.forEach((guarantor) => {
         guarantorMap[guarantor.guarantorId] = {
-          firstName: guarantor.firstName,
-          lastName: guarantor.lastName,
+          firstName: guarantor.firstName.toLowerCase(),
+          lastName: guarantor.lastName.toLowerCase(),
           contact: guarantor.contact,
           cnic: guarantor.cnic,
           city: guarantor.city,
@@ -85,7 +83,6 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Filtered installment sales based on search and filter
   const filteredSales = useMemo(() => {
     return installmentSales.filter((sale) => {
       const customer = customerDetails[sale.customerId];
@@ -96,12 +93,8 @@ const InstallmentManagement = () => {
         sale.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         sale.invoiceId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (customer &&
-          (customer.firstName
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-            customer.lastName
-              ?.toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
+          (customer.firstName?.includes(searchTerm.toLowerCase()) ||
+            customer.lastName?.includes(searchTerm.toLowerCase()) ||
             customer.cnic?.includes(searchTerm) ||
             customer.contact?.includes(searchTerm)));
 
@@ -114,38 +107,53 @@ const InstallmentManagement = () => {
     });
   }, [installmentSales, searchTerm, filterStatus, customerDetails]);
 
-  // Calculate payment status - only completed or active
   const getPaymentStatus = (sale) => {
     if (sale.remainingAmount <= 0) return "completed";
     return "active";
   };
 
-  // Get next due date
-  const getNextDueDate = (sale) => {
-    if (!sale.paymentTimeline || sale.paymentTimeline.length === 0) return "—";
+  const getNextDueInfo = (sale) => {
+    if (!sale.paymentTimeline || sale.paymentTimeline.length === 0) {
+      return { dueDate: "—", amount: 0, isOverdue: false };
+    }
 
     const nextPayment = sale.paymentTimeline.find((payment) => !payment.paid);
-    return nextPayment ? formatShortDate(nextPayment.dueDate) : "—";
+    if (!nextPayment) return { dueDate: "—", amount: 0, isOverdue: false };
+
+    const today = new Date();
+    const dueDate = new Date(nextPayment.dueDate);
+    const isOverdue = dueDate < today;
+
+    return {
+      dueDate: formatShortDate(nextPayment.dueDate),
+      amount: nextPayment.paymentAmount,
+      isOverdue: isOverdue,
+    };
   };
 
-  // Get remaining installments count
+  const hasOverduePayments = (sale) => {
+    if (!sale.paymentTimeline || sale.remainingAmount <= 0) return false;
+
+    const today = new Date();
+    return sale.paymentTimeline.some(
+      (payment) => !payment.paid && new Date(payment.dueDate) < today
+    );
+  };
+
   const getRemainingInstallments = (sale) => {
     if (!sale.paymentTimeline) return 0;
     return sale.paymentTimeline.filter((payment) => !payment.paid).length;
   };
 
-  // Get paid installments count
   const getPaidInstallments = (sale) => {
     if (!sale.paymentTimeline) return 0;
     return sale.paymentTimeline.filter((payment) => payment.paid).length;
   };
 
-  // Get total installments
   const getTotalInstallments = (sale) => {
     return sale.paymentTimeline ? sale.paymentTimeline.length : 0;
   };
 
-  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "—";
     try {
@@ -161,7 +169,6 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Short date formatter
   const formatShortDate = (dateString) => {
     if (!dateString) return "—";
     try {
@@ -176,7 +183,6 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Format date time for detailed display
   const formatDateTime = (dateInput) => {
     if (!dateInput) return "—";
     try {
@@ -224,7 +230,6 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Handle payment submission
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
 
@@ -233,7 +238,6 @@ const InstallmentManagement = () => {
       return;
     }
 
-    // Check if installment is already completed
     if (selectedSale.remainingAmount <= 0) {
       toast.error("This installment is already completed!");
       return;
@@ -252,16 +256,32 @@ const InstallmentManagement = () => {
       return;
     }
 
+    // Check if this is the last payment
+    const remainingInstallments = getRemainingInstallments(selectedSale);
+    if (remainingInstallments === 1 && payment < selectedSale.remainingAmount) {
+      toast.error(
+        "This is the last payment. Please pay the full remaining amount!"
+      );
+      return;
+    }
+
     if (!paymentDate) {
       toast.error("Please select a payment date!");
       return;
     }
 
-    // Create payment record
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmPayment = () => {
+    const payment = parseFloat(paymentAmount);
+    const receiptId = generatePaymentReceiptId();
+
     const paymentRecord = {
       id: crypto.randomUUID(),
       saleId: selectedSale.id,
       invoiceId: selectedSale.invoiceId,
+      receiptId: receiptId,
       timestamp: new Date().toISOString(),
       paymentDate: paymentDate,
       paymentAmount: payment,
@@ -271,7 +291,6 @@ const InstallmentManagement = () => {
       productName: selectedSale.productName,
     };
 
-    // Update installment sale
     const updatedSales = installmentSales.map((sale) => {
       if (sale.id === selectedSale.id) {
         let remainingPayment = payment;
@@ -279,7 +298,6 @@ const InstallmentManagement = () => {
           ? [...sale.paymentTimeline]
           : [];
 
-        // Mark payments as paid in timeline
         for (let paymentItem of updatedTimeline) {
           if (!paymentItem.paid && remainingPayment > 0) {
             const paymentDue = paymentItem.paymentAmount;
@@ -289,7 +307,6 @@ const InstallmentManagement = () => {
               paymentItem.actualAmount = paymentDue;
               remainingPayment -= paymentDue;
             } else {
-              // Partial payment for this installment
               paymentItem.paid = true;
               paymentItem.paymentDate = paymentDate;
               paymentItem.actualAmount = remainingPayment;
@@ -311,10 +328,8 @@ const InstallmentManagement = () => {
       return sale;
     });
 
-    // Save to localStorage
     localStorage.setItem("salesHistory", JSON.stringify(updatedSales));
 
-    // Save payment to installment history
     const installmentHistory =
       JSON.parse(localStorage.getItem("installmentHistory")) || [];
     installmentHistory.push(paymentRecord);
@@ -323,12 +338,11 @@ const InstallmentManagement = () => {
       JSON.stringify(installmentHistory)
     );
 
-    // Update state
     setInstallmentSales(updatedSales);
     setCurrentPayment(paymentRecord);
     setIsReceiptModalOpen(true);
+    setShowConfirmation(false);
 
-    // Reset form
     setPaymentAmount("");
     setPaymentDate("");
     setPaymentMethod("cash");
@@ -336,7 +350,11 @@ const InstallmentManagement = () => {
     toast.success("Payment recorded successfully!");
   };
 
-  // Handle print receipt
+  const handleCancelPayment = () => {
+    setShowConfirmation(false);
+    toast.info("Payment cancelled");
+  };
+
   const handlePrint = () => {
     const bodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -344,13 +362,11 @@ const InstallmentManagement = () => {
     document.body.style.overflow = bodyOverflow;
   };
 
-  // Handle close modal
   const handleCloseModal = () => {
     setIsReceiptModalOpen(false);
     setCurrentPayment(null);
   };
 
-  // Get status badge class for table
   const getStatusBadgeClassTable = (status) => {
     switch (status) {
       case "completed":
@@ -362,29 +378,26 @@ const InstallmentManagement = () => {
     }
   };
 
-  // Handle row click
   const handleRowClick = (sale) => {
     setSelectedSale(sale);
   };
 
-  // Format payment method for display
   const getPaymentMethodDisplay = (method) => {
     const methodMap = {
-      cash: "Cash",
-      hbl: "HBL Bank",
-      jazzcash: "JazzCash",
-      easypaisa: "EasyPaisa",
-      meezan: "Meezan Bank",
+      cash: "CASH",
+      hbl: "HBL BANK",
+      jazzcash: "JAZZCASH",
+      easypaisa: "EASYPAISA",
+      meezan: "MEEZAN BANK",
     };
-    return methodMap[method] || method;
+    return methodMap[method] || method.toUpperCase();
   };
 
-  // Render payment form with customer details
   const renderPaymentForm = () => (
     <div className="bg-cyan-800/50 backdrop-blur-md border border-cyan-700 rounded-lg p-6 mb-6">
       <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <TrendingUp className="w-5 h-5" />
-        Record Payment
+        RECORD PAYMENT
       </h3>
 
       {!selectedSale ? (
@@ -395,33 +408,32 @@ const InstallmentManagement = () => {
           </p>
         </div>
       ) : selectedSale.remainingAmount <= 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-green-500/30 rounded-md bg-green-500/10">
-          <div className="text-green-400 text-3xl mb-3">✅</div>
-          <p className="text-green-400 font-semibold text-lg">
-            Installment Completed
-          </p>
-          <p className="text-green-400/80 text-sm mt-2">
+        <div className="text-center py-8 border-2 border-dashed border-green-500/30 rounded-md bg-green-500/50">
+          <div className="text-white text-3xl mb-3">✅</div>
+          <p className=" font-semibold text-lg">INSTALLMENT COMPLETED</p>
+          <p className=" text-sm mt-2">
             All payments have been received for this installment
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Customer Details Section */}
           <div className="bg-cyan-900/40 backdrop-blur-md border border-cyan-600 rounded-lg p-4">
             <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <User className="w-4 h-4" />
-              Customer & Installment Details
+              CUSTOMER & INSTALLMENT DETAILS
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-white/70">Customer:</span>
+                  <span className="text-white/70">CUSTOMER:</span>
                   <span className="text-white font-semibold">
                     {customerDetails[selectedSale.customerId]
-                      ? `${
-                          customerDetails[selectedSale.customerId].firstName
-                        } ${customerDetails[selectedSale.customerId].lastName}`
-                      : selectedSale.customer}
+                      ? `${customerDetails[
+                          selectedSale.customerId
+                        ].firstName.toUpperCase()} ${customerDetails[
+                          selectedSale.customerId
+                        ].lastName.toUpperCase()}`
+                      : selectedSale.customer.toUpperCase()}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -431,7 +443,7 @@ const InstallmentManagement = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-white/70">Contact:</span>
+                  <span className="text-white/70">CONTACT:</span>
                   <span className="text-white">
                     {customerDetails[selectedSale.customerId]?.contact || "—"}
                   </span>
@@ -439,56 +451,65 @@ const InstallmentManagement = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-white/70">Product:</span>
+                  <span className="text-white/70">PRODUCT:</span>
                   <span className="text-white font-semibold">
-                    {selectedSale.productName}
+                    {selectedSale.productName.toUpperCase()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-white/70">Remaining Amount:</span>
-                  <span className="text-orange-400 font-semibold">
-                    {selectedSale.remainingAmount}
+                  <span className="text-white/70">REMAINING AMOUNT:</span>
+                  <span className="text-white font-semibold">
+                    Rs: {selectedSale.remainingAmount}/-
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-white/70">Installments:</span>
+                  <span className="text-white/70">NEXT DUE AMOUNT:</span>
+                  <span className="text-white font-bold">
+                    Rs: {getNextDueInfo(selectedSale).amount || 0}/-
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/70">INSTALLMENTS:</span>
                   <span className="text-white">
                     {getPaidInstallments(selectedSale)}/
-                    {getTotalInstallments(selectedSale)} paid
+                    {getTotalInstallments(selectedSale)} PAID
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Payment Form */}
           <form onSubmit={handlePaymentSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Payment Amount
+                  PAYMENT AMOUNT
                 </label>
                 <input
                   type="text"
                   value={paymentAmount}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow only numbers and decimal point
                     if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
                       setPaymentAmount(value);
                     }
                   }}
                   className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
-                  placeholder="Enter amount"
+                  placeholder="ENTER AMOUNT"
                 />
-                <p className="text-xs text-white/70 mt-1">
-                  Remaining: {selectedSale.remainingAmount}
+                <p className="text-xs  text-white bg-orange-600/80 rounded-full px-2 py-1 max-w-max  mt-1">
+                  REMAINING TOTAL: RS: {selectedSale.remainingAmount}/-
                 </p>
+                {getNextDueInfo(selectedSale).amount > 0 && (
+                  <p className="text-xs text-white bg-yellow-500/80 rounded-full px-2 py-1 max-w-max  mt-1">
+                    MINIMUM DUE: RS: {getNextDueInfo(selectedSale).amount}/-
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Payment Date
+                  PAYMENT DATE
                 </label>
                 <input
                   type="date"
@@ -500,7 +521,7 @@ const InstallmentManagement = () => {
 
               <div>
                 <label className="block text-sm font-medium text-white mb-1">
-                  Payment Method
+                  PAYMENT METHOD
                 </label>
                 <select
                   value={paymentMethod}
@@ -508,19 +529,19 @@ const InstallmentManagement = () => {
                   className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
                 >
                   <option value="cash" className="bg-black/90">
-                    Cash
+                    CASH
                   </option>
                   <option value="easypaisa" className="bg-black/90">
-                    EasyPaisa
+                    EASYPAISA
                   </option>
                   <option value="jazzcash" className="bg-black/90">
-                    JazzCash
+                    JAZZCASH
                   </option>
                   <option value="meezan" className="bg-black/90">
-                    Meezan Bank
+                    MEEZAN BANK
                   </option>
                   <option value="hbl" className="bg-black/90">
-                    HBL Bank
+                    HBL BANK
                   </option>
                 </select>
               </div>
@@ -532,14 +553,14 @@ const InstallmentManagement = () => {
                 onClick={() => setSelectedSale(null)}
                 className="px-6 py-3 border border-white/30 rounded-md bg-gray-600 hover:bg-gray-700 transition-all duration-300 cursor-pointer font-semibold text-white"
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 type="submit"
                 className="flex-1 py-3 border border-white/30 rounded-md bg-cyan-950/70 hover:bg-cyan-950 transition-all duration-300 cursor-pointer font-semibold text-white flex justify-center items-center gap-2"
               >
                 <TrendingUp className="w-4 h-4" />
-                Record Payment
+                RECORD PAYMENT
               </button>
             </div>
           </form>
@@ -566,28 +587,26 @@ const InstallmentManagement = () => {
 
       <div className="p-2 min-h-screen text-white">
         <div className="max-w-8xl mx-auto space-y-6">
-          {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 flex items-center">
                 <Calendar className="w-6 h-6 mr-2" />
-                Installment Management
+                INSTALLMENT MANAGEMENT
               </h1>
               <p className="text-white/80">
-                Manage and track installment payments
+                MANAGE AND TRACK INSTALLMENT PAYMENTS
               </p>
             </div>
           </div>
 
-          {/* Search and Filter */}
           <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
               <SearchIcon className="text-white" />
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by customer, product, invoice, CNIC, contact..."
-                className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
+                placeholder="SEARCH "
+                className="flex-1 outline-none bg-transparent text-white placeholder-white/60 uppercase"
               />
             </div>
 
@@ -598,44 +617,42 @@ const InstallmentManagement = () => {
                 className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
               >
                 <option value="all" className="bg-black/90">
-                  All Installments
+                  ALL INSTALLMENTS
                 </option>
                 <option value="active" className="bg-black/90">
-                  Active
+                  ACTIVE
                 </option>
                 <option value="completed" className="bg-black/90">
-                  Completed
+                  COMPLETED
                 </option>
               </select>
             </div>
 
             <div className="text-white/80 text-lg flex items-center">
-              Total Records: {filteredSales.length}
+              TOTAL RECORDS: {filteredSales.length}
             </div>
           </div>
 
-          {/* Payment Form */}
           {renderPaymentForm()}
 
-          {/* Installment Sales Table */}
           <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide">
             <table className="w-full text-white/90 min-w-[1000px]">
               <thead className="bg-white/10 text-left text-sm">
                 <tr>
-                  <th className="p-3">Invoice</th>
-                  <th className="p-3">Customer</th>
-                  <th className="p-3">Paid</th>
-                  <th className="p-3">Remaining</th>
-                  <th className="p-3">Installments</th>
-                  <th className="p-3">Next Due Date</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Progress</th>
-                  <th className="p-3">Actions</th>
+                  <th className="p-3">S.NO</th>
+                  <th className="p-3">CUSTOMER</th>
+                  <th className="p-3">PAID</th>
+                  <th className="p-3">REMAINING</th>
+                  <th className="p-3">DUE AMOUNT</th>
+                  <th className="p-3">NEXT DUE DATE</th>
+                  <th className="p-3">STATUS</th>
+                  <th className="p-3">PROGRESS</th>
+                  <th className="p-3">ACTIONS</th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredSales.map((sale) => {
+                {filteredSales.map((sale, index) => {
                   const status = getPaymentStatus(sale);
                   const paidInstallments = getPaidInstallments(sale);
                   const remainingInstallments = getRemainingInstallments(sale);
@@ -644,6 +661,8 @@ const InstallmentManagement = () => {
                     ((sale.finalTotal - sale.remainingAmount) /
                       sale.finalTotal) *
                     100;
+                  const nextDueInfo = getNextDueInfo(sale);
+                  const isOverdue = hasOverduePayments(sale);
 
                   const customer = customerDetails[sale.customerId];
 
@@ -654,40 +673,62 @@ const InstallmentManagement = () => {
                       className={`border-t border-white/5 transition cursor-pointer ${
                         selectedSale?.id === sale.id
                           ? "bg-purple-600/50"
+                          : isOverdue
+                          ? "bg-red-600/50 hover:bg-red-600/70"
                           : "hover:bg-purple-600/30"
                       }`}
                     >
-                      <td className="p-3 font-mono">{sale.invoiceId}</td>
+                      <td className="p-3 font-mono text-center">{index + 1}</td>
                       <td className="p-3">
                         <div className="font-semibold">
                           {customer
-                            ? `${customer.firstName} ${customer.lastName}`
-                            : sale.customer}
+                            ? `${customer.firstName.toUpperCase()} ${customer.lastName.toUpperCase()}`
+                            : sale.customer.toUpperCase()}
                         </div>
+                        <div className="text-xs text-white/70 mt-1">
+                          {sale.invoiceId.toUpperCase()}
+                        </div>
+                        {isOverdue && (
+                          <div className="text-xs text-red-300 font-semibold mt-1">
+                            ⚠️ OVERDUE
+                          </div>
+                        )}
                       </td>
                       <td className="p-3 text-white font-semibold">
-                        Rs:{" "}
+                        RS:{" "}
                         {sale.totalPaid ||
                           sale.finalTotal - sale.remainingAmount}
                         /-
                       </td>
                       <td className="p-3 text-white font-semibold">
-                        Rs: {sale.remainingAmount}/-
+                        RS: {sale.remainingAmount}/-
                       </td>
                       <td className="p-3">
                         <div className="text-center">
-                          <div className="text-sm font-semibold">
-                            {paidInstallments}/{totalInstallments}
+                          <div
+                            className={`text-sm font-semibold ${
+                              nextDueInfo.isOverdue
+                                ? "text-red-300"
+                                : "text-white"
+                            }`}
+                          >
+                            RS: {nextDueInfo.amount}/-
                           </div>
-                          <div className="text-xs text-white/70">
-                            {remainingInstallments} remaining
-                          </div>
+                          {nextDueInfo.isOverdue && (
+                            <div className="text-xs text-red-300">PAST DUE</div>
+                          )}
                         </div>
                       </td>
                       <td className="p-3">
                         <div className="text-center">
-                          <div className="text-sm font-semibold">
-                            {getNextDueDate(sale)}
+                          <div
+                            className={`text-sm font-semibold ${
+                              nextDueInfo.isOverdue
+                                ? "text-red-300"
+                                : "text-white"
+                            }`}
+                          >
+                            {nextDueInfo.dueDate}
                           </div>
                         </div>
                       </td>
@@ -731,7 +772,7 @@ const InstallmentManagement = () => {
                 {filteredSales.length === 0 && (
                   <tr>
                     <td colSpan="9" className="p-4 text-center text-white/70">
-                      No installment records found.
+                      NO INSTALLMENT RECORDS FOUND.
                     </td>
                   </tr>
                 )}
@@ -741,22 +782,114 @@ const InstallmentManagement = () => {
         </div>
       </div>
 
-      {/* Sale Details Modal - UPDATED with complete details */}
+      {showConfirmation && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md z-50 p-4">
+          <div className="bg-cyan-800/90 backdrop-blur-md border border-cyan-900 rounded-md p-6 w-full max-w-md text-white">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <span className="text-purple-300">⚠️</span>
+              CONFIRM PAYMENT RECORD
+            </h3>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between">
+                <span className="text-white">CUSTOMER:</span>
+                <span className="font-semibold">
+                  {customerDetails[selectedSale?.customerId]
+                    ? `${customerDetails[
+                        selectedSale.customerId
+                      ].firstName.toUpperCase()} ${customerDetails[
+                        selectedSale.customerId
+                      ].lastName.toUpperCase()}`
+                    : selectedSale?.customer.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">PRODUCT:</span>
+                <span className="font-semibold">
+                  {selectedSale?.productName.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">INVOICE ID:</span>
+                <span className="font-mono font-bold text-white">
+                  {selectedSale?.invoiceId.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">PAYMENT AMOUNT:</span>
+                <span className="font-semibold text-white">
+                  RS: {paymentAmount}/-
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">PAYMENT DATE:</span>
+                <span className="font-semibold text-white">{paymentDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">PAYMENT METHOD:</span>
+                <span className="font-semibold text-white">
+                  {getPaymentMethodDisplay(paymentMethod)}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-white/20 pt-2">
+                <span className="text-white">REMAINING AFTER PAYMENT:</span>
+                <span className="font-bold text-white">
+                  RS:{" "}
+                  {selectedSale
+                    ? selectedSale.remainingAmount - parseFloat(paymentAmount)
+                    : 0}
+                  /-
+                </span>
+              </div>
+            </div>
+
+            <p className="text-white text-sm mb-6 text-center bg-red-600/30 p-3 rounded border border-red-500/50">
+              ⚠️ THIS ACTION CANNOT BE UNDONE. PAYMENT RECORD WILL BE PERMANENT.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelPayment}
+                className="flex-1 py-3 border border-white/30 rounded-md bg-red-700 hover:bg-red-800 transition-all duration-300 cursor-pointer font-semibold"
+              >
+                CANCEL
+              </button>
+
+              <button
+                onClick={handleConfirmPayment}
+                className="flex-1 py-3 border border-white/30 rounded-md bg-cyan-950/70 hover:bg-cyan-950 transition-all duration-300 cursor-pointer font-semibold flex justify-center items-center gap-2"
+              >
+                <TrendingUp className="w-4 h-4" />
+                CONFIRM PAYMENT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isViewOpen && selectedSale && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           <div className="bg-white text-black rounded-lg w-full max-w-2xl mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
+            {selectedSale.remainingAmount <= 0 && (
+              <div className="absolute top-40 right-67 transform  z-10 print:block">
+                <div className="bg-green-500 text-white text-lg font-bold py-2 px-4 rounded-2xl border-4 border-green-600 shadow-2xl text-center">
+                  <div>PAID</div>
+                  <div className="text-sm">COMPLETED</div>
+                </div>
+              </div>
+            )}
+
             <div className="p-4 space-y-3">
-              {/* Header section */}
               <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
                 <h2 className="text-xl font-bold tracking-wider text-gray-900">
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Installment Sale Details
+                  INSTALLMENT SALE DETAILS
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Invoice: {selectedSale.invoiceId}
+                    INVOICE: {selectedSale.invoiceId.toUpperCase()}
                   </p>
                   <p className="text-xs text-gray-600">
                     {formatDateTime(selectedSale.timestamp)}
@@ -764,97 +897,83 @@ const InstallmentManagement = () => {
                 </div>
               </div>
 
-              {/* Product details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Product ID:</span>
+                  <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.productId}
+                    {selectedSale.productId?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSale.productName?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Model:</span>
+                  <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSale.productModel?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSale.productCategory?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Quantity:</span>
+                  <span className="font-medium text-gray-700">QUANTITY:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.quantity || 1} units
+                    {selectedSale.quantity || 1} PIECE(s)
                   </span>
                 </div>
               </div>
 
-              {/* Customer and Guarantor Information */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">
-                    Customer ID:
-                  </span>
+                  <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.customerId}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Customer:</span>
-                  <span className="text-gray-900 text-right">
+                    {selectedSale.customerId}{" "}
                     {selectedSale.customer?.toUpperCase()}
                   </span>
                 </div>
+
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">
-                    Guarantor ID:
-                  </span>
+                  <span className="font-medium text-gray-700">GUARANTOR:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.guarantorId}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Guarantor:</span>
-                  <span className="text-gray-900 text-right">
+                    {selectedSale.guarantorId}{" "}
                     {selectedSale.guarantor?.toUpperCase()}
                   </span>
                 </div>
               </div>
 
-              {/* Payment Details Section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <h4 className="font-medium text-gray-700 mb-2">
-                  Payment Summary
+                  PAYMENT SUMMARY
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Total Amount:
+                    TOTAL AMOUNT:
                   </span>
                   <span className="text-gray-900 text-right font-semibold">
-                    Rs: {selectedSale.finalTotal}/-
+                    RS: {selectedSale.finalTotal}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Advance Paid:
+                    ADVANCE PAID:
                   </span>
                   <span className="text-gray-900 text-right">
-                    Rs: {selectedSale.advancePaymentAmount || 0}/-
+                    RS: {selectedSale.advancePaymentAmount || 0}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Installment Paid:</span>
+                  <span className="font-medium text-gray-700">
+                    INSTALLMENT PAID:
+                  </span>
                   <span className="text-right text-green-600 font-semibold">
-                    Rs:{" "}
+                    RS:{" "}
                     {selectedSale.totalPaid ||
                       selectedSale.finalTotal - selectedSale.remainingAmount}
                     /-
@@ -862,38 +981,38 @@ const InstallmentManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Remaining Amount:
+                    REMAINING AMOUNT:
                   </span>
                   <span className="text-right text-orange-600 font-semibold">
-                    Rs: {selectedSale.remainingAmount}/-
+                    RS: {selectedSale.remainingAmount}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Monthly Payment:
+                    MONTHLY PAYMENT:
                   </span>
                   <span className="text-gray-900 text-right">
-                    Rs: {selectedSale.monthlyPayment || 0}/-
+                    RS: {selectedSale.monthlyPayment || 0}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Payment Plan:
+                    PAYMENT PLAN:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.planMonths} months
+                    {selectedSale.planMonths} MONTHS
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Payment Method:
+                    PAYMENT METHOD:
                   </span>
                   <span className="text-gray-900 text-right">
                     {getPaymentMethodDisplay(selectedSale.paymentMethod)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Status:</span>
+                  <span className="font-medium text-gray-700">STATUS:</span>
                   <span
                     className={`text-right font-semibold ${
                       selectedSale.remainingAmount <= 0
@@ -906,14 +1025,50 @@ const InstallmentManagement = () => {
                 </div>
               </div>
 
-              {/* Installment Progress */}
+              {selectedSale.remainingAmount > 0 && (
+                <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
+                  <h4 className="font-medium text-gray-700 mb-2">
+                    DUE INFORMATION
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-gray-700">
+                      MINIMUM DUE AMOUNT:
+                    </span>
+                    <span
+                      className={`text-right font-semibold ${
+                        getNextDueInfo(selectedSale).isOverdue
+                          ? "text-red-600"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      RS: {getNextDueInfo(selectedSale).amount}/-
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-gray-700">DUE DATE:</span>
+                    <span
+                      className={`text-right ${
+                        getNextDueInfo(selectedSale).isOverdue
+                          ? "text-red-600 font-semibold"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {getNextDueInfo(selectedSale).dueDate}
+                      {getNextDueInfo(selectedSale).isOverdue && (
+                        <span className="text-red-500 ml-2">(OVERDUE)</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
                 <h4 className="font-medium text-gray-700 mb-2">
-                  Installment Progress
+                  INSTALLMENT PROGRESS
                 </h4>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <span className="font-medium text-gray-700">
-                    Installments Paid:
+                    INSTALLMENTS PAID:
                   </span>
                   <span className="text-gray-900 text-right">
                     {getPaidInstallments(selectedSale)}/
@@ -939,63 +1094,82 @@ const InstallmentManagement = () => {
                       selectedSale.finalTotal) *
                       100
                   )}
-                  % Paid
+                  % PAID
                 </div>
               </div>
 
-              {/* Payment Timeline */}
               {selectedSale.paymentTimeline &&
                 selectedSale.paymentTimeline.length > 0 && (
                   <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
                     <h4 className="font-medium text-gray-700 mb-2">
-                      Payment Schedule
+                      PAYMENT SCHEDULE
                     </h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {selectedSale.paymentTimeline.map((payment, index) => (
-                        <div
-                          key={index}
-                          className={`flex justify-between items-center p-2 rounded border ${
-                            payment.paid
-                              ? "bg-green-50 border-green-200"
-                              : "bg-gray-50 border-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-700">
-                              Payment {payment.paymentNumber}:
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              {formatDate(payment.dueDate)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">
-                              {payment.paymentAmount}
-                            </span>
-                            {payment.paid ? (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                PAID
+                      {selectedSale.paymentTimeline.map((payment, index) => {
+                        const isOverdue =
+                          !payment.paid &&
+                          new Date(payment.dueDate) < new Date();
+                        return (
+                          <div
+                            key={index}
+                            className={`flex justify-between items-center p-2 rounded border ${
+                              payment.paid
+                                ? "bg-green-300 border-green-400"
+                                : isOverdue
+                                ? "bg-red-300 border-red-400"
+                                : "bg-gray-300 border-gray-400"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-700">
+                                PAYMENT {payment.paymentNumber}:
                               </span>
-                            ) : (
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                                PENDING
+                              <span
+                                className={`text-sm ${
+                                  isOverdue
+                                    ? "text-red-600 font-semibold"
+                                    : "text-gray-600"
+                                }`}
+                              >
+                                {formatDate(payment.dueDate)}
+                                {isOverdue && (
+                                  <span className="text-red-500 ml-1">
+                                    (OVERDUE)
+                                  </span>
+                                )}
                               </span>
-                            )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">
+                                {payment.paymentAmount}
+                              </span>
+                              {payment.paid ? (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                  PAID
+                                </span>
+                              ) : isOverdue ? (
+                                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                  OVERDUE
+                                </span>
+                              ) : (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                                  PENDING
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-              {/* Footer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>Installment Management System</p>
+                <p>INSTALLMENT MANAGEMENT SYSTEM</p>
                 <p>This is a computer-generated detail view.</p>
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 rounded-b-lg p-2 print:hidden">
               <div className="flex flex-col sm:flex-row gap-2 justify-end">
                 <button
@@ -1003,13 +1177,13 @@ const InstallmentManagement = () => {
                   className="px-4 py-2 rounded hover:cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
                 <button
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded hover:cursor-pointer bg-gray-600 text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>
@@ -1017,22 +1191,20 @@ const InstallmentManagement = () => {
         </div>
       )}
 
-      {/* Payment Receipt Modal */}
       {isReceiptModalOpen && currentPayment && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
             <div className="p-4 space-y-3">
-              {/* Header section */}
               <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
                 <h2 className="text-xl font-bold tracking-wider text-gray-900">
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Installment Payment Receipt
+                  INSTALLMENT PAYMENT RECEIPT
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Receipt ID: {currentPayment.id.slice(0, 8).toUpperCase()}
+                    RECEIPT ID: {currentPayment.receiptId}
                   </p>
                   <p className="text-xs text-gray-600">
                     {formatDate(currentPayment.timestamp)}
@@ -1040,33 +1212,33 @@ const InstallmentManagement = () => {
                 </div>
               </div>
 
-              {/* Payment details */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Invoice No:</span>
+                  <span className="font-medium text-gray-700">
+                    MAIN INVOICE:
+                  </span>
                   <span className="text-gray-900 text-right font-mono">
-                    {currentPayment.invoiceId}
+                    {currentPayment.invoiceId.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Customer:</span>
+                  <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.customer}
+                    {currentPayment.customer.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Product:</span>
+                  <span className="font-medium text-gray-700">PRODUCT:</span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.productName}
+                    {currentPayment.productName.toUpperCase()}
                   </span>
                 </div>
               </div>
 
-              {/* Payment information */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Payment Date:
+                    PAYMENT DATE:
                   </span>
                   <span className="text-gray-900 text-right">
                     {formatDate(currentPayment.paymentDate)}
@@ -1074,38 +1246,36 @@ const InstallmentManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Payment Method:
+                    PAYMENT METHOD:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.paymentMethod.toUpperCase()}
+                    {getPaymentMethodDisplay(currentPayment.paymentMethod)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Amount Paid:
+                    AMOUNT PAID:
                   </span>
                   <span className="text-gray-900 text-right font-semibold">
-                    {currentPayment.paymentAmount}
+                    RS: {currentPayment.paymentAmount}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Remaining Balance:
+                    REMAINING BALANCE:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.remainingAmount}
+                    RS: {currentPayment.remainingAmount}/-
                   </span>
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>Thank you for your payment!</p>
+                <p>THANK YOU FOR YOUR PAYMENT!</p>
                 <p>This is a computer-generated receipt.</p>
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 rounded-b-lg p-2 print:hidden">
               <div className="flex flex-col sm:flex-row gap-2 justify-end">
                 <button
@@ -1113,13 +1283,13 @@ const InstallmentManagement = () => {
                   className="px-4 py-2 rounded hover:cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
                 <button
                   onClick={handleCloseModal}
                   className="px-4 py-2 rounded hover:cursor-pointer bg-gray-600 text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

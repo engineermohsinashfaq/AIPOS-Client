@@ -128,7 +128,7 @@ export const menuItems = [
         path: "/up-installment-management",
       },
       {
-        icon: List,
+        icon: Receipt,
         label: "Installment History",
         path: "/up-installment-history",
       },

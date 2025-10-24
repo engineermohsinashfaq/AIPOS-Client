@@ -165,12 +165,14 @@ export default function AddStock() {
 
   // State for new supplier information
   const [newSupplier, setNewSupplier] = useState("");
+  const [displayNewSupplier, setDisplayNewSupplier] = useState("");
 
   // State for new supplier contact information
   const [newSupplierContact, setNewSupplierContact] = useState("");
 
   // State for company information
   const [company, setCompany] = useState("");
+  const [displayCompany, setDisplayCompany] = useState("");
 
   // State for calculated average price per unit
   const [pricePerUnit, setPricePerUnit] = useState("0.00");
@@ -202,12 +204,18 @@ export default function AddStock() {
       setNewPurchasePrice("");
       setAdditionalQty("");
       setNewSupplier("");
+      setDisplayNewSupplier("");
       setNewSupplierContact("");
       setCompany("");
+      setDisplayCompany("");
       setPricePerUnit("0.00");
     } else {
       setProduct(null);
-      toast.error("Product not found!", { theme: "dark", autoClose: 2000 });
+      toast.error("Product not found!", { 
+        position: "top-right",
+        theme: "dark", 
+        autoClose: 2000 
+      });
     }
   }, [selectedId, products]);
 
@@ -274,15 +282,17 @@ export default function AddStock() {
       return;
     }
 
-    // Convert to lowercase for supplier name
+    // For fields that should be saved in lowercase and displayed in uppercase
     if (name === "newSupplier") {
-      setNewSupplier(value. toUpperCase());
+      setNewSupplier(value.toLowerCase());
+      setDisplayNewSupplier(value.toUpperCase());
       return;
     }
 
     // Handle company input
     if (name === "company") {
-      setCompany(value);
+      setCompany(value.toLowerCase());
+      setDisplayCompany(value.toUpperCase());
       return;
     }
   };
@@ -294,10 +304,16 @@ export default function AddStock() {
     setNewPurchasePrice("");
     setAdditionalQty("");
     setNewSupplier("");
+    setDisplayNewSupplier("");
     setNewSupplierContact("");
     setCompany("");
+    setDisplayCompany("");
     setPricePerUnit("0.00");
-    toast.info("Form cleared", { theme: "dark", autoClose: 1500 });
+    toast.info("Form cleared", { 
+      position: "top-right",
+      theme: "dark", 
+      autoClose: 1500 
+    });
   };
 
   // Form submission handler with validation
@@ -305,9 +321,16 @@ export default function AddStock() {
     e.preventDefault();
 
     // Validate product selection
-    if (!product) return toast.error("No product selected!", { theme: "dark" });
+    if (!product) return toast.error("No product selected!", { 
+      position: "top-right",
+      theme: "dark" 
+    });
 
-    const toastOptions = { theme: "dark", autoClose: 2000 };
+    const toastOptions = { 
+      position: "top-right",
+      theme: "dark", 
+      autoClose: 2000 
+    };
 
     // Validate purchase price
     if (
@@ -370,8 +393,8 @@ export default function AddStock() {
     const fullSupplierContact = "+" + newSupplierContact;
     const existingSupplier = products.find(
       (p) =>
-        p.supplier?. toUpperCase() === newSupplier. toUpperCase() &&
-        p.company?. toUpperCase() === company. toUpperCase() &&
+        p.supplier?.toLowerCase() === newSupplier.toLowerCase() &&
+        p.company?.toLowerCase() === company.toLowerCase() &&
         p.supplierContact === fullSupplierContact
     );
 
@@ -382,9 +405,9 @@ export default function AddStock() {
             ...p,
             price: newPurchasePrice, // Use new purchase price
             quantity: newTotalQty.toString(),
-            supplier: newSupplier. toUpperCase(), // Use new supplier in lowercase
+            supplier: newSupplier, // Use new supplier in lowercase
             supplierContact: "+" + newSupplierContact, // Use new supplier contact
-            company: company, // Use company from input
+            company: company, // Use company from input in lowercase
             value: totalInventoryValue.toFixed(2), // Total inventory value
             pricePerUnit: finalPricePerUnit, // Store weighted average price per unit
             updatedOn: formatDateTime(new Date()),
@@ -406,7 +429,7 @@ export default function AddStock() {
       quantity: additionalQty, // Only additional quantity
       price: newPurchasePrice, // Use new purchase price
       supplierContact: "+" + newSupplierContact, // Use new supplier contact
-      company: company, // Use company from input
+      company: company, // Use company from input in lowercase
       total: purchaseValue.toFixed(2), // Value for additional quantity only
       value: purchaseValue.toFixed(2),
       pricePerUnit: finalPricePerUnit, // Include price per unit in history
@@ -414,7 +437,7 @@ export default function AddStock() {
       name: product.name,
       model: product.model,
       category: product.category,
-      supplier: newSupplier. toUpperCase(), // Use new supplier in lowercase
+      supplier: newSupplier, // Use new supplier in lowercase
       type: "stock-addition", // Mark as stock addition type
     };
 
@@ -428,6 +451,7 @@ export default function AddStock() {
       toast.success(
         `Supplier already exists and product stock updated with Invoice ${newInvoiceId}`,
         {
+          position: "top-right",
           theme: "dark",
           autoClose: 2000,
           onClose: () => navigate("/up-dashboard"),
@@ -435,6 +459,7 @@ export default function AddStock() {
       );
     } else {
       toast.success(`Product stock updated with Invoice ${newInvoiceId}`, {
+        position: "top-right",
         theme: "dark",
         autoClose: 2000,
         onClose: () => navigate("/up-dashboard"),
@@ -474,7 +499,11 @@ export default function AddStock() {
     // Main container with responsive padding
     <div className="px-4 py-2 min-h-screen ">
       {/* Toast notifications container */}
-      <ToastContainer theme="dark" autoClose={2000} />
+      <ToastContainer 
+        position="top-right"
+        theme="dark" 
+        autoClose={2000} 
+      />
 
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto">
@@ -605,7 +634,7 @@ export default function AddStock() {
                         <input
                           type="text"
                           name="company"
-                          value={company}
+                          value={displayCompany}
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
                           placeholder="Enter company name"
@@ -619,7 +648,7 @@ export default function AddStock() {
                         <input
                           type="text"
                           name="newSupplier"
-                          value={newSupplier}
+                          value={displayNewSupplier}
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
                           placeholder="Enter supplier name"
@@ -844,7 +873,11 @@ export default function AddStock() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white">Company:</span>
-                  <span className="font-semibold text-white">{company}</span>
+                  <span className="font-semibold text-white">{displayCompany}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white">Supplier:</span>
+                  <span className="font-semibold text-white">{displayNewSupplier}</span>
                 </div>
                 {/* Average price per unit in confirmation */}
                 <div className="flex justify-between">

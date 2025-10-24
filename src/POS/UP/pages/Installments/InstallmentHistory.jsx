@@ -1,32 +1,85 @@
 // |===============================| InstallmentHistory Component |===============================|
 // Import necessary React hooks and external libraries
 import React, { useState, useEffect, useMemo } from "react";
-import { Receipt, Search, Calendar, Download } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Receipt } from "lucide-react";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 // Date formatting utility function - converts date to standardized string
-const formatDate = (dateString) => {
+const formatDateTime = (dateInput) => {
   // Return dash for empty/null dates
-  if (!dateString) return "—";
+  if (!dateInput) return "—";
 
   try {
-    const date = new Date(dateString);
-    
+    let date;
+
+    // Handle different date input types and formats
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === "string") {
+      // Parse custom date format (DD/MM/YYYY HH:MM:SS)
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
+        const datePart = parts[0];
+        const timePart = parts[1];
+
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
+          if (timePart) {
+            const [hours, minutes, seconds] = timePart.split(":");
+            date = new Date(
+              year,
+              month - 1,
+              day,
+              hours || 0,
+              minutes || 0,
+              seconds || 0
+            );
+          } else {
+            date = new Date(year, month - 1, day);
+          }
+        }
+      } else {
+        // Parse ISO string or other standard formats
+        date = new Date(dateInput);
+      }
+    } else {
+      // Handle numeric timestamps or other date types
+      date = new Date(dateInput);
+    }
+
     // Validate the parsed date
     if (isNaN(date.getTime())) {
       return "—";
     }
 
-    // Return formatted date string (Month Day, Year)
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    // Format date components with leading zeros
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    // Return formatted date string (DD/MM/YYYY HH:MM:SS)
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   } catch (error) {
     console.error("Date formatting error:", error);
+    return "—";
+  }
+};
+
+// Short date formatter - extracts only the date portion
+const formatShortDate = (dateString) => {
+  if (!dateString) return "—";
+
+  try {
+    const fullDate = formatDateTime(dateString);
+    if (fullDate === "—") return "—";
+    return fullDate.split(" ")[0]; // Return only date part (before space)
+  } catch (error) {
     return "—";
   }
 };
@@ -42,16 +95,105 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-// Load payment history from localStorage
+// Enhanced date parser for consistent sorting
+const parseDateForSorting = (dateInput) => {
+  if (!dateInput) return new Date(0); // Return epoch for invalid dates
+
+  try {
+    // Handle multiple date formats
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+
+    if (typeof dateInput === "string") {
+      // Handle DD/MM/YYYY HH:MM:SS format
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
+        const datePart = parts[0];
+        const timePart = parts[1] || "00:00:00";
+
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
+          const [hours, minutes, seconds] = timePart.split(":");
+          return new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+            parseInt(hours) || 0,
+            parseInt(minutes) || 0,
+            parseInt(seconds) || 0
+          );
+        }
+      }
+
+      // Handle ISO format and other standard formats
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    // Fallback for other types (timestamps, etc.)
+    return new Date(dateInput);
+  } catch (error) {
+    console.error("Date parsing error for sorting:", error, dateInput);
+    return new Date(0);
+  }
+};
+
+// Load payment history from localStorage with enhanced sorting
 const loadPaymentHistory = () => {
   try {
     // Retrieve payment history from localStorage or initialize empty array
-    const history = JSON.parse(localStorage.getItem("installmentHistory")) || [];
-    return history;
-  } catch {
-    console.error("Error loading payment history from localStorage.");
+    const history = JSON.parse(window.localStorage?.getItem("installmentHistory")) || [];
+    
+    // Sort by timestamp (newest first)
+    return history.sort((a, b) => {
+      try {
+        const dateA = parseDateForSorting(a.timestamp || a.paymentDate);
+        const dateB = parseDateForSorting(b.timestamp || b.paymentDate);
+        return dateB.getTime() - dateA.getTime();
+      } catch (error) {
+        console.error("Sorting error:", error);
+        return 0;
+      }
+    });
+  } catch (error) {
+    console.error("Error loading payment history from localStorage:", error);
     return [];
   }
+};
+
+// Payment method background color formatter
+const getPaymentMethodColor = (payment) => {
+  const paymentMethod = payment.paymentMethod?.toLowerCase();
+
+  switch (paymentMethod) {
+    case "meezan":
+      return "bg-purple-950/50";
+    case "hbl":
+      return "bg-cyan-800/50";
+    case "easypaisa":
+      return "bg-green-700/50";
+    case "jazzcash":
+      return "bg-red-700/50";
+    case "cash":
+      return "bg-blue-600/50";
+    default:
+      return "bg-orange-600/50";
+  }
+};
+
+// Payment method display formatter
+const getPaymentMethodDisplay = (payment) => {
+  const methodMap = {
+    cash: "CASH",
+    hbl: "HBL BANK",
+    jazzcash: "JAZZCASH",
+    easypaisa: "EASY PAISA",
+    meezan: "MEEZAN BANK",
+  };
+  return methodMap[payment.paymentMethod?.toLowerCase()] || payment.paymentMethod?.toUpperCase() || "PAYMENT METHOD";
 };
 
 // Main InstallmentHistory component function
@@ -60,39 +202,50 @@ export default function InstallmentHistory() {
   const [paymentHistory, setPaymentHistory] = useState([]);
 
   // State for search query
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // State for date filter
-  const [dateFilter, setDateFilter] = useState("");
+  const [query, setQuery] = useState("");
 
   // State for modal visibility
-  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   // State for currently selected receipt details
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
-  // Navigation hook for routing
-  const navigate = useNavigate();
-
   // Effect hook to handle initial data loading
   useEffect(() => {
     setPaymentHistory(loadPaymentHistory());
+
+    // Event handler for storage changes (other tabs/windows)
+    const handleStorage = () => {
+      setPaymentHistory(loadPaymentHistory());
+    };
+    window.addEventListener("storage", handleStorage);
+
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Memoized filtered payment history based on search criteria
+  // Memoized filtered payment history based on search query - PRESERVE SORTING
   const filteredHistory = useMemo(() => {
-    return paymentHistory.filter(payment => {
-      const matchesSearch = searchTerm === "" || 
-        payment.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.invoiceId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.productName?.toLowerCase().includes(searchTerm.toLowerCase());
+    let arr = paymentHistory.slice(); // Start with already sorted array
 
-      const matchesDate = dateFilter === "" || 
-        payment.paymentDate === dateFilter;
+    // Apply search filter if query exists
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      arr = arr.filter((payment) =>
+        [
+          payment.invoiceId,
+          payment.customer,
+          payment.productName,
+          payment.paymentMethod,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+    }
 
-      return matchesSearch && matchesDate;
-    });
-  }, [paymentHistory, searchTerm, dateFilter]);
+    // Return filtered results - they maintain the original sort order
+    return arr;
+  }, [paymentHistory, query]);
 
   // Print functionality handler
   const handlePrint = () => {
@@ -105,192 +258,146 @@ export default function InstallmentHistory() {
   // Handle view receipt action
   const handleViewReceipt = (payment) => {
     setSelectedReceipt(payment);
-    setIsReceiptModalOpen(true);
+    setIsViewOpen(true);
   };
 
   // Handle close modal action
   const handleCloseModal = () => {
-    setIsReceiptModalOpen(false);
+    setIsViewOpen(false);
     setSelectedReceipt(null);
-  };
-
-  // Navigate back to management page
-  const handleBackToManagement = () => {
-    navigate("/installment-management");
   };
 
   // Component render method
   return (
-    // Main container with responsive padding
-    <div className="p-2 min-h-screen">
+    // Main container with responsive padding and dark background
+    <div className="p-2 min-h-screen text-white">
       {/* Toast notifications container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-        style={{ zIndex: 9999 }}
-      />
+      <ToastContainer position="top-right" theme="dark" autoClose={2000} />
 
-      {/* Content wrapper with glass morphism effect */}
-      <div className="bg-white/10 p-6 rounded-lg border border-white/20 backdrop-blur-md">
-        {/* Header section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2 flex items-center">
-              <Receipt className="w-6 h-6 mr-2" />
-              Installment Payment History
-            </h2>
-            <p className="text-white/70">View all installment payment records</p>
-          </div>
-          
-          {/* Back to management button */}
-          <button
-            onClick={handleBackToManagement}
-            className="mt-4 md:mt-0 px-6 py-3 bg-cyan-950/70 hover:bg-cyan-950 border border-white/30 rounded-md transition-all duration-300 cursor-pointer font-semibold text-white flex items-center gap-2"
-          >
-            <Calendar className="w-4 h-4" />
-            Back to Management
-          </button>
+      {/* Content wrapper with max width constraint */}
+      <div className="max-w-8xl mx-auto space-y-6">
+        {/* Page header section */}
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">INSTALLMENT PAYMENT HISTORY</h1>
+          <p className="text-white/80">
+            View all installment payment records with invoice details. Latest payments shown first.
+          </p>
         </div>
 
-        {/* Search and filter controls */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Search input */}
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              <Search className="w-4 h-4 inline mr-1" />
-              Search
-            </label>
+        {/* Search and statistics panel */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search input with icon */}
+          <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
+            <SearchIcon className="text-white" />
             <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
-              placeholder="Search by customer, invoice, product..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search"
+              className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
-          {/* Date filter input */}
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              <Calendar className="w-4 h-4 inline mr-1" />
-              Filter by Date
-            </label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
-            />
-          </div>
-
-          {/* Results counter */}
-          <div className="flex items-end">
-            <div className="text-white text-sm">
-              Showing {filteredHistory.length} of {paymentHistory.length} payments
-            </div>
+          {/* Record count display */}
+          <div className="text-white/80 text-lg flex items-center">
+            Total Records: {filteredHistory.length}
           </div>
         </div>
 
-        {/* Payment history table container */}
-        <div className="bg-cyan-800/30 backdrop-blur-md border border-cyan-700 rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
-            Payment Records
-          </h3>
+        {/* Main data table container */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide">
+          {/* Payment history table */}
+          <table className="w-full text-white/90 min-w-[800px]">
+            {/* Table header with column labels */}
+            <thead className="bg-white/10 text-left text-sm">
+              <tr>
+                <th className="p-3">DATE</th>
+                <th className="p-3">RECEIPT ID</th>
+                <th className="p-3">INVOICE ID</th>
+                <th className="p-3">CUSTOMER</th>
+                <th className="p-3">PRODUCT</th>
+                <th className="p-3">AMOUNT</th>
+                <th className="p-3">METHOD</th>
+                <th className="p-3">ACTIONS</th>
+              </tr>
+            </thead>
 
-          {/* Empty state message */}
-          {filteredHistory.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-white/20 rounded-md">
-              <div className="text-white text-4xl mb-4">📋</div>
-              <p className="text-white italic">No payment records found</p>
-              <p className="text-white text-sm mt-2">
-                {paymentHistory.length === 0 
-                  ? "No installment payments have been recorded yet." 
-                  : "No payments match your search criteria."}
-              </p>
-            </div>
-          ) : (
-            /* Payment records table */
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    <th className="text-left py-3 px-4 text-white font-semibold">Date</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Invoice ID</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Customer</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Product</th>
-                    <th className="text-right py-3 px-4 text-white font-semibold">Amount</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Method</th>
-                    <th className="text-right py-3 px-4 text-white font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Map through filtered payment records */}
-                  {filteredHistory.map((payment) => (
-                    <tr key={payment.id} className="border-b border-white/10 hover:bg-cyan-700/20 transition-colors">
-                      {/* Payment date column */}
-                      <td className="py-3 px-4 text-white text-sm">
-                        {formatDate(payment.paymentDate)}
-                      </td>
+            {/* Table body with payment records - LATEST PAYMENTS ON TOP */}
+            <tbody>
+              {/* Map through filtered payment records */}
+              {filteredHistory.map((payment) => (
+                <tr
+                  key={`${payment.id}-${payment.paymentDate}`}
+                  className="border-t border-white/5 hover:bg-cyan-600/20 transition"
+                >
+                  {/* Payment date column */}
+                  <td className="p-3">
+                    {formatShortDate(payment.paymentDate || payment.timestamp)}
+                  </td>
 
-                      {/* Invoice ID column */}
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-cyan-300 text-sm">
-                          {payment.invoiceId}
-                        </span>
-                      </td>
+                  {/* Receipt ID column - UPPERCASE */}
+                  <td className="p-3 font-mono font-semibold">
+                    {payment.receiptId?.toUpperCase() || "—"}
+                  </td>
 
-                      {/* Customer name column */}
-                      <td className="py-3 px-4 text-white text-sm">
-                        {payment.customer}
-                      </td>
+                  {/* Invoice ID column */}
+                  <td className="p-3 font-mono">
+                    {payment.invoiceId?.toUpperCase()}
+                  </td>
 
-                      {/* Product name column */}
-                      <td className="py-3 px-4 text-white text-sm">
-                        {payment.productName}
-                      </td>
+                  {/* Customer name column */}
+                  <td className="p-3">
+                    {payment.customer?.toUpperCase()}
+                  </td>
 
-                      {/* Payment amount column */}
-                      <td className="py-3 px-4 text-right text-white font-semibold text-sm">
-                        {formatCurrency(payment.paymentAmount)}
-                      </td>
+                  {/* Product name column */}
+                  <td className="p-3">
+                    {payment.productName?.toUpperCase()}
+                  </td>
 
-                      {/* Payment method column */}
-                      <td className="py-3 px-4">
-                        <span className="text-white text-sm capitalize">
-                          {payment.paymentMethod}
-                        </span>
-                      </td>
+                  {/* Payment amount column */}
+                  <td className="p-3 font-semibold">
+                    {formatCurrency(payment.paymentAmount)}
+                  </td>
 
-                      {/* Actions column with receipt button */}
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => handleViewReceipt(payment)}
-                          className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-sm transition-colors flex items-center gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          Receipt
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  {/* Payment method column */}
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 text-xs border rounded-full border-white/30 ${getPaymentMethodColor(
+                        payment
+                      )}`}
+                    >
+                      {getPaymentMethodDisplay(payment)}
+                    </span>
+                  </td>
+
+                  {/* Actions column with view button */}
+                  <td className="p-3 flex gap-2">
+                    <button
+                      title="View Receipt"
+                      onClick={() => handleViewReceipt(payment)}
+                      className="p-2 rounded bg-cyan-900 text-white hover:bg-cyan-950 transition-colors cursor-pointer"
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {/* Empty state message */}
+              {filteredHistory.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="p-4 text-center text-white/70">
+                    No payment records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {/* Receipt details modal */}
-      {isReceiptModalOpen && selectedReceipt && (
+      {isViewOpen && selectedReceipt && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           {/* Modal content container */}
           <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
@@ -302,14 +409,14 @@ export default function InstallmentHistory() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Installment Payment Receipt
+                  INSTALLMENT PAYMENT RECEIPT
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Receipt ID: {selectedReceipt.id.slice(0, 8).toUpperCase()}
+                    RECEIPT ID: {selectedReceipt.receiptId?.toUpperCase() || selectedReceipt.id?.slice(0, 8).toUpperCase()}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {formatDate(selectedReceipt.timestamp)}
+                    {formatDateTime(selectedReceipt.timestamp || selectedReceipt.paymentDate)}
                   </p>
                 </div>
               </div>
@@ -317,21 +424,21 @@ export default function InstallmentHistory() {
               {/* Payment details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Invoice No:</span>
+                  <span className="font-medium text-gray-700">INVOICE NO:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedReceipt.invoiceId}
+                    {selectedReceipt.invoiceId?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Customer:</span>
+                  <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedReceipt.customer}
+                    {selectedReceipt.customer?.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Product:</span>
+                  <span className="font-medium text-gray-700">PRODUCT:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedReceipt.productName}
+                    {selectedReceipt.productName?.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -339,27 +446,37 @@ export default function InstallmentHistory() {
               {/* Payment information section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Payment Date:</span>
+                  <span className="font-medium text-gray-700">PAYMENT DATE:</span>
                   <span className="text-gray-900 text-right">
-                    {formatDate(selectedReceipt.paymentDate)}
+                    {formatDateTime(selectedReceipt.paymentDate || selectedReceipt.timestamp)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Payment Method:</span>
+                  <span className="font-medium text-gray-700">PAYMENT METHOD:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedReceipt.paymentMethod.toUpperCase()}
+                    {getPaymentMethodDisplay(selectedReceipt)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Amount Paid:</span>
+                  <span className="font-medium text-gray-700">AMOUNT PAID:</span>
                   <span className="text-gray-900 text-right font-semibold">
                     {formatCurrency(selectedReceipt.paymentAmount)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Remaining Balance:</span>
+                  <span className="font-medium text-gray-700">REMAINING BALANCE:</span>
                   <span className="text-gray-900 text-right">
-                    {formatCurrency(selectedReceipt.remainingAmount)}
+                    {formatCurrency(selectedReceipt.remainingAmount || 0)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Total value highlight section */}
+              <div className="bg-green-100 border border-green-200 rounded-md p-2 mb-6">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-bold text-green-900">TOTAL PAID:</span>
+                  <span className="font-bold text-green-900 text-right">
+                    {formatCurrency(selectedReceipt.paymentAmount)}
                   </span>
                 </div>
               </div>
@@ -377,18 +494,18 @@ export default function InstallmentHistory() {
                 {/* Print button */}
                 <button
                   onClick={handlePrint}
-                  className="px-4 py-2 rounded hover:cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
+                  className="px-4 py-2 rounded cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
-                
+
                 {/* Close modal button */}
                 <button
                   onClick={handleCloseModal}
-                  className="px-4 py-2 rounded hover:cursor-pointer bg-gray-600 text-white hover:bg-gray-700 transition font-medium"
+                  className="px-4 py-2 rounded cursor-pointer bg-gray-600 text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

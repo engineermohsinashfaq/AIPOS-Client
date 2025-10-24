@@ -208,12 +208,19 @@ export default function AllCustomers() {
   // Field name mapper for display purposes
   const getFieldDisplayName = (field) => {
     const fieldNames = {
-      contact: "Contact",
-      city: "City",
-      address: "Address",
-      status: "Status",
+      contact: "CONTACT",
+      city: "CITY",
+      address: "ADDRESS",
+      status: "STATUS",
     };
-    return fieldNames[field] || field;
+    return fieldNames[field] || field.toUpperCase();
+  };
+
+  // Get password for display - can be replaced with DB fetch later
+  const getCustomerPassword = (customer) => {
+    // For now, using a default password
+    // Later this can be replaced with: return customer.password || "default123";
+    return "pakistan@123"; // This will be fetched from DB later
   };
 
   // Open edit modal with customer data
@@ -246,16 +253,16 @@ export default function AllCustomers() {
     e.preventDefault();
 
     // Validate required fields
-    if (!form.contact?.trim()) return notifyError("Contact number is required");
+    if (!form.contact?.trim()) return notifyError("CONTACT NUMBER IS REQUIRED");
 
     // Generate update message based on changed fields
     const changedFields = Object.keys(formChanges);
     const updateMessage =
       changedFields.length > 0
-        ? `Updated: ${changedFields
+        ? `UPDATED: ${changedFields
             .map((field) => getFieldDisplayName(field))
             .join(", ")}`
-        : "Record updated";
+        : "RECORD UPDATED";
 
     // Prepare updated customer data with metadata
     const updatedForm = {
@@ -273,7 +280,7 @@ export default function AllCustomers() {
     setIsModalOpen(false);
     setOriginalCustomer(null);
     setFormChanges({});
-    notifySuccess(`${form.customerId} updated successfully.`);
+    notifySuccess(`${form.customerId} UPDATED SUCCESSFULLY.`);
   };
 
   // Close modal handler
@@ -302,9 +309,9 @@ export default function AllCustomers() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">All Customers</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">ALL CUSTOMERS</h1>
           <p className="text-white/80">
-            View, edit, and manage customer accounts.
+            VIEW, EDIT, AND MANAGE CUSTOMER ACCOUNTS.
           </p>
         </div>
 
@@ -316,23 +323,23 @@ export default function AllCustomers() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="SEARCH"
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
           {/* Status filter dropdown */}
           <div className="flex items-center gap-2 justify-between md:justify-end">
-            <label className="text-sm text-white/70">Status</label>
+            <label className="text-sm text-white/70">STATUS</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="p-2 border border-white/10 rounded bg-white/10 text-white"
             >
-              <option className="bg-black/95 text-white">All</option>
-              <option className="bg-black/95 text-white">Active</option>
-              <option className="bg-black/95 text-white">Inactive</option>
-              <option className="bg-black/95 text-white">Suspended</option>
+              <option className="bg-black/95 text-white">ALL</option>
+              <option className="bg-black/95 text-white">ACTIVE</option>
+              <option className="bg-black/95 text-white">INACTIVE</option>
+              <option className="bg-black/95 text-white">SUSPENDED</option>
             </select>
           </div>
         </div>
@@ -345,12 +352,12 @@ export default function AllCustomers() {
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
-                <th className="p-3">Name</th>
+                <th className="p-3">NAME</th>
                 <th className="p-3">CNIC</th>
-                <th className="p-3">Contact</th>
-                <th className="p-3">City</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">CONTACT</th>
+                <th className="p-3">CITY</th>
+                <th className="p-3">STATUS</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
@@ -373,7 +380,7 @@ export default function AllCustomers() {
         }`}
                   >
                     {/* Customer ID column */}
-                    <td className="p-3">{c.customerId}</td>
+                    <td className="p-3">{c.customerId.toUpperCase()}</td>
 
                     {/* Customer name with avatar */}
                     <td className="p-3 flex items-center gap-3">
@@ -390,22 +397,22 @@ export default function AllCustomers() {
                     </td>
 
                     {/* CNIC column */}
-                    <td className="p-3">{c.cnic}</td>
+                    <td className="p-3">{c.cnic.toUpperCase()}</td>
 
                     {/* Contact column */}
-                    <td className="p-3">{c.contact}</td>
+                    <td className="p-3">{c.contact.toUpperCase()}</td>
 
                     {/* City column */}
                     <td className="p-3">{c.city.toUpperCase()}</td>
 
                     {/* Status column */}
-                    <td className="p-3">{c.status}</td>
+                    <td className="p-3">{c.status.toUpperCase()}</td>
 
                     {/* Actions column with view and edit buttons */}
                     <td className="p-3 flex gap-2">
                       {/* View button */}
                       <button
-                        title="View"
+                        title="VIEW"
                         onClick={() => {
                           setSelectedCustomer(c);
                           setIsViewOpen(true);
@@ -417,7 +424,7 @@ export default function AllCustomers() {
 
                       {/* Edit button */}
                       <button
-                        title="Edit"
+                        title="EDIT"
                         onClick={() => handleOpenEdit(c)}
                         className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
                       >
@@ -431,8 +438,8 @@ export default function AllCustomers() {
                 <tr>
                   <td colSpan="7" className="text-center py-6 text-white/60">
                     {customers.length === 0
-                      ? "No customers added yet."
-                      : "No customers match your search."}
+                      ? "NO CUSTOMERS ADDED YET."
+                      : "NO CUSTOMERS MATCH YOUR SEARCH."}
                   </td>
                 </tr>
               )}
@@ -448,19 +455,19 @@ export default function AllCustomers() {
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
             {/* Modal header */}
             <h2 className="text-xl font-semibold mb-4">
-              Edit Customer: {form.customerId}
+              EDIT CUSTOMER: {form.customerId.toUpperCase()}
             </h2>
 
             {/* Changes detection display */}
             {isFormModified && (
               <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
-                <p className="font-medium text-yellow-300">Changes detected:</p>
+                <p className="font-medium text-yellow-300">CHANGES DETECTED:</p>
                 <ul className="text-xs mt-1 space-y-1">
                   {Object.entries(formChanges).map(([field, change]) => (
                     <li key={field} className="flex justify-between">
                       <span>{getFieldDisplayName(field)}:</span>
                       <span className="text-yellow-200">
-                        "{change.from}" → "{change.to}"
+                        "{change.from.toUpperCase()}" → "{change.to.toUpperCase()}"
                       </span>
                     </li>
                   ))}
@@ -476,14 +483,14 @@ export default function AllCustomers() {
                   name="firstName"
                   value={form.firstName.toUpperCase()}
                   readOnly
-                  placeholder="First Name"
+                  placeholder="FIRST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
                 <input
                   name="lastName"
                   value={form.lastName.toUpperCase()}
                   readOnly
-                  placeholder="Last Name"
+                  placeholder="LAST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
               </div>
@@ -491,27 +498,27 @@ export default function AllCustomers() {
               {/* Read-only customer ID */}
               <input
                 name="customerId"
-                value={form.customerId}
+                value={form.customerId.toUpperCase()}
                 readOnly
-                placeholder="Customer ID"
+                placeholder="CUSTOMER ID"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
               {/* Read-only CNIC */}
               <input
                 name="cnic"
-                value={form.cnic}
+                value={form.cnic.toUpperCase()}
                 readOnly
                 placeholder="CNIC"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
-              {/* Read-only password */}
+              {/* Read-only password - same as in view modal */}
               <input
                 name="password"
-                value="default123"
+                value={getCustomerPassword(form).toUpperCase()}
                 readOnly
-                placeholder="Password"
+                placeholder="PASSWORD"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
@@ -520,7 +527,7 @@ export default function AllCustomers() {
                 name="contact"
                 value={form.contact}
                 onChange={handleChange}
-                placeholder="Contact (+92...)"
+                placeholder="CONTACT (+92...)"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
@@ -529,7 +536,7 @@ export default function AllCustomers() {
                 name="city"
                 value={form.city.toUpperCase()}
                 onChange={handleChange}
-                placeholder="City"
+                placeholder="CITY"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
@@ -538,7 +545,7 @@ export default function AllCustomers() {
                 name="address"
                 value={form.address.toUpperCase() || ""}
                 onChange={handleChange}
-                placeholder="Address"
+                placeholder="ADDRESS"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
@@ -549,9 +556,9 @@ export default function AllCustomers() {
                 onChange={handleChange}
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               >
-                <option className="bg-black/90">Active</option>
-                <option className="bg-black/90">Inactive</option>
-                <option className="bg-black/90">Suspended</option>
+                <option className="bg-black/90">ACTIVE</option>
+                <option className="bg-black/90">INACTIVE</option>
+                <option className="bg-black/90">SUSPENDED</option>
               </select>
 
               {/* Form action buttons */}
@@ -566,7 +573,7 @@ export default function AllCustomers() {
                       : "bg-gray-600/50 cursor-not-allowed opacity-50"
                   }`}
                 >
-                  Save Changes
+                  SAVE CHANGES
                 </button>
 
                 {/* Cancel button */}
@@ -575,7 +582,7 @@ export default function AllCustomers() {
                   onClick={handleCloseModal}
                   className="px-4 py-2 rounded border border-white/40 bg-red-600 hover:bg-red-700 transition hover:cursor-pointer"
                 >
-                  Cancel
+                  CANCEL
                 </button>
               </div>
             </form>
@@ -596,11 +603,11 @@ export default function AllCustomers() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Customer Information
+                  CUSTOMER INFORMATION
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Customer ID: {selectedCustomer.customerId}
+                    CUSTOMER ID: {selectedCustomer.customerId.toUpperCase()}
                   </p>
                 </div>
               </div>
@@ -608,45 +615,47 @@ export default function AllCustomers() {
               {/* Customer details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">First Name:</span>
+                  <span className="font-medium text-gray-700">FIRST NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedCustomer.firstName.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Last Name:</span>
+                  <span className="font-medium text-gray-700">LAST NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedCustomer.lastName.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Contact:</span>
+                  <span className="font-medium text-gray-700">CONTACT:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.contact}
+                    {selectedCustomer.contact.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CNIC:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.cnic}
+                    {selectedCustomer.cnic.toUpperCase()}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">City:</span>
+                  <span className="font-medium text-gray-700">CITY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedCustomer.city.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Address:</span>
+                  <span className="font-medium text-gray-700">ADDRESS:</span>
                   <span className="text-gray-900 text-right">
                     {selectedCustomer.address.toUpperCase() || "—"}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2  border-t border-b border-dashed border-gray-300 py-3 ">
-                  <span className="font-medium text-gray-700">Password:</span>
-                  <span className="text-gray-900 text-right">customer@321</span>
+                  <span className="font-medium text-gray-700">PASSWORD:</span>
+                  <span className="text-gray-900 text-right">
+                    {getCustomerPassword(selectedCustomer).toUpperCase()}
+                  </span>
                 </div>
               </div>
 
@@ -670,7 +679,7 @@ export default function AllCustomers() {
                         : "text-red-900"
                     }`}
                   >
-                    Account Status:
+                    ACCOUNT STATUS:
                   </span>
                   <span
                     className={`font-bold text-right ${
@@ -681,7 +690,7 @@ export default function AllCustomers() {
                         : "text-red-900"
                     }`}
                   >
-                    {selectedCustomer.status}
+                    {selectedCustomer.status.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -689,7 +698,7 @@ export default function AllCustomers() {
               {/* Timestamp and update history section */}
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Date Added:</span>
+                  <span>DATE ADDED:</span>
                   <span className="text-right">
                     {formatDateTime(selectedCustomer.dateAdded)}
                   </span>
@@ -697,7 +706,7 @@ export default function AllCustomers() {
                 {/* Show update timestamp if available */}
                 {selectedCustomer.updatedAt && (
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <span>Last Updated:</span>
+                    <span>LAST UPDATED:</span>
                     <span className="text-right">
                       {formatDateTime(selectedCustomer.updatedAt)}
                     </span>
@@ -706,16 +715,16 @@ export default function AllCustomers() {
                 {/* Show update message if available */}
                 {selectedCustomer.lastUpdateMessage && (
                   <div className="col-span-2 mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
-                    <span className="font-medium">Update Note: </span>
-                    {selectedCustomer.lastUpdateMessage}
+                    <span className="font-medium">UPDATE NOTE: </span>
+                    {selectedCustomer.lastUpdateMessage.toUpperCase()}
                   </div>
                 )}
               </div>
 
               {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>This is a computer-generated customer record.</p>
-                <p>Contains personal and contact information only.</p>
+                <p>THIS IS A COMPUTER-GENERATED CUSTOMER RECORD.</p>
+                <p>CONTAINS PERSONAL AND CONTACT INFORMATION ONLY.</p>
               </div>
             </div>
 
@@ -728,7 +737,7 @@ export default function AllCustomers() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
 
                 {/* Close modal button */}
@@ -736,7 +745,7 @@ export default function AllCustomers() {
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

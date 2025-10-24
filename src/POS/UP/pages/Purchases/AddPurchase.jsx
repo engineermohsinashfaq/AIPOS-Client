@@ -156,6 +156,7 @@ const formatShortDate = (dateString) => {
 export default function AddPurchase({ onSave }) {
   // State management for product form data
   const [product, setProduct] = useState(emptyProduct);
+  const [displayProduct, setDisplayProduct] = useState(emptyProduct);
 
   // State for existing products list
   const [products, setProducts] = useState(loadProducts());
@@ -165,10 +166,17 @@ export default function AddPurchase({ onSave }) {
 
   // Effect hook to generate product and invoice IDs on component mount
   useEffect(() => {
+    const productId = generateProductId();
+    const invoiceId = generateInvoiceId();
     setProduct((prev) => ({
       ...prev,
-      productId: generateProductId(),
-      invoiceId: generateInvoiceId(),
+      productId,
+      invoiceId,
+    }));
+    setDisplayProduct((prev) => ({
+      ...prev,
+      productId,
+      invoiceId,
     }));
   }, []);
 
@@ -178,6 +186,7 @@ export default function AddPurchase({ onSave }) {
     const qty = parseInt(product.quantity) || 0;
     const total = (price * qty).toFixed(2);
     setProduct((prev) => ({ ...prev, total, value: total }));
+    setDisplayProduct((prev) => ({ ...prev, total, value: total }));
   }, [product.price, product.quantity]);
 
   // Form input change handler with special formatting for numeric fields
@@ -186,13 +195,17 @@ export default function AddPurchase({ onSave }) {
 
     // Special handling for price field - only allow numbers and decimal point
     if (name === "price") {
-      setProduct((prev) => ({ ...prev, [name]: value.replace(/[^\d.]/g, "") }));
+      const cleanedValue = value.replace(/[^\d.]/g, "");
+      setProduct((prev) => ({ ...prev, [name]: cleanedValue }));
+      setDisplayProduct((prev) => ({ ...prev, [name]: cleanedValue }));
       return;
     }
 
     // Special handling for quantity field - only allow digits
     if (name === "quantity") {
-      setProduct((prev) => ({ ...prev, [name]: value.replace(/\D/g, "") }));
+      const cleanedValue = value.replace(/\D/g, "");
+      setProduct((prev) => ({ ...prev, [name]: cleanedValue }));
+      setDisplayProduct((prev) => ({ ...prev, [name]: cleanedValue }));
       return;
     }
 
@@ -200,30 +213,31 @@ export default function AddPurchase({ onSave }) {
     if (name === "supplierContact") {
       let digits = value.replace(/\D/g, "").slice(0, 15);
       setProduct((prev) => ({ ...prev, [name]: digits }));
+      setDisplayProduct((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
-    // Convert to lowercase for text fields
-    if (
-      name === "name" ||
-      name === "model" ||
-      name === "category" ||
-      name === "company" ||
-      name === "supplier"
-    ) {
-      setProduct((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+    // For fields that should be saved in lowercase and displayed in uppercase
+    if (["name", "model", "category", "company", "supplier"].includes(name)) {
+      setProduct((prev) => ({ ...prev, [name]: value.toLowerCase() }));
+      setDisplayProduct((prev) => ({ ...prev, [name]: value.toUpperCase() }));
       return;
     }
 
-    // Default handling for all other fields
+    // Default handling for all other fields (productId, invoiceId, total, value)
     setProduct((prev) => ({ ...prev, [name]: value }));
+    setDisplayProduct((prev) => ({ ...prev, [name]: value }));
   };
 
   // Form submission handler with comprehensive validation
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const toastOptions = { theme: "dark", autoClose: 2000 };
+    const toastOptions = { 
+      position: "top-right",
+      theme: "dark", 
+      autoClose: 2000 
+    };
 
     // Validate Product ID
     if (!/^P-\d+$/.test(product.productId))
@@ -266,7 +280,7 @@ export default function AddPurchase({ onSave }) {
     // Unique model validation
     if (
       products.some(
-        (p) => p.model?.toUpperCase() === product.model.toUpperCase()
+        (p) => p.model?.toLowerCase() === product.model.toLowerCase()
       )
     )
       return toast.error("Model must be unique!", toastOptions);
@@ -274,8 +288,8 @@ export default function AddPurchase({ onSave }) {
     // Check if supplier already exists (same supplier, company, and contact)
     const existingSupplier = products.find(
       (p) =>
-        p.supplier?.toUpperCase() === product.supplier.toUpperCase() &&
-        p.company?.toUpperCase() === product.company.toUpperCase() &&
+        p.supplier?.toLowerCase() === product.supplier.toLowerCase() &&
+        p.company?.toLowerCase() === product.company.toLowerCase() &&
         p.supplierContact === fullSupplierContact
     );
 
@@ -289,17 +303,14 @@ export default function AddPurchase({ onSave }) {
           supplierContact: existingSupplier.supplierContact,
         }
       : {
-          supplier: product.supplier.toUpperCase(),
-          company: product.company.toUpperCase(),
+          supplier: product.supplier,
+          company: product.company,
           supplierContact: fullSupplierContact,
         };
 
     const newProduct = {
       ...product,
       ...supplierData,
-      name: product.name.toUpperCase(),
-      model: product.model.toUpperCase(),
-      category: product.category.toUpperCase(),
       price: parseFloat(product.price),
       quantity: parseInt(product.quantity),
       savedOn: timestamp,
@@ -323,6 +334,7 @@ export default function AddPurchase({ onSave }) {
 
     // Generate next IDs
     const nextInvoiceId = generateInvoiceId();
+    const nextProductId = generateProductId();
 
     // ✅ Show unified success message
     toast.success(
@@ -334,7 +346,12 @@ export default function AddPurchase({ onSave }) {
         onClose: () => {
           setProduct({
             ...emptyProduct,
-            productId: generateProductId(),
+            productId: nextProductId,
+            invoiceId: nextInvoiceId,
+          });
+          setDisplayProduct({
+            ...emptyProduct,
+            productId: nextProductId,
             invoiceId: nextInvoiceId,
           });
 
@@ -351,12 +368,23 @@ export default function AddPurchase({ onSave }) {
   // Form clear/reset handler
   const handleClear = () => {
     // Reset form with new generated IDs
-    setProduct((prev) => ({
+    const productId = generateProductId();
+    const invoiceId = generateInvoiceId();
+    setProduct({
       ...emptyProduct,
-      productId: generateProductId(),
-      invoiceId: generateInvoiceId(),
-    }));
-    toast.info("Form cleared", { theme: "dark", autoClose: 1500 });
+      productId,
+      invoiceId,
+    });
+    setDisplayProduct({
+      ...emptyProduct,
+      productId,
+      invoiceId,
+    });
+    toast.info("Form cleared", { 
+      position: "top-right",
+      theme: "dark", 
+      autoClose: 1500 
+    });
   };
 
   // Component render method
@@ -364,7 +392,11 @@ export default function AddPurchase({ onSave }) {
     // Main container with padding and full height
     <div className="px-4 py-2 min-h-[100%]">
       {/* Toast notifications container */}
-      <ToastContainer theme="dark" autoClose={2000} />
+      <ToastContainer 
+        position="top-right"
+        theme="dark" 
+        autoClose={2000} 
+      />
 
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto space-y-3">
@@ -390,7 +422,7 @@ export default function AddPurchase({ onSave }) {
                 <input
                   type="text"
                   name="invoiceId"
-                  value={product.invoiceId}
+                  value={displayProduct.invoiceId}
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
                 />
@@ -404,7 +436,7 @@ export default function AddPurchase({ onSave }) {
                 <input
                   type="text"
                   name="productId"
-                  value={product.productId}
+                  value={displayProduct.productId}
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
                 />
@@ -423,7 +455,7 @@ export default function AddPurchase({ onSave }) {
                   id="name"
                   name="name"
                   placeholder="Enter product name"
-                  value={product.name}
+                  value={displayProduct.name}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -442,7 +474,7 @@ export default function AddPurchase({ onSave }) {
                   id="model"
                   name="model"
                   placeholder="Enter model"
-                  value={product.model}
+                  value={displayProduct.model}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -461,7 +493,7 @@ export default function AddPurchase({ onSave }) {
                   id="category"
                   name="category"
                   placeholder="Enter category"
-                  value={product.category}
+                  value={displayProduct.category}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -480,7 +512,7 @@ export default function AddPurchase({ onSave }) {
                   id="quantity"
                   name="quantity"
                   placeholder="Enter quantity"
-                  value={product.quantity}
+                  value={displayProduct.quantity}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -499,7 +531,7 @@ export default function AddPurchase({ onSave }) {
                   id="price"
                   name="price"
                   placeholder="Enter purchase price"
-                  value={product.price}
+                  value={displayProduct.price}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -517,7 +549,7 @@ export default function AddPurchase({ onSave }) {
                   type="text"
                   id="value"
                   name="value"
-                  value={product.value}
+                  value={displayProduct.value}
                   placeholder="0.0"
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
@@ -537,7 +569,7 @@ export default function AddPurchase({ onSave }) {
                   id="supplier"
                   name="supplier"
                   placeholder="Enter supplier name"
-                  value={product.supplier}
+                  value={displayProduct.supplier}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -556,7 +588,7 @@ export default function AddPurchase({ onSave }) {
                   id="company"
                   name="company"
                   placeholder="Enter company name"
-                  value={product.company}
+                  value={displayProduct.company}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -580,7 +612,7 @@ export default function AddPurchase({ onSave }) {
                     name="supplierContact"
                     placeholder="923001234567"
                     maxLength={15}
-                    value={product.supplierContact}
+                    value={displayProduct.supplierContact}
                     onChange={handleChange}
                     className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />

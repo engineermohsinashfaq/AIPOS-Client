@@ -43,6 +43,7 @@ const generateCustomerId = () => {
 export default function AddCustomer({ onSave }) {
   // State management for customer form data
   const [customer, setCustomer] = useState(emptyCustomer);
+  const [displayCustomer, setDisplayCustomer] = useState(emptyCustomer);
 
   // Navigation hook for programmatic routing
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ export default function AddCustomer({ onSave }) {
     if (!customer.customerId) {
       const newId = generateCustomerId();
       setCustomer((prev) => ({ ...prev, customerId: newId }));
+      setDisplayCustomer((prev) => ({ ...prev, customerId: newId }));
     }
   }, []);
 
@@ -64,6 +66,7 @@ export default function AddCustomer({ onSave }) {
     if (name === "contact") {
       let digits = value.replace(/\D/g, "");
       setCustomer((prev) => ({ ...prev, [name]: digits }));
+      setDisplayCustomer((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
@@ -84,12 +87,21 @@ export default function AddCustomer({ onSave }) {
           12
         )}-${digits.slice(12)}`;
 
-      setCustomer((prev) => ({ ...prev, [name]: formatted }));
+      setCustomer((prev) => ({ ...prev, [name]: formatted.toLowerCase() }));
+      setDisplayCustomer((prev) => ({ ...prev, [name]: formatted.toUpperCase() }));
       return;
     }
 
-    // Default handling for all other fields
+    // For fields that should be saved in lowercase and displayed in uppercase
+    if (["firstName", "lastName", "city", "address"].includes(name)) {
+      setCustomer((prev) => ({ ...prev, [name]: value.toLowerCase() }));
+      setDisplayCustomer((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+      return;
+    }
+
+    // Default handling for all other fields (status, customerId)
     setCustomer((prev) => ({ ...prev, [name]: value }));
+    setDisplayCustomer((prev) => ({ ...prev, [name]: value }));
   };
 
   // Form submission handler with comprehensive validation
@@ -189,16 +201,17 @@ export default function AddCustomer({ onSave }) {
     });
 
     // Reset form with new customer ID
-    setCustomer({ ...emptyCustomer, customerId: generateCustomerId() });
+    const newId = generateCustomerId();
+    setCustomer({ ...emptyCustomer, customerId: newId });
+    setDisplayCustomer({ ...emptyCustomer, customerId: newId });
   };
 
   // Form clear/reset handler
   const handleClear = () => {
     // Reset form but preserve the current customer ID
-    setCustomer((prev) => ({
-      ...emptyCustomer,
-      customerId: prev.customerId,
-    }));
+    const currentId = customer.customerId;
+    setCustomer({ ...emptyCustomer, customerId: currentId });
+    setDisplayCustomer({ ...emptyCustomer, customerId: currentId });
     toast.info("Form cleared!", {
       position: "top-right",
       autoClose: 1500,
@@ -248,7 +261,7 @@ export default function AddCustomer({ onSave }) {
                 type="text"
                 name="customerId"
                 id="customerId"
-                value={customer.customerId}
+                value={displayCustomer.customerId}
                 readOnly
                 className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
               />
@@ -269,9 +282,9 @@ export default function AddCustomer({ onSave }) {
                   name="firstName"
                   id="firstName"
                   placeholder="First Name"
-                  value={customer.firstName.toUpperCase()}
+                  value={displayCustomer.firstName}
                   onChange={handleChange}
-                  className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
 
@@ -288,9 +301,9 @@ export default function AddCustomer({ onSave }) {
                   name="lastName"
                   id="lastName"
                   placeholder="Last Name"
-                  value={customer.lastName.toUpperCase()}
+                  value={displayCustomer.lastName}
                   onChange={handleChange}
-                  className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
             </div>
@@ -315,9 +328,9 @@ export default function AddCustomer({ onSave }) {
                     id="contact"
                     placeholder="923001234567"
                     maxLength={15}
-                    value={customer.contact}
+                    value={displayCustomer.contact}
                     onChange={handleChange}
-                    className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                    className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />
                 </div>
               </div>
@@ -335,10 +348,10 @@ export default function AddCustomer({ onSave }) {
                   name="cnic"
                   id="cnic"
                   placeholder="12345-1234567-1"
-                  value={customer.cnic}
+                  value={displayCustomer.cnic}
                   onChange={handleChange}
                   maxLength={15}
-                  className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
             </div>
@@ -358,9 +371,9 @@ export default function AddCustomer({ onSave }) {
                   name="city"
                   id="city"
                   placeholder="City"
-                  value={customer.city.toUpperCase()}
+                  value={displayCustomer.city}
                   onChange={handleChange}
-                  className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
 
@@ -375,7 +388,7 @@ export default function AddCustomer({ onSave }) {
                 <select
                   name="status"
                   id="status"
-                  value={customer.status}
+                  value={displayCustomer.status}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 >
@@ -398,10 +411,10 @@ export default function AddCustomer({ onSave }) {
                 name="address"
                 id="address"
                 placeholder="Enter full residential address"
-                value={customer.address.toUpperCase()}
+                value={displayCustomer.address}
                 onChange={handleChange}
                 rows="3"
-                className="w-full p-3 rounded-md bg-black/30 border border-white/20   text-white outline-none"
+                className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
               />
             </div>
 

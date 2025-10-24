@@ -46,7 +46,7 @@ const Developers = () => {
 
   return (
     <div className="px-4 sm:px-6 md:px-10 py-10 text-white h-[100%] flex flex-col items-center">
-      <div className="w-full max-w-7xl space-y-8">
+      <div className="w-full max-w-8xl space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl sm:text-4xl md:text-4xl font-bold mb-2">

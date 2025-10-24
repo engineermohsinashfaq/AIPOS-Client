@@ -156,7 +156,7 @@ const getStockLevel = (quantity) => {
   if (qty === 0) {
     return {
       level: "out-of-stock",
-      label: "Out of Stock",
+      label: "OUT OF STOCK",
       color: "text-white",
       bgColor: "bg-red-500/80",
       borderColor: "border-white/20",
@@ -165,7 +165,7 @@ const getStockLevel = (quantity) => {
   } else if (qty <= 5) {
     return {
       level: "low",
-      label: "Low Stock",
+      label: "LOW STOCK",
       color: "text-white",
       bgColor: "bg-orange-500/80",
       borderColor: "border-white/20",
@@ -174,7 +174,7 @@ const getStockLevel = (quantity) => {
   } else if (qty <= 15) {
     return {
       level: "medium",
-      label: "Medium Stock",
+      label: "MEDIUM STOCK",
       color: "text-white",
       bgColor: "bg-yellow-500/80",
       borderColor: "border-white/20",
@@ -183,7 +183,7 @@ const getStockLevel = (quantity) => {
   } else {
     return {
       level: "high",
-      label: "In Stock",
+      label: "IN STOCK",
       color: "text-white",
       bgColor: "bg-green-500",
       borderColor: "border-white/20",
@@ -309,10 +309,10 @@ export default function Inventory() {
         {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Inventory & Stocks
+            INVENTORY & STOCKS
           </h1>
           <p className="text-white/80">
-            View all stocks and inventory records with accumulated values.
+            VIEW ALL STOCKS AND INVENTORY RECORDS WITH ACCUMULATED VALUES.
           </p>
         </div>
 
@@ -321,7 +321,7 @@ export default function Inventory() {
           {/* Total Products Card */}
           <div className="bg-blue-600/80 backdrop-blur-md border border-blue-400/80 rounded-lg p-4">
             <h3 className="text-blue-300 text-sm font-semibold">
-              Total Products
+              TOTAL PRODUCTS
             </h3>
             <p className="text-2xl font-bold text-white">{filtered.length}</p>
           </div>
@@ -329,19 +329,19 @@ export default function Inventory() {
           {/* Total Quantity Card */}
           <div className="bg-green-600/80 backdrop-blur-md border border-green-400/80 rounded-lg p-4">
             <h3 className="text-green-300 text-sm font-semibold">
-              Total Quantity
+              TOTAL QUANTITY
             </h3>
             <p className="text-2xl font-bold text-white">
-              {totalQuantity} units
+              {totalQuantity} UNITS
             </p>
           </div>
 
           {/* Total Inventory Value Card */}
           <div className="bg-purple-600/80 backdrop-blur-md border border-purple-400/80 rounded-lg p-4">
             <h3 className="text-purple-300 text-sm font-semibold">
-              Total Inventory Value
+              TOTAL INVENTORY VALUE
             </h3>
-            <p className="text-2xl font-bold text-white">Rs {totalValue}/-</p>
+            <p className="text-2xl font-bold text-white">RS {totalValue}/-</p>
           </div>
 
           {/* Stock Alerts Card with pulse animation when alerts exist */}
@@ -352,26 +352,26 @@ export default function Inventory() {
           >
             <h3 className="text-red-200 text-sm font-semibold flex items-center gap-2">
               <WarningIcon fontSize="small" />
-              Stock Alerts
+              STOCK ALERTS
             </h3>
             <div className="space-y-1 mt-2">
               {/* Out of Stock Alert */}
               {outOfStockCount > 0 && (
                 <p className="text-white font-bold flex items-center gap-1">
                   <ErrorIcon fontSize="small" />
-                  {outOfStockCount} Out of Stock
+                  {outOfStockCount} OUT OF STOCK
                 </p>
               )}
               {/* Low Stock Alert */}
               {lowStockCount > 0 && (
                 <p className="text-white font-bold flex items-center gap-1">
                   <WarningIcon fontSize="small" />
-                  {lowStockCount} Low Stock
+                  {lowStockCount} LOW STOCK
                 </p>
               )}
               {/* All Good Message */}
               {outOfStockCount === 0 && lowStockCount === 0 && (
-                <p className="text-white font-bold">All Good ✓</p>
+                <p className="text-white font-bold">ALL GOOD ✓</p>
               )}
             </div>
           </div>
@@ -384,7 +384,7 @@ export default function Inventory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="SEARCH"
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
@@ -398,14 +398,14 @@ export default function Inventory() {
             <thead className="bg-white/10 text-left text-sm">
               <tr className="text-white/90">
                 <th className="p-3">P-ID</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Category</th>
-                <th className="p-3">Qty</th>
-                <th className="p-3">Stock Level</th>
-                <th className="p-3">Purchase Price</th>
-                <th className="p-3">Value</th>
-                <th className="p-3">Last Updated</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">NAME</th>
+                <th className="p-3">CATEGORY</th>
+                <th className="p-3">QTY</th>
+                <th className="p-3">STOCK LEVEL</th>
+                <th className="p-3">PURCHASE PRICE</th>
+                <th className="p-3">VALUE</th>
+                <th className="p-3">LAST UPDATED</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
@@ -427,7 +427,7 @@ export default function Inventory() {
                   }`}
                 >
                   {/* Product ID Column */}
-                  <td className="p-3 font-mono">{p.productId}</td>
+                  <td className="p-3 font-mono">{p.productId.toUpperCase()}</td>
 
                   {/* Product Name Column */}
                   <td className="p-3">{p.name.toUpperCase()}</td>
@@ -449,10 +449,10 @@ export default function Inventory() {
                   </td>
 
                   {/* Purchase Price Column */}
-                  <td className="p-3">Rs {p.price}/-</td>
+                  <td className="p-3">RS {p.price}/-</td>
 
                   {/* Inventory Value Column */}
-                  <td className="p-3">Rs {p.displayValue}/-</td>
+                  <td className="p-3">RS {p.displayValue}/-</td>
 
                   {/* Last Updated Date Column */}
                   <td className="p-3 text-xs">
@@ -462,7 +462,7 @@ export default function Inventory() {
                   {/* Actions Column with View Button */}
                   <td className="p-3 flex gap-2">
                     <button
-                      title="View"
+                      title="VIEW"
                       onClick={() => {
                         setSelectedProduct({
                           ...p,
@@ -484,7 +484,7 @@ export default function Inventory() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan="12" className="p-4 text-center text-white/70">
-                    No products found.
+                    NO PRODUCTS FOUND.
                   </td>
                 </tr>
               )}
@@ -506,7 +506,7 @@ export default function Inventory() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Product & Stock Details
+                  PRODUCT & STOCK DETAILS
                 </p>
               </div>
 
@@ -515,23 +515,23 @@ export default function Inventory() {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">ID:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedProduct.productId}
+                    {selectedProduct.productId.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.name.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Model:</span>
+                  <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.model.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.category.toUpperCase()}
                   </span>
@@ -542,16 +542,16 @@ export default function Inventory() {
               {/* Pricing and Stock Section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Quantity:</span>
+                  <span className="font-medium text-gray-700">QUANTITY:</span>
                   <span className="text-gray-900 text-right font-semibold">
-                    {selectedProduct.quantity} piece(s)
+                    {selectedProduct.quantity} PIECE(S)
                   </span>
                 </div>
 
                 {/* Stock Level Display */}
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Stock Status:
+                    STOCK STATUS:
                   </span>
                   <span className="text-right">
                     <div
@@ -565,20 +565,20 @@ export default function Inventory() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Purchase Price:
+                    PURCHASE PRICE:
                   </span>
                   <span className="text-gray-900 text-right">
-                    Rs {selectedProduct.price}/-
+                    RS {selectedProduct.price}/-
                   </span>
                 </div>
 
                 {/* Average Price Per Unit Display */}
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Average Price Per Unit:
+                    AVERAGE PRICE PER UNIT:
                   </span>
                   <span className="text-right font-semibold text-orange-600">
-                    Rs {selectedProduct.pricePerUnit}/-
+                    RS {selectedProduct.pricePerUnit}/-
                   </span>
                 </div>
               </div>
@@ -587,14 +587,14 @@ export default function Inventory() {
               <div className="bg-blue-200 border border-blue-200 rounded-lg p-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-blue-900">
-                    Inventory Value:
+                    INVENTORY VALUE:
                   </span>
                   <span className="font-bold text-blue-900 text-right">
-                    Rs {selectedProduct.value}/-
+                    RS {selectedProduct.value}/-
                   </span>
                 </div>
                 <div className="text-xs text-blue-700 mt-1 text-center">
-                  (Accumulated inventory value)
+                  (ACCUMULATED INVENTORY VALUE)
                 </div>
               </div>
 
@@ -602,7 +602,7 @@ export default function Inventory() {
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 {/* Creation Date */}
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Created:</span>
+                  <span>CREATED:</span>
                   <span className="text-right">
                     {formatDateTime(selectedProduct.createdAt)}
                   </span>
@@ -610,7 +610,7 @@ export default function Inventory() {
 
                 {/* Last Update Date */}
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Last Updated:</span>
+                  <span>LAST UPDATED:</span>
                   <span className="text-right">
                     {formatDateTime(selectedProduct.updatedAt)}
                   </span>
@@ -619,8 +619,8 @@ export default function Inventory() {
 
               {/* Footer Disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>This is a computer-generated record.</p>
-                <p>Contains product and stock details only.</p>
+                <p>THIS IS A COMPUTER-GENERATED RECORD.</p>
+                <p>CONTAINS PRODUCT AND STOCK DETAILS ONLY.</p>
               </div>
             </div>
 
@@ -633,7 +633,7 @@ export default function Inventory() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
 
                 {/* Close Modal Button */}
@@ -641,7 +641,7 @@ export default function Inventory() {
                   onClick={handleCloseViewModal}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

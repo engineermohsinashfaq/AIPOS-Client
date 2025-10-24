@@ -13,7 +13,19 @@ const Cash = () => {
   const loadProducts = () => {
     try {
       const stored = localStorage.getItem("products");
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        const productsData = JSON.parse(stored);
+        // Convert all product string fields to lowercase when loading
+        const formattedProducts = productsData.map((product) => ({
+          ...product,
+          name: product.name ? product.name.toLowerCase() : "",
+          model: product.model ? product.model.toLowerCase() : "",
+          category: product.category ? product.category.toLowerCase() : "",
+          company: product.company ? product.company.toLowerCase() : "",
+        }));
+        return formattedProducts;
+      }
+      return [];
     } catch {
       console.error("Error loading products from localStorage.");
       return [];
@@ -52,10 +64,10 @@ const Cash = () => {
       const nextNumber = lastNumber + 1;
 
       // Format with leading zeros (8 digits)
-      return `CASH-${nextNumber.toString().padStart(8, "0")}`;
+      return `CASH-${nextNumber.toString().padStart(4, "0")}`;
     } catch (error) {
       console.error("Error generating invoice number:", error);
-      return `CASH-${Date.now().toString().slice(-8)}`;
+      return `CASH-${Date.now().toString().slice(-4)}`;
     }
   };
 
@@ -267,9 +279,9 @@ const Cash = () => {
       id: crypto.randomUUID(),
       timestamp: new Date().toLocaleString(),
       productId: selectedProduct.productId,
-      productName: selectedProduct.name,
-      productModel: selectedProduct.model,
-      productCategory: selectedProduct.category,
+      productName: selectedProduct.name, // Already in lowercase from state
+      productModel: selectedProduct.model, // Already in lowercase from state
+      productCategory: selectedProduct.category, // Already in lowercase from state
       customerType: paymentMethod === "cash" ? "cash" : "bank",
       salePrice: salePrice,
       quantitySold: qty,
@@ -277,7 +289,7 @@ const Cash = () => {
       discountAmount:
         discountPercent > 0 ? (salePrice * qty * discountPercent) / 100 : 0,
       finalTotal: finalTotal,
-      company: selectedProduct.company,
+      company: selectedProduct.company, // Already in lowercase from state
       pricePerUnit: selectedProduct.pricePerUnit,
       inventoryValue: selectedProduct.value,
       paymentMethod: paymentMethod,
@@ -305,7 +317,7 @@ const Cash = () => {
     localStorage.setItem("products", JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
 
-    // Add to sales history
+    // Add to sales history - data is already in lowercase from state
     const existingSalesHistory =
       JSON.parse(localStorage.getItem("salesHistory")) || [];
     const newSaleEntry = {
@@ -427,6 +439,7 @@ const Cash = () => {
 
   const finalTotal = calculateFinalTotal();
   const currentStock = selectedProduct ? parseInt(selectedProduct.quantity) : 0;
+  const isQuantityExceedingStock = parseInt(quantity) > currentStock;
 
   // Format payment method for display
   const getPaymentMethodDisplay = (method) => {
@@ -556,7 +569,13 @@ const Cash = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Current Stock:</span>
-                    <span className="font-semibold text-white text-sm md:text-base">
+                    <span
+                      className={`font-semibold text-sm md:text-base ${
+                        parseInt(selectedProduct.quantity) > 0
+                          ? "text-white"
+                          : "text-red-400"
+                      }`}
+                    >
                       {selectedProduct.quantity} pcs
                     </span>
                   </div>
@@ -579,9 +598,18 @@ const Cash = () => {
                   placeholder="Enter quantity"
                   required
                 />
-                <p className="text-xs text-white/70 mt-1">
-                  Available: {currentStock} pcs
-                </p>
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-white/70">
+                    Available: {currentStock} pcs
+                  </p>
+                  {isQuantityExceedingStock && (
+                    <div className="flex items-center gap-1 bg-red-500/70 border border-red-400/50 rounded-full px-2 py-1">
+                      <span className="text-white text-xs font-semibold">
+                        Only {currentStock} pcs in stock
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Selling Price Input */}
@@ -661,13 +689,22 @@ const Cash = () => {
                   <div className="flex justify-between items-center p-3 bg-cyan-800/90 backdrop-blur-md border border-cyan-900 rounded-md">
                     <span className="text-white">Subtotal:</span>
                     <span className="font-bold text-white">
-                      Rs {(parseFloat(price) * parseInt(quantity || 0)).toFixed(2)}/-
+                      Rs{" "}
+                      {(parseFloat(price) * parseInt(quantity || 0)).toFixed(2)}
+                      /-
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-cyan-800/90 backdrop-blur-md border border-cyan-900 rounded-md">
                     <span className="text-white">Discount:</span>
                     <span className="font-semibold text-white">
-                      {discount}% (Rs {((parseFloat(price) * parseInt(quantity || 0)) * parseFloat(discount || 0) / 100).toFixed(2)}/-)
+                      {discount}% (Rs{" "}
+                      {(
+                        (parseFloat(price) *
+                          parseInt(quantity || 0) *
+                          parseFloat(discount || 0)) /
+                        100
+                      ).toFixed(2)}
+                      /-)
                     </span>
                   </div>
                 </div>
@@ -717,7 +754,9 @@ const Cash = () => {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-white">Product:</span>
-                <span className="font-semibold">{selectedProduct?.name}</span>
+                <span className="font-semibold">
+                  {selectedProduct?.name.toUpperCase()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Invoice ID:</span>
@@ -727,9 +766,7 @@ const Cash = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Quantity:</span>
-                <span className="font-semibold text-white">
-                  {quantity} pcs
-                </span>
+                <span className="font-semibold text-white">{quantity} pcs</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Unit Price:</span>
@@ -739,9 +776,7 @@ const Cash = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Discount:</span>
-                <span className="font-semibold text-white">
-                  {discount}%
-                </span>
+                <span className="font-semibold text-white">{discount}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Payment Method:</span>
@@ -751,9 +786,7 @@ const Cash = () => {
               </div>
               <div className="flex justify-between border-t border-white/20 pt-2">
                 <span className="text-white">Final Amount:</span>
-                <span className="font-bold text-white">
-                  Rs {finalTotal}/-
-                </span>
+                <span className="font-bold text-white">Rs {finalTotal}/-</span>
               </div>
             </div>
 

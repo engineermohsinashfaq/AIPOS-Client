@@ -229,8 +229,8 @@ export default function PurchaseHistory() {
   // Purchase type display formatter
   const getPurchaseType = (product) => {
     return product.type === "stock-addition"
-      ? "Stock Addition"
-      : "New Purchase";
+      ? "STOCK ADDITION"
+      : "NEW PURCHASE";
   };
 
   // Component render method
@@ -245,10 +245,10 @@ export default function PurchaseHistory() {
         {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Purchase History
+            PURCHASE HISTORY
           </h1>
           <p className="text-white/80">
-            View all purchase and stock addition records with invoice details. Latest purchases shown first.
+            VIEW ALL PURCHASE AND STOCK ADDITION RECORDS WITH INVOICE DETAILS. LATEST PURCHASES SHOWN FIRST.
           </p>
         </div>
 
@@ -260,14 +260,14 @@ export default function PurchaseHistory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by invoice, product, supplier..."
+              placeholder="SEARCH BY INVOICE, PRODUCT, SUPPLIER..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
           {/* Record count display */}
           <div className="text-white/80 text-lg flex items-center">
-            Total Records: {filtered.length}
+            TOTAL RECORDS: {filtered.length}
           </div>
         </div>
 
@@ -278,15 +278,15 @@ export default function PurchaseHistory() {
             {/* Table header with column labels */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
-                <th className="p-3">Invoice ID</th>
-                <th className="p-3">Product ID</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Type</th>
-                <th className="p-3">Qty</th>
-                <th className="p-3">Price</th>
-                <th className="p-3">Supplier</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">INVOICE ID</th>
+                <th className="p-3">PRODUCT ID</th>
+                <th className="p-3">NAME</th>
+                <th className="p-3">TYPE</th>
+                <th className="p-3">QTY</th>
+                <th className="p-3">PRICE</th>
+                <th className="p-3">SUPPLIER</th>
+                <th className="p-3">DATE</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
@@ -305,10 +305,10 @@ export default function PurchaseHistory() {
         }`}
                 >
                   {/* Invoice ID column */}
-                  <td className="p-3 font-mono">{p.invoiceId}</td>
+                  <td className="p-3 font-mono">{p.invoiceId.toUpperCase()}</td>
 
                   {/* Product ID column */}
-                  <td className="p-3 font-mono">{p.productId}</td>
+                  <td className="p-3 font-mono">{p.productId.toUpperCase()}</td>
 
                   {/* Product name column */}
                   <td className="p-3">{p.name.toUpperCase()}</td>
@@ -330,7 +330,7 @@ export default function PurchaseHistory() {
                   <td className="p-3">{p.quantity}</td>
 
                   {/* Price column */}
-                  <td className="p-3">Rs {p.price}/-</td>
+                  <td className="p-3">RS {p.price}/-</td>
 
                   {/* Supplier column */}
                   <td className="p-3">{p.supplier.toUpperCase()}</td>
@@ -341,7 +341,7 @@ export default function PurchaseHistory() {
                   {/* Actions column with view button */}
                   <td className="p-3 flex gap-2">
                     <button
-                      title="View"
+                      title="VIEW"
                       onClick={() => {
                         setSelectedProduct(p);
                         setIsViewOpen(true);
@@ -358,7 +358,7 @@ export default function PurchaseHistory() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan="10" className="p-4 text-center text-white/70">
-                    No purchase records found.
+                    NO PURCHASE RECORDS FOUND.
                   </td>
                 </tr>
               )}
@@ -380,11 +380,11 @@ export default function PurchaseHistory() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Purchase & Invoice Details
+                  PURCHASE & INVOICE DETAILS
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    Invoice: {selectedProduct.invoiceId}
+                    INVOICE: {selectedProduct.invoiceId.toUpperCase()}
                   </p>
                   {/* Purchase type badge */}
                   <span
@@ -402,25 +402,25 @@ export default function PurchaseHistory() {
               {/* Product details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Product ID:</span>
+                  <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedProduct.productId}
+                    {selectedProduct.productId.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.name.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Model:</span>
+                  <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.model.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Category:</span>
+                  <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.category.toUpperCase()}
                   </span>
@@ -430,17 +430,17 @@ export default function PurchaseHistory() {
               {/* Purchase details section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Quantity:</span>
+                  <span className="font-medium text-gray-700">QUANTITY:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedProduct.quantity} piece(s)
+                    {selectedProduct.quantity} PIECE(S)
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Purchase Price:
+                    PURCHASE PRICE:
                   </span>
                   <span className="text-gray-900 text-right">
-                    Rs {selectedProduct.price}/-
+                    RS {selectedProduct.price}/-
                   </span>
                 </div>
               </div>
@@ -449,10 +449,10 @@ export default function PurchaseHistory() {
               <div className="bg-blue-200 border border-blue-200 rounded-md p-2 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-blue-900">
-                    Purchase Value:
+                    PURCHASE VALUE:
                   </span>
                   <span className="font-bold text-blue-900 text-right">
-                    Rs {selectedProduct.total}/-
+                    RS {selectedProduct.total}/-
                   </span>
                 </div>
               </div>
@@ -460,13 +460,13 @@ export default function PurchaseHistory() {
               {/* Supplier information section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Company:</span>
+                  <span className="font-medium text-gray-700">COMPANY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.company.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Supplier:</span>
+                  <span className="font-medium text-gray-700">SUPPLIER:</span>
                   <span className="text-gray-900 text-right">
                     {selectedProduct.supplier.toUpperCase()}
                   </span>
@@ -474,10 +474,10 @@ export default function PurchaseHistory() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
-                    Supplier Contact:
+                    SUPPLIER CONTACT:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {selectedProduct.supplierContact}
+                    {selectedProduct.supplierContact.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -485,7 +485,7 @@ export default function PurchaseHistory() {
               {/* Timestamp information */}
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Purchase Date:</span>
+                  <span>PURCHASE DATE:</span>
                   <span className="text-right">
                     {formatDateTime(selectedProduct.savedOn)}
                   </span>
@@ -493,7 +493,7 @@ export default function PurchaseHistory() {
                 {/* Show update timestamp if available */}
                 {selectedProduct.updatedAt && (
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <span>Last Updated:</span>
+                    <span>LAST UPDATED:</span>
                     <span className="text-right">
                       {formatDateTime(selectedProduct.updatedAt)}
                     </span>
@@ -503,8 +503,8 @@ export default function PurchaseHistory() {
 
               {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>This is a computer-generated purchase record.</p>
-                <p>Contains invoice and purchase details only.</p>
+                <p>THIS IS A COMPUTER-GENERATED PURCHASE RECORD.</p>
+                <p>CONTAINS INVOICE AND PURCHASE DETAILS ONLY.</p>
               </div>
             </div>
 
@@ -517,7 +517,7 @@ export default function PurchaseHistory() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
 
                 {/* Close modal button */}
@@ -525,7 +525,7 @@ export default function PurchaseHistory() {
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

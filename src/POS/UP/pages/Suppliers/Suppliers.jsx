@@ -106,7 +106,6 @@ const extractSuppliersFromData = () => {
             address: item.address || "",
             dateAdded:
               item.savedOn || item.dateAdded || formatDateTime(new Date()),
-            status: "Active",
             id: supplierKey,
             updatedAt: item.updatedAt || null,
             lastUpdateMessage: item.lastUpdateMessage || null,
@@ -224,7 +223,6 @@ export default function AllSuppliers() {
         s.contact,
         s.company,
         s.whatsapp,
-        s.email,
         s.address,
       ]
         .map((v) => String(v || "").toLowerCase())
@@ -348,8 +346,8 @@ export default function AllSuppliers() {
 
       <div className="max-w-8xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">All Suppliers</h1>
-          <p className="text-white/80">View and manage supplier accounts.</p>
+          <h1 className="text-3xl font-bold mb-2">ALL SUPPLIERS</h1>
+          <p className="text-white/80">VIEW AND MANAGE SUPPLIER ACCOUNTS.</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -358,13 +356,13 @@ export default function AllSuppliers() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
+              placeholder="SEARCH SUPPLIERS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
           <div className="text-white/80 text-lg flex items-center justify-between">
-            <span>Total: {filteredSuppliers.length}</span>
+            <span>TOTAL: {filteredSuppliers.length}</span>
           </div>
         </div>
 
@@ -372,12 +370,12 @@ export default function AllSuppliers() {
           <table className="w-full text-white/90 min-w-[800px]">
             <thead className="bg-white/10 text-left text-sm">
               <tr>
-                <th className="p-3">Supplier</th>
-                <th className="p-3">Contact</th>
-                <th className="p-3">Company</th>
-                <th className="p-3">WhatsApp</th>
-                <th className="p-3">Date Added</th>
-                <th className="p-3">Actions</th>
+                <th className="p-3">SUPPLIER</th>
+                <th className="p-3">CONTACT</th>
+                <th className="p-3">COMPANY</th>
+                <th className="p-3">WHATSAPP</th>
+                <th className="p-3">DATE ADDED</th>
+                <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
@@ -404,10 +402,10 @@ export default function AllSuppliers() {
                       <button
                         onClick={() => handleWhatsApp(s.whatsapp)}
                         className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer"
-                        title="Open WhatsApp"
+                        title="OPEN WHATSAPP"
                       >
                         <WhatsAppIcon fontSize="small" />
-                        <span>Chat</span>
+                        <span>CHAT</span>
                       </button>
                     </td>
                     <td className="p-3 text-sm">
@@ -415,7 +413,7 @@ export default function AllSuppliers() {
                     </td>
                     <td className="p-3 flex gap-2">
                       <button
-                        title="View"
+                        title="VIEW SUPPLIER DETAILS"
                         onClick={() => {
                           setSelectedSupplier(s);
                           setIsViewOpen(true);
@@ -431,8 +429,8 @@ export default function AllSuppliers() {
                 <tr>
                   <td colSpan="6" className="text-center py-6 text-white/60">
                     {suppliers.length === 0
-                      ? "No suppliers found in purchase data. Add some purchases first."
-                      : "No suppliers match your search."}
+                      ? "NO SUPPLIERS FOUND IN PURCHASE DATA. ADD SOME PURCHASES FIRST."
+                      : "NO SUPPLIERS MATCH YOUR SEARCH."}
                   </td>
                 </tr>
               )}
@@ -452,41 +450,58 @@ export default function AllSuppliers() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Supplier Information
+                  SUPPLIER INFORMATION
                 </p>
               </div>
 
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Company:</span>
+                  <span className="font-medium text-gray-700">COMPANY:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSupplier.company.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Supplier:</span>
+                  <span className="font-medium text-gray-700">SUPPLIER:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSupplier.name.toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">Contact:</span>
+                  <span className="font-medium text-gray-700">CONTACT:</span>
                   <span className="text-gray-900 text-right">
                     {selectedSupplier.contact}
                   </span>
                 </div>
+                {selectedSupplier.email && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-gray-700">EMAIL:</span>
+                    <span className="text-gray-900 text-right">
+                      {selectedSupplier.email.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                {selectedSupplier.address && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-gray-700">ADDRESS:</span>
+                    <span className="text-gray-900 text-right">
+                      {selectedSupplier.address.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+               
               </div>
 
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span>Date Added:</span>
+                  <span>DATE ADDED:</span>
                   <span className="text-right">
                     {formatDateTime(selectedSupplier.dateAdded)}
                   </span>
                 </div>
                 {selectedSupplier.updatedAt && (
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <span>Last Updated:</span>
+                    <span>LAST UPDATED:</span>
                     <span className="text-right">
                       {formatDateTime(selectedSupplier.updatedAt)}
                     </span>
@@ -494,15 +509,15 @@ export default function AllSuppliers() {
                 )}
                 {selectedSupplier.lastUpdateMessage && (
                   <div className="col-span-2 mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
-                    <span className="font-medium">Update Note: </span>
-                    {selectedSupplier.lastUpdateMessage}
+                    <span className="font-medium">UPDATE NOTE: </span>
+                    {selectedSupplier.lastUpdateMessage.toUpperCase()}
                   </div>
                 )}
               </div>
 
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>This is a computer-generated supplier record.</p>
-                <p>Contains business and contact information only.</p>
+                <p>THIS IS A COMPUTER-GENERATED SUPPLIER RECORD.</p>
+                <p>CONTAINS BUSINESS AND CONTACT INFORMATION ONLY.</p>
               </div>
             </div>
 
@@ -513,14 +528,14 @@ export default function AllSuppliers() {
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
-                  <span>Print</span>
+                  <span>PRINT</span>
                 </button>
 
                 <button
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>
