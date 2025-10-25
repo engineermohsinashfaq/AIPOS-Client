@@ -54,8 +54,8 @@ const InstallmentManagement = () => {
       const customerMap = {};
       customersData.forEach((customer) => {
         customerMap[customer.customerId] = {
-          firstName: customer.firstName.toLowerCase(),
-          lastName: customer.lastName.toLowerCase(),
+          firstName: customer.firstName,
+          lastName: customer.lastName,
           contact: customer.contact,
           cnic: customer.cnic,
           city: customer.city,
@@ -69,8 +69,8 @@ const InstallmentManagement = () => {
       const guarantorMap = {};
       guarantorsData.forEach((guarantor) => {
         guarantorMap[guarantor.guarantorId] = {
-          firstName: guarantor.firstName.toLowerCase(),
-          lastName: guarantor.lastName.toLowerCase(),
+          firstName: guarantor.firstName,
+          lastName: guarantor.lastName,
           contact: guarantor.contact,
           cnic: guarantor.cnic,
           city: guarantor.city,
@@ -89,12 +89,12 @@ const InstallmentManagement = () => {
 
       const matchesSearch =
         searchTerm === "" ||
-        sale.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sale.invoiceId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sale.customer?.includes(searchTerm) ||
+        sale.productName?.includes(searchTerm) ||
+        sale.invoiceId?.includes(searchTerm) ||
         (customer &&
-          (customer.firstName?.includes(searchTerm.toLowerCase()) ||
-            customer.lastName?.includes(searchTerm.toLowerCase()) ||
+          (customer.firstName?.includes(searchTerm) ||
+            customer.lastName?.includes(searchTerm) ||
             customer.cnic?.includes(searchTerm) ||
             customer.contact?.includes(searchTerm)));
 
@@ -390,7 +390,7 @@ const InstallmentManagement = () => {
       easypaisa: "EASYPAISA",
       meezan: "MEEZAN BANK",
     };
-    return methodMap[method] || method.toUpperCase();
+    return methodMap[method] || method;
   };
 
   const renderPaymentForm = () => (
@@ -428,12 +428,10 @@ const InstallmentManagement = () => {
                   <span className="text-white/70">CUSTOMER:</span>
                   <span className="text-white font-semibold">
                     {customerDetails[selectedSale.customerId]
-                      ? `${customerDetails[
-                          selectedSale.customerId
-                        ].firstName.toUpperCase()} ${customerDetails[
-                          selectedSale.customerId
-                        ].lastName.toUpperCase()}`
-                      : selectedSale.customer.toUpperCase()}
+                      ? `${
+                          customerDetails[selectedSale.customerId].firstName
+                        } ${customerDetails[selectedSale.customerId].lastName}`
+                      : selectedSale.customer}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -453,7 +451,7 @@ const InstallmentManagement = () => {
                 <div className="flex justify-between">
                   <span className="text-white/70">PRODUCT:</span>
                   <span className="text-white font-semibold">
-                    {selectedSale.productName.toUpperCase()}
+                    {selectedSale.productName}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -682,11 +680,11 @@ const InstallmentManagement = () => {
                       <td className="p-3">
                         <div className="font-semibold">
                           {customer
-                            ? `${customer.firstName.toUpperCase()} ${customer.lastName.toUpperCase()}`
-                            : sale.customer.toUpperCase()}
+                            ? `${customer.firstName} ${customer.lastName}`
+                            : sale.customer}
                         </div>
                         <div className="text-xs text-white/70 mt-1">
-                          {sale.invoiceId.toUpperCase()}
+                          {sale.invoiceId}
                         </div>
                         {isOverdue && (
                           <div className="text-xs text-red-300 font-semibold mt-1">
@@ -738,7 +736,7 @@ const InstallmentManagement = () => {
                             status
                           )}`}
                         >
-                          {status.toUpperCase()}
+                          {status}
                         </span>
                       </td>
                       <td className="p-3">
@@ -795,24 +793,22 @@ const InstallmentManagement = () => {
                 <span className="text-white">CUSTOMER:</span>
                 <span className="font-semibold">
                   {customerDetails[selectedSale?.customerId]
-                    ? `${customerDetails[
-                        selectedSale.customerId
-                      ].firstName.toUpperCase()} ${customerDetails[
-                        selectedSale.customerId
-                      ].lastName.toUpperCase()}`
-                    : selectedSale?.customer.toUpperCase()}
+                    ? `${customerDetails[selectedSale.customerId].firstName} ${
+                        customerDetails[selectedSale.customerId].lastName
+                      }`
+                    : selectedSale?.customer}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">PRODUCT:</span>
                 <span className="font-semibold">
-                  {selectedSale?.productName.toUpperCase()}
+                  {selectedSale?.productName}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">INVOICE ID:</span>
                 <span className="font-mono font-bold text-white">
-                  {selectedSale?.invoiceId.toUpperCase()}
+                  {selectedSale?.invoiceId}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -889,7 +885,7 @@ const InstallmentManagement = () => {
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    INVOICE: {selectedSale.invoiceId.toUpperCase()}
+                    INVOICE: {selectedSale.invoiceId}
                   </p>
                   <p className="text-xs text-gray-600">
                     {formatDateTime(selectedSale.timestamp)}
@@ -901,25 +897,25 @@ const InstallmentManagement = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.productId?.toUpperCase()}
+                    {selectedSale.productId}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productName?.toUpperCase()}
+                    {selectedSale.productName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productModel?.toUpperCase()}
+                    {selectedSale.productModel}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedSale.productCategory?.toUpperCase()}
+                    {selectedSale.productCategory}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -934,16 +930,14 @@ const InstallmentManagement = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.customerId}{" "}
-                    {selectedSale.customer?.toUpperCase()}
+                    {selectedSale.customerId} {selectedSale.customer}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">GUARANTOR:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.guarantorId}{" "}
-                    {selectedSale.guarantor?.toUpperCase()}
+                    {selectedSale.guarantorId} {selectedSale.guarantor}
                   </span>
                 </div>
               </div>
@@ -1218,19 +1212,19 @@ const InstallmentManagement = () => {
                     MAIN INVOICE:
                   </span>
                   <span className="text-gray-900 text-right font-mono">
-                    {currentPayment.invoiceId.toUpperCase()}
+                    {currentPayment.invoiceId}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.customer.toUpperCase()}
+                    {currentPayment.customer}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">PRODUCT:</span>
                   <span className="text-gray-900 text-right">
-                    {currentPayment.productName.toUpperCase()}
+                    {currentPayment.productName}
                   </span>
                 </div>
               </div>

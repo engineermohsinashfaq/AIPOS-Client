@@ -12,7 +12,6 @@ import {
   Inventory,
   ShoppingBag,
   AttachMoney,
-  Receipt,
   CreditCard,
   Info,
   Backup,
@@ -47,11 +46,7 @@ export const menuItems = [
         label: "Add Customer",
         path: "/up-add-customer",
       },
-      {
-        icon: List,
-        label: "All Customers",
-        path: "/up-all-customers",
-      },
+
     ],
   },
   {
@@ -63,11 +58,7 @@ export const menuItems = [
         label: "Add Guarantor",
         path: "/up-add-guarantor",
       },
-      {
-        icon: List,
-        label: "All Guarantors",
-        path: "/up-all-guarantors",
-      },
+
     ],
   },
   {
@@ -78,11 +69,6 @@ export const menuItems = [
         icon: Add,
         label: "Add Purchase",
         path: "/up-add-purchase",
-      },
-      {
-        icon: Receipt,
-        label: "Purchase History",
-        path: "/up-purchase-history",
       },
 
     ],
@@ -97,24 +83,8 @@ export const menuItems = [
         label: "Add Stock",
         path: "/up-add-stock",
       },
-      {
-        icon: List,
-        label: "Inventory",
-        path: "/up-inventory",
-      },
 
-    ],
-  },
-  {
-    icon: Group,
-    label: "Suppliers",
-    children: [
 
-      {
-        icon: Group,
-        label: "Suppliers",
-        path: "/up-suppliers",
-      },
     ],
   },
   {
@@ -126,24 +96,7 @@ export const menuItems = [
         icon: List,
         label: "Installment Management",
         path: "/up-installment-management",
-      },
-      {
-        icon: Receipt,
-        label: "Installment History",
-        path: "/up-installment-history",
-      },
-    ],
-  },
-  {
-    icon: Receipt,
-    label: "Sales",
-    children: [
-
-      {
-        icon: Receipt,
-        label: "Sales History",
-        path: "/up-sales-history",
-      },
+      }
     ],
   },
 
@@ -152,25 +105,39 @@ export const menuItems = [
     label: "Reports",
     children: [
       {
-        icon: TrendingUp,
-        label: "Sales Reports",
-        path: "/up-sales-report",
-        roles: ["owner", "admin"],
-      },
-      {
-        icon: People,
-        label: "Customer Reports",
-        path: "/up-customer-report",
-      },
-      {
         icon: AttachMoney,
         label: "Purchase Reports",
         path: "/up-purchase-report",
       },
       {
         icon: Inventory,
-        label: "Product Reports",
-        path: "/up-product-report",
+        label: "Inventory Reports",
+        path: "/up-inventory-report",
+      },
+      {
+        icon: People,
+        label: "Customers Reports",
+        path: "/up-customer-report",
+      },
+      {
+        icon: Group,
+        label: "Guarantors Reports",
+        path: "/up-guarantors-report",
+      },
+      {
+        icon: CreditCard,
+        label: "Installments Reports",
+        path: "/up-installments-report",
+      },
+      {
+        icon: TrendingUp,
+        label: "Sales Reports",
+        path: "/up-sales-report",
+      },
+      {
+        icon: Group,
+        label: "Supliers Reports",
+        path: "/up-suppliers-report",
       },
     ],
   },

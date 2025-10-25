@@ -7,6 +7,46 @@ import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
 
+// Payment methods list
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Al Baraka Bank (Pakistan) Limited",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib Limited",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Dubai Islamic Bank Pakistan Limited",
+  "Faysal Bank Limited",
+  "First Women Bank",
+  "Habib Bank Limited",
+  "Habib Metropolitan Bank Limited",
+  "HBL Bank",
+  "Industrial and Commercial Bank of China",
+  "Industrial Development Bank of Pakistan",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP (National Bank of Pakistan)",
+  "Punjab Provincial Cooperative Bank Ltd.",
+  "Samba Bank",
+  "Silkbank Limited",
+  "Sindh Bank Limited",
+  "SME Bank Limited",
+  "Soneri Bank Limited",
+  "Standard Chartered Bank (Pakistan) Ltd",
+  "Summit Bank Limited",
+  "UBL (United Bank Limited)",
+  "United Bank Limited",
+  "Zarai Taraqiati Bank Limited",
+];
+
 // Load products from localStorage utility function
 const loadProducts = () => {
   const stored = localStorage.getItem("products");
@@ -37,6 +77,18 @@ const generateInvoiceId = () => {
   // Generate next sequential invoice ID
   const nextNum = lastSavedNum + 1;
   return `Inv-${String(nextNum).padStart(3, "0")}`;
+};
+
+// Helper function to capitalize text (first letter of each word)
+const capitalizeText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    .trim();
 };
 
 // Date formatting utility function - converts various date formats to standardized string
@@ -174,6 +226,9 @@ export default function AddStock() {
   const [company, setCompany] = useState("");
   const [displayCompany, setDisplayCompany] = useState("");
 
+  // State for payment method
+  const [paymentMethod, setPaymentMethod] = useState("");
+
   // State for calculated average price per unit
   const [pricePerUnit, setPricePerUnit] = useState("0.00");
 
@@ -208,13 +263,14 @@ export default function AddStock() {
       setNewSupplierContact("");
       setCompany("");
       setDisplayCompany("");
+      setPaymentMethod("");
       setPricePerUnit("0.00");
     } else {
       setProduct(null);
-      toast.error("Product not found!", { 
+      toast.error("Product not found!", {
         position: "top-right",
-        theme: "dark", 
-        autoClose: 2000 
+        theme: "dark",
+        autoClose: 2000,
       });
     }
   }, [selectedId, products]);
@@ -282,17 +338,23 @@ export default function AddStock() {
       return;
     }
 
-    // For fields that should be saved in lowercase and displayed in uppercase
+    // For fields that should be displayed as-is but saved capitalized
     if (name === "newSupplier") {
-      setNewSupplier(value.toLowerCase());
-      setDisplayNewSupplier(value.toUpperCase());
+      setNewSupplier(value);
+      setDisplayNewSupplier(value); // Display original input
       return;
     }
 
     // Handle company input
     if (name === "company") {
-      setCompany(value.toLowerCase());
-      setDisplayCompany(value.toUpperCase());
+      setCompany(value);
+      setDisplayCompany(value); // Display original input
+      return;
+    }
+
+    // Handle payment method selection
+    if (name === "paymentMethod") {
+      setPaymentMethod(value);
       return;
     }
   };
@@ -308,11 +370,12 @@ export default function AddStock() {
     setNewSupplierContact("");
     setCompany("");
     setDisplayCompany("");
+    setPaymentMethod("");
     setPricePerUnit("0.00");
-    toast.info("Form cleared", { 
+    toast.info("Form cleared", {
       position: "top-right",
-      theme: "dark", 
-      autoClose: 1500 
+      theme: "dark",
+      autoClose: 1500,
     });
   };
 
@@ -321,15 +384,16 @@ export default function AddStock() {
     e.preventDefault();
 
     // Validate product selection
-    if (!product) return toast.error("No product selected!", { 
-      position: "top-right",
-      theme: "dark" 
-    });
+    if (!product)
+      return toast.error("No product selected!", {
+        position: "top-right",
+        theme: "dark",
+      });
 
-    const toastOptions = { 
+    const toastOptions = {
       position: "top-right",
-      theme: "dark", 
-      autoClose: 2000 
+      theme: "dark",
+      autoClose: 2000,
     };
 
     // Validate purchase price
@@ -360,6 +424,10 @@ export default function AddStock() {
     if (!company.trim())
       return toast.error("Company is required", toastOptions);
 
+    // Validate payment method
+    if (!paymentMethod.trim())
+      return toast.error("Payment Method is required", toastOptions);
+
     // Show confirmation modal instead of directly saving
     setShowConfirmModal(true);
   };
@@ -367,6 +435,10 @@ export default function AddStock() {
   // Confirm and execute stock update
   const confirmSave = () => {
     if (!product) return;
+
+    // Create capitalized versions for saving
+    const capitalizedSupplier = capitalizeText(newSupplier);
+    const capitalizedCompany = capitalizeText(company);
 
     // Calculate new total quantity
     const currentQty = parseInt(product.quantity) || 0;
@@ -393,8 +465,8 @@ export default function AddStock() {
     const fullSupplierContact = "+" + newSupplierContact;
     const existingSupplier = products.find(
       (p) =>
-        p.supplier?.toLowerCase() === newSupplier.toLowerCase() &&
-        p.company?.toLowerCase() === company.toLowerCase() &&
+        p.supplier === capitalizedSupplier &&
+        p.company === capitalizedCompany &&
         p.supplierContact === fullSupplierContact
     );
 
@@ -405,9 +477,9 @@ export default function AddStock() {
             ...p,
             price: newPurchasePrice, // Use new purchase price
             quantity: newTotalQty.toString(),
-            supplier: newSupplier, // Use new supplier in lowercase
+            supplier: capitalizedSupplier, // Use capitalized supplier
             supplierContact: "+" + newSupplierContact, // Use new supplier contact
-            company: company, // Use company from input in lowercase
+            company: capitalizedCompany, // Use capitalized company
             value: totalInventoryValue.toFixed(2), // Total inventory value
             pricePerUnit: finalPricePerUnit, // Store weighted average price per unit
             updatedOn: formatDateTime(new Date()),
@@ -429,7 +501,7 @@ export default function AddStock() {
       quantity: additionalQty, // Only additional quantity
       price: newPurchasePrice, // Use new purchase price
       supplierContact: "+" + newSupplierContact, // Use new supplier contact
-      company: company, // Use company from input in lowercase
+      company: capitalizedCompany, // Use capitalized company
       total: purchaseValue.toFixed(2), // Value for additional quantity only
       value: purchaseValue.toFixed(2),
       pricePerUnit: finalPricePerUnit, // Include price per unit in history
@@ -437,7 +509,8 @@ export default function AddStock() {
       name: product.name,
       model: product.model,
       category: product.category,
-      supplier: newSupplier, // Use new supplier in lowercase
+      supplier: capitalizedSupplier, // Use capitalized supplier
+      paymentMethod: paymentMethod, // Include payment method
       type: "stock-addition", // Mark as stock addition type
     };
 
@@ -499,11 +572,7 @@ export default function AddStock() {
     // Main container with responsive padding
     <div className="px-4 py-2 min-h-screen ">
       {/* Toast notifications container */}
-      <ToastContainer 
-        position="top-right"
-        theme="dark" 
-        autoClose={2000} 
-      />
+      <ToastContainer position="top-right" theme="dark" autoClose={2000} />
 
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto">
@@ -543,7 +612,7 @@ export default function AddStock() {
                     key={p.productId}
                     value={p.productId}
                   >
-                    {p.name.toUpperCase()} - {p.model.toUpperCase()}{" "}
+                    {p.name} - {p.model}{" "}
                   </option>
                 ))}
               </select>
@@ -634,7 +703,7 @@ export default function AddStock() {
                         <input
                           type="text"
                           name="company"
-                          value={displayCompany}
+                          value={displayCompany} // Display original input
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
                           placeholder="Enter company name"
@@ -648,7 +717,7 @@ export default function AddStock() {
                         <input
                           type="text"
                           name="newSupplier"
-                          value={displayNewSupplier}
+                          value={displayNewSupplier} // Display original input
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
                           placeholder="Enter supplier name"
@@ -673,6 +742,32 @@ export default function AddStock() {
                             placeholder="923001234567"
                           />
                         </div>
+                      </div>
+
+                      {/* Payment Method dropdown */}
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-white">
+                          Payment Method
+                        </label>
+                        <select
+                          name="paymentMethod"
+                          value={paymentMethod}
+                          onChange={handleChange}
+                          className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
+                        >
+                          <option value="" className="bg-black/90">
+                            Select a payment method
+                          </option>
+                          {PAYMENT_METHODS.map((method) => (
+                            <option
+                              key={method}
+                              value={method}
+                              className="bg-black/90"
+                            >
+                              {method}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -873,11 +968,21 @@ export default function AddStock() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white">Company:</span>
-                  <span className="font-semibold text-white">{displayCompany}</span>
+                  <span className="font-semibold text-white">
+                    {displayCompany}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white">Supplier:</span>
-                  <span className="font-semibold text-white">{displayNewSupplier}</span>
+                  <span className="font-semibold text-white">
+                    {displayNewSupplier}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white">Payment Method:</span>
+                  <span className="font-semibold text-black rounded-full px-2 bg-white/70">
+                    {paymentMethod}
+                  </span>
                 </div>
                 {/* Average price per unit in confirmation */}
                 <div className="flex justify-between">

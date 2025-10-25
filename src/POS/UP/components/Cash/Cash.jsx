@@ -2,12 +2,50 @@
 import React, { useState, useEffect } from "react";
 import { CreditCard } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
+
+// Payment methods list
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Al Baraka Bank (Pakistan) Limited",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib Limited",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Dubai Islamic Bank Pakistan Limited",
+  "Faysal Bank Limited",
+  "First Women Bank",
+  "Habib Bank Limited",
+  "Habib Metropolitan Bank Limited",
+  "HBL Bank",
+  "Industrial and Commercial Bank of China",
+  "Industrial Development Bank of Pakistan",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP (National Bank of Pakistan)",
+  "Punjab Provincial Cooperative Bank Ltd.",
+  "Samba Bank",
+  "Silkbank Limited",
+  "Sindh Bank Limited",
+  "SME Bank Limited",
+  "Soneri Bank Limited",
+  "Standard Chartered Bank (Pakistan) Ltd",
+  "Summit Bank Limited",
+  "UBL (United Bank Limited)",
+  "United Bank Limited",
+  "Zarai Taraqiati Bank Limited",
+];
 
 // |===============================| Cash Component |===============================|
 const Cash = () => {
-  const navigate = useNavigate();
 
   // Load products from localStorage
   const loadProducts = () => {
@@ -18,10 +56,10 @@ const Cash = () => {
         // Convert all product string fields to lowercase when loading
         const formattedProducts = productsData.map((product) => ({
           ...product,
-          name: product.name ? product.name.toLowerCase() : "",
-          model: product.model ? product.model.toLowerCase() : "",
-          category: product.category ? product.category.toLowerCase() : "",
-          company: product.company ? product.company.toLowerCase() : "",
+          name: product.name ? product.name : "",
+          model: product.model ? product.model : "",
+          category: product.category ? product.category : "",
+          company: product.company ? product.company : "",
         }));
         return formattedProducts;
       }
@@ -80,7 +118,7 @@ const Cash = () => {
   const [price, setPrice] = useState("0");
   const [discount, setDiscount] = useState("0");
   const [quantity, setQuantity] = useState("1");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -97,7 +135,7 @@ const Cash = () => {
       setPrice("0");
       setDiscount("0");
       setQuantity("1");
-      setPaymentMethod("cash");
+      setPaymentMethod("Cash");
       return;
     }
 
@@ -123,13 +161,13 @@ const Cash = () => {
       setPrice("0");
       setDiscount("0");
       setQuantity("1");
-      setPaymentMethod("cash");
+      setPaymentMethod("Cash");
     } else {
       setSelectedProduct(null);
       setPrice("0");
       setDiscount("0");
       setQuantity("1");
-      setPaymentMethod("cash");
+      setPaymentMethod("Cash");
       toast.error("Product not found!", {
         position: "top-right",
         autoClose: 2000,
@@ -282,7 +320,7 @@ const Cash = () => {
       productName: selectedProduct.name, // Already in lowercase from state
       productModel: selectedProduct.model, // Already in lowercase from state
       productCategory: selectedProduct.category, // Already in lowercase from state
-      customerType: paymentMethod === "cash" ? "cash" : "bank",
+      customerType: paymentMethod === "Cash" ? "cash" : "bank",
       salePrice: salePrice,
       quantitySold: qty,
       discount: discountPercent,
@@ -354,7 +392,7 @@ const Cash = () => {
     setPrice("0");
     setDiscount("0");
     setQuantity("1");
-    setPaymentMethod("cash");
+    setPaymentMethod("Cash");
   };
 
   // Handlers
@@ -412,7 +450,7 @@ const Cash = () => {
 
   const handleCloseModal = () => {
     setIsReceiptModalOpen(false);
-    navigate("/up-dashboard");
+    window.location.href = "/up-dashboard";
   };
 
   // Check if all required fields are filled
@@ -441,16 +479,9 @@ const Cash = () => {
   const currentStock = selectedProduct ? parseInt(selectedProduct.quantity) : 0;
   const isQuantityExceedingStock = parseInt(quantity) > currentStock;
 
-  // Format payment method for display
+  // Format payment method for display (no change needed since we're using the actual names)
   const getPaymentMethodDisplay = (method) => {
-    const methodMap = {
-      cash: "Cash",
-      hbl: "HBL",
-      jazzcash: "JazzCash",
-      easypaisa: "Easy Paisa",
-      meezan: "Meezan Bank",
-    };
-    return methodMap[method] || method;
+    return method;
   };
 
   return (
@@ -505,7 +536,7 @@ const Cash = () => {
                 key={p.productId}
                 value={p.productId}
               >
-                {p.name.toUpperCase()} - {p.model.toUpperCase()}
+                {p.name} - {p.model}
               </option>
             ))}
           </select>
@@ -550,13 +581,13 @@ const Cash = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Name:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.name.toUpperCase()}
+                      {selectedProduct.name}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Model:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.model.toUpperCase()}
+                      {selectedProduct.model}
                     </span>
                   </div>
                 </div>
@@ -564,7 +595,7 @@ const Cash = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Category:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.category.toUpperCase()}
+                      {selectedProduct.category}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -626,7 +657,7 @@ const Cash = () => {
                   required
                 />
                 <p className="text-xs text-white/70 mt-1">
-                  Unit price: {parseFloat(selectedProduct.pricePerUnit)}
+                  Unit price: Rs: {parseFloat(selectedProduct.pricePerUnit)}/-
                 </p>
               </div>
 
@@ -655,23 +686,13 @@ const Cash = () => {
                 <select
                   value={paymentMethod}
                   onChange={handlePaymentMethodChange}
-                  className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                  className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                 >
-                  <option value="cash" className="bg-black/90">
-                    Cash
-                  </option>
-                  <option value="hbl" className="bg-black/90">
-                    HBL
-                  </option>
-                  <option value="jazzcash" className="bg-black/90">
-                    JazzCash
-                  </option>
-                  <option value="easypaisa" className="bg-black/90">
-                    Easy Paisa
-                  </option>
-                  <option value="meezan" className="bg-black/90">
-                    Meezan Bank
-                  </option>
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method} value={method} className="bg-black/90">
+                      {method}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -715,7 +736,7 @@ const Cash = () => {
                     Final Amount:
                   </span>
                   <span className="text-xl md:text-2xl font-bold text-white">
-                    Rs {finalTotal}/-
+                    Rs: {finalTotal}/-
                   </span>
                 </div>
               </div>
@@ -754,9 +775,7 @@ const Cash = () => {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-white">Product:</span>
-                <span className="font-semibold">
-                  {selectedProduct?.name.toUpperCase()}
-                </span>
+                <span className="font-semibold">{selectedProduct?.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Invoice ID:</span>
@@ -771,7 +790,7 @@ const Cash = () => {
               <div className="flex justify-between">
                 <span className="text-white">Unit Price:</span>
                 <span className="font-semibold text-white">
-                  Rs {parseFloat(price).toFixed(2)}/-
+                  Rs: {parseFloat(price).toFixed(2)}/-
                 </span>
               </div>
               <div className="flex justify-between">
@@ -780,13 +799,13 @@ const Cash = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Payment Method:</span>
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-black bg-white/70 px-2 py-1 rounded-full ">
                   {getPaymentMethodDisplay(paymentMethod)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-white/20 pt-2">
                 <span className="text-white">Final Amount:</span>
-                <span className="font-bold text-white">Rs {finalTotal}/-</span>
+                <span className="font-bold text-white">Rs: {finalTotal}/-</span>
               </div>
             </div>
 
@@ -851,19 +870,19 @@ const Cash = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Name:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productName.toUpperCase()}
+                    {currentTransaction.productName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Model:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productModel.toUpperCase()}
+                    {currentTransaction.productModel}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Category:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productCategory.toUpperCase()}
+                    {currentTransaction.productCategory}
                   </span>
                 </div>
               </div>
@@ -879,7 +898,7 @@ const Cash = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Unit Price:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.salePrice}
+                    Rs: {currentTransaction.salePrice}/-
                   </span>
                 </div>
                 {currentTransaction.discount >= 0 && (
@@ -902,7 +921,7 @@ const Cash = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-green-900">Total:</span>
                   <span className="font-bold text-green-900 text-right">
-                    {currentTransaction.finalTotal}
+                    Rs: {currentTransaction.finalTotal}/-
                   </span>
                 </div>
               </div>
@@ -914,9 +933,7 @@ const Cash = () => {
                     Payment Method:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {getPaymentMethodDisplay(
-                      currentTransaction.paymentMethod
-                    ).toUpperCase()}
+                    {getPaymentMethodDisplay(currentTransaction.paymentMethod)}
                   </span>
                 </div>
               </div>
@@ -958,3 +975,19 @@ const Cash = () => {
 
 // |===============================| Export |===============================|
 export default Cash;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

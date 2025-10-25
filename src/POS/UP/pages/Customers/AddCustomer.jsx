@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { useNavigate } from "react-router-dom";
 
 // Define empty customer object template for form initialization
 const emptyCustomer = {
@@ -39,14 +38,19 @@ const generateCustomerId = () => {
   return `C-${String(nextId).padStart(3, "0")}`;
 };
 
+// Helper function to capitalize text (first letter of each word)
+const capitalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 // Main AddCustomer component function
 export default function AddCustomer({ onSave }) {
   // State management for customer form data
   const [customer, setCustomer] = useState(emptyCustomer);
-  const [displayCustomer, setDisplayCustomer] = useState(emptyCustomer);
-
-  // Navigation hook for programmatic routing
-  const navigate = useNavigate();
 
   // Effect hook to generate customer ID on component mount
   useEffect(() => {
@@ -54,7 +58,6 @@ export default function AddCustomer({ onSave }) {
     if (!customer.customerId) {
       const newId = generateCustomerId();
       setCustomer((prev) => ({ ...prev, customerId: newId }));
-      setDisplayCustomer((prev) => ({ ...prev, customerId: newId }));
     }
   }, []);
 
@@ -66,7 +69,6 @@ export default function AddCustomer({ onSave }) {
     if (name === "contact") {
       let digits = value.replace(/\D/g, "");
       setCustomer((prev) => ({ ...prev, [name]: digits }));
-      setDisplayCustomer((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
@@ -87,29 +89,35 @@ export default function AddCustomer({ onSave }) {
           12
         )}-${digits.slice(12)}`;
 
-      setCustomer((prev) => ({ ...prev, [name]: formatted.toLowerCase() }));
-      setDisplayCustomer((prev) => ({ ...prev, [name]: formatted.toUpperCase() }));
+      setCustomer((prev) => ({ ...prev, [name]: formatted }));
       return;
     }
 
-    // For fields that should be saved in lowercase and displayed in uppercase
+    // For text fields that should be capitalized: firstName, lastName, city, address
     if (["firstName", "lastName", "city", "address"].includes(name)) {
-      setCustomer((prev) => ({ ...prev, [name]: value.toLowerCase() }));
-      setDisplayCustomer((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+      setCustomer((prev) => ({ ...prev, [name]: value }));
       return;
     }
 
-    // Default handling for all other fields (status, customerId)
+    // For all other fields - keep as entered
     setCustomer((prev) => ({ ...prev, [name]: value }));
-    setDisplayCustomer((prev) => ({ ...prev, [name]: value }));
   };
 
   // Form submission handler with comprehensive validation
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Create a capitalized version of the customer data for saving
+    const capitalizedCustomer = {
+      ...customer,
+      firstName: capitalizeText(customer.firstName),
+      lastName: capitalizeText(customer.lastName),
+      city: capitalizeText(customer.city),
+      address: capitalizeText(customer.address),
+    };
+
     // Validate Customer ID format
-    if (!/^C-\d+$/.test(customer.customerId))
+    if (!/^C-\d+$/.test(capitalizedCustomer.customerId))
       return toast.error("Invalid Customer ID format", {
         position: "top-right",
         autoClose: 2000,
@@ -117,7 +125,7 @@ export default function AddCustomer({ onSave }) {
       });
 
     // Validate First Name (required field)
-    if (!customer.firstName.trim())
+    if (!capitalizedCustomer.firstName.trim())
       return toast.error("First Name is required", {
         position: "top-right",
         autoClose: 2000,
@@ -125,7 +133,7 @@ export default function AddCustomer({ onSave }) {
       });
 
     // Validate Last Name (required field)
-    if (!customer.lastName.trim())
+    if (!capitalizedCustomer.lastName.trim())
       return toast.error("Last Name is required", {
         position: "top-right",
         autoClose: 2000,
@@ -133,7 +141,7 @@ export default function AddCustomer({ onSave }) {
       });
 
     // Validate Contact format with country code
-    const fullContact = "+" + customer.contact;
+    const fullContact = "+" + capitalizedCustomer.contact;
     if (!/^\+\d{7,15}$/.test(fullContact))
       return toast.error(
         "Contact must start with '+' followed by 7–15 digits (e.g., +923001234567)",
@@ -141,7 +149,7 @@ export default function AddCustomer({ onSave }) {
       );
 
     // Validate CNIC format (Pakistan standard)
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(customer.cnic))
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(capitalizedCustomer.cnic))
       return toast.error("CNIC must be in format 12345-1234567-1", {
         position: "top-right",
         autoClose: 2000,
@@ -149,7 +157,7 @@ export default function AddCustomer({ onSave }) {
       });
 
     // Validate City (required field)
-    if (!customer.city.trim())
+    if (!capitalizedCustomer.city.trim())
       return toast.error("City is required", {
         position: "top-right",
         autoClose: 2000,
@@ -157,7 +165,7 @@ export default function AddCustomer({ onSave }) {
       });
 
     // Validate Address (required field)
-    if (!customer.address.trim())
+    if (!capitalizedCustomer.address.trim())
       return toast.error("Address is required", {
         position: "top-right",
         autoClose: 2000,
@@ -169,7 +177,7 @@ export default function AddCustomer({ onSave }) {
       localStorage.getItem("all_customers_data") || "[]"
     );
 
-    const isCnicDuplicate = existing.some((c) => c.cnic === customer.cnic);
+    const isCnicDuplicate = existing.some((c) => c.cnic === capitalizedCustomer.cnic);
     if (isCnicDuplicate) {
       return toast.error("A customer with this CNIC already exists!", {
         position: "top-right",
@@ -180,7 +188,7 @@ export default function AddCustomer({ onSave }) {
 
     // Prepare customer data for saving with additional metadata
     const savedCustomer = {
-      ...customer,
+      ...capitalizedCustomer,
       contact: fullContact, // Store with country code prefix
       dateAdded: new Date().toISOString(), // Add timestamp
     };
@@ -197,13 +205,12 @@ export default function AddCustomer({ onSave }) {
       position: "top-right",
       autoClose: 2000,
       theme: "dark",
-      onClose: () => navigate("/up-all-customers"), // Navigate to customers list
+      onClose: () => (window.location.href = "/up-dashboard"), // Redirect using window.location
     });
 
     // Reset form with new customer ID
     const newId = generateCustomerId();
     setCustomer({ ...emptyCustomer, customerId: newId });
-    setDisplayCustomer({ ...emptyCustomer, customerId: newId });
   };
 
   // Form clear/reset handler
@@ -211,7 +218,6 @@ export default function AddCustomer({ onSave }) {
     // Reset form but preserve the current customer ID
     const currentId = customer.customerId;
     setCustomer({ ...emptyCustomer, customerId: currentId });
-    setDisplayCustomer({ ...emptyCustomer, customerId: currentId });
     toast.info("Form cleared!", {
       position: "top-right",
       autoClose: 1500,
@@ -261,7 +267,7 @@ export default function AddCustomer({ onSave }) {
                 type="text"
                 name="customerId"
                 id="customerId"
-                value={displayCustomer.customerId}
+                value={customer.customerId}
                 readOnly
                 className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
               />
@@ -282,7 +288,7 @@ export default function AddCustomer({ onSave }) {
                   name="firstName"
                   id="firstName"
                   placeholder="First Name"
-                  value={displayCustomer.firstName}
+                  value={customer.firstName}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -301,7 +307,7 @@ export default function AddCustomer({ onSave }) {
                   name="lastName"
                   id="lastName"
                   placeholder="Last Name"
-                  value={displayCustomer.lastName}
+                  value={customer.lastName}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -328,7 +334,7 @@ export default function AddCustomer({ onSave }) {
                     id="contact"
                     placeholder="923001234567"
                     maxLength={15}
-                    value={displayCustomer.contact}
+                    value={customer.contact}
                     onChange={handleChange}
                     className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />
@@ -348,7 +354,7 @@ export default function AddCustomer({ onSave }) {
                   name="cnic"
                   id="cnic"
                   placeholder="12345-1234567-1"
-                  value={displayCustomer.cnic}
+                  value={customer.cnic}
                   onChange={handleChange}
                   maxLength={15}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
@@ -371,7 +377,7 @@ export default function AddCustomer({ onSave }) {
                   name="city"
                   id="city"
                   placeholder="City"
-                  value={displayCustomer.city}
+                  value={customer.city}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -388,7 +394,7 @@ export default function AddCustomer({ onSave }) {
                 <select
                   name="status"
                   id="status"
-                  value={displayCustomer.status}
+                  value={customer.status}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 >
@@ -411,7 +417,7 @@ export default function AddCustomer({ onSave }) {
                 name="address"
                 id="address"
                 placeholder="Enter full residential address"
-                value={displayCustomer.address}
+                value={customer.address}
                 onChange={handleChange}
                 rows="3"
                 className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"

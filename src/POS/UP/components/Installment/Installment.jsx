@@ -144,10 +144,10 @@ const Installment = () => {
         // Convert all product string fields to lowercase when loading
         const formattedProducts = productsData.map(product => ({
           ...product,
-          name: product.name ? product.name.toLowerCase() : "",
-          model: product.model ? product.model.toLowerCase() : "",
-          category: product.category ? product.category.toLowerCase() : "",
-          company: product.company ? product.company.toLowerCase() : ""
+          name: product.name ? product.name : "",
+          model: product.model ? product.model : "",
+          category: product.category ? product.category : "",
+          company: product.company ? product.company : ""
         }));
         setProducts(formattedProducts);
       } else {
@@ -166,12 +166,12 @@ const Installment = () => {
         // Convert all customer string fields to lowercase when loading
         const formattedCustomers = customersData.map((customer) => ({
           id: customer.customerId,
-          name: `${customer.firstName} ${customer.lastName}`.toLowerCase(),
+          name: `${customer.firstName} ${customer.lastName}`,
           contact: customer.contact,
           cnic: customer.cnic,
-          city: customer.city ? customer.city.toLowerCase() : "",
+          city: customer.city ? customer.city : "",
           status: customer.status || "Active",
-          address: customer.address ? customer.address.toLowerCase() : "",
+          address: customer.address ? customer.address : "",
         }));
         setCustomers(formattedCustomers);
       } else {
@@ -190,11 +190,11 @@ const Installment = () => {
         // Convert all guarantor string fields to lowercase when loading
         const formattedGuarantors = guarantorsData.map((guarantor) => ({
           id: guarantor.guarantorId,
-          name: `${guarantor.firstName} ${guarantor.lastName}`.toLowerCase(),
+          name: `${guarantor.firstName} ${guarantor.lastName}`,
           contact: guarantor.contact,
           cnic: guarantor.cnic,
-          city: guarantor.city ? guarantor.city.toLowerCase() : "",
-          address: guarantor.address ? guarantor.address.toLowerCase() : "",
+          city: guarantor.city ? guarantor.city : "",
+          address: guarantor.address ? guarantor.address : "",
         }));
         setGuarantors(formattedGuarantors);
       } else {
@@ -938,7 +938,7 @@ const Installment = () => {
                 value={p.productId}
                 className="bg-black/90"
               >
-                {p.name.toUpperCase()} - {p.model.toUpperCase()}
+                {p.name} - {p.model}
               </option>
             ))}
           </select>
@@ -983,13 +983,13 @@ const Installment = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Name:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.name.toUpperCase()}
+                      {selectedProduct.name}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Model:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.model.toUpperCase()}
+                      {selectedProduct.model}
                     </span>
                   </div>
                 </div>
@@ -997,7 +997,7 @@ const Installment = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Category:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.category.toUpperCase()}
+                      {selectedProduct.category}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -1169,7 +1169,7 @@ const Installment = () => {
                       </option>
                       {customers.map((c) => (
                         <option key={c.id} value={c.id} className="bg-black/90">
-                          {c.name.toUpperCase()}
+                          {c.name}
                         </option>
                       ))}
                     </select>
@@ -1203,7 +1203,7 @@ const Installment = () => {
                     </option>
                     {guarantors.map((g) => (
                       <option key={g.id} value={g.id} className="bg-black/90">
-                        {g.name.toUpperCase()}
+                        {g.name}
                       </option>
                     ))}
                   </select>
@@ -1356,7 +1356,7 @@ const Installment = () => {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-white">Product:</span>
-                <span className="font-semibold">{selectedProduct?.name.toUpperCase()}</span>
+                <span className="font-semibold">{selectedProduct?.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Quantity:</span>
@@ -1371,14 +1371,14 @@ const Installment = () => {
               <div className="flex justify-between">
                 <span className="text-white">Customer:</span>
                 <span className="font-semibold text-white">
-                  {customers.find((c) => c.id === selectedCustomerId)?.name.toUpperCase()}
+                  {customers.find((c) => c.id === selectedCustomerId)?.name}
                 </span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-white">Guarantor:</span>
                 <span className="font-semibold text-white">
-                  {guarantors.find((g) => g.id === selectedGuarantorId)?.name.toUpperCase()}
+                  {guarantors.find((g) => g.id === selectedGuarantorId)?.name}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1508,19 +1508,19 @@ const Installment = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Name:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productName.toUpperCase()}
+                    {currentTransaction.productName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Model:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productModel.toUpperCase()}
+                    {currentTransaction.productModel}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Category:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.productCategory.toUpperCase()}
+                    {currentTransaction.productCategory}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1537,14 +1537,14 @@ const Installment = () => {
                   <span className="font-medium text-gray-700">Customer:</span>
                   <span className="text-gray-900 text-right">
                     {currentTransaction.customerId}{" "}
-                    {currentTransaction.customer.toUpperCase()}
+                    {currentTransaction.customer}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Guarantor:</span>
                   <span className="text-gray-900 text-right">
                     {currentTransaction.guarantorId}{" "}
-                    {currentTransaction.guarantor.toUpperCase()}
+                    {currentTransaction.guarantor}
                   </span>
                 </div>
               </div>

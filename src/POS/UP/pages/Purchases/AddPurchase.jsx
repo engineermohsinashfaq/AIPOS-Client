@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AddIcon from "@mui/icons-material/Add";
-import { useNavigate } from "react-router-dom";
 
 // Define empty product object template for form initialization
 const emptyProduct = {
@@ -20,7 +19,48 @@ const emptyProduct = {
   supplierContact: "",
   total: "",
   value: "",
+  paymentMethod: "",
 };
+
+// Payment methods list
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Al Baraka Bank (Pakistan) Limited",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib Limited",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Dubai Islamic Bank Pakistan Limited",
+  "Faysal Bank Limited",
+  "First Women Bank",
+  "Habib Bank Limited",
+  "Habib Metropolitan Bank Limited",
+  "HBL Bank",
+  "Industrial and Commercial Bank of China",
+  "Industrial Development Bank of Pakistan",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP (National Bank of Pakistan)",
+  "Punjab Provincial Cooperative Bank Ltd.",
+  "Samba Bank",
+  "Silkbank Limited",
+  "Sindh Bank Limited",
+  "SME Bank Limited",
+  "Soneri Bank Limited",
+  "Standard Chartered Bank (Pakistan) Ltd",
+  "Summit Bank Limited",
+  "UBL (United Bank Limited)",
+  "United Bank Limited",
+  "Zarai Taraqiati Bank Limited",
+];
 
 // Product ID generator function - creates sequential IDs based on existing data
 const generateProductId = () => {
@@ -71,6 +111,18 @@ const generateInvoiceId = () => {
 const loadProducts = () => {
   const stored = localStorage.getItem("products");
   return stored ? JSON.parse(stored) : [];
+};
+
+// Helper function to capitalize text (first letter of each word)
+const capitalizeText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    .trim();
 };
 
 // Date formatting utility function - converts various date formats to standardized string
@@ -156,24 +208,17 @@ const formatShortDate = (dateString) => {
 export default function AddPurchase({ onSave }) {
   // State management for product form data
   const [product, setProduct] = useState(emptyProduct);
-  const [displayProduct, setDisplayProduct] = useState(emptyProduct);
 
   // State for existing products list
   const [products, setProducts] = useState(loadProducts());
 
   // Navigation hook for programmatic routing
-  const navigate = useNavigate();
 
   // Effect hook to generate product and invoice IDs on component mount
   useEffect(() => {
     const productId = generateProductId();
     const invoiceId = generateInvoiceId();
     setProduct((prev) => ({
-      ...prev,
-      productId,
-      invoiceId,
-    }));
-    setDisplayProduct((prev) => ({
       ...prev,
       productId,
       invoiceId,
@@ -186,7 +231,6 @@ export default function AddPurchase({ onSave }) {
     const qty = parseInt(product.quantity) || 0;
     const total = (price * qty).toFixed(2);
     setProduct((prev) => ({ ...prev, total, value: total }));
-    setDisplayProduct((prev) => ({ ...prev, total, value: total }));
   }, [product.price, product.quantity]);
 
   // Form input change handler with special formatting for numeric fields
@@ -197,7 +241,6 @@ export default function AddPurchase({ onSave }) {
     if (name === "price") {
       const cleanedValue = value.replace(/[^\d.]/g, "");
       setProduct((prev) => ({ ...prev, [name]: cleanedValue }));
-      setDisplayProduct((prev) => ({ ...prev, [name]: cleanedValue }));
       return;
     }
 
@@ -205,7 +248,6 @@ export default function AddPurchase({ onSave }) {
     if (name === "quantity") {
       const cleanedValue = value.replace(/\D/g, "");
       setProduct((prev) => ({ ...prev, [name]: cleanedValue }));
-      setDisplayProduct((prev) => ({ ...prev, [name]: cleanedValue }));
       return;
     }
 
@@ -213,38 +255,40 @@ export default function AddPurchase({ onSave }) {
     if (name === "supplierContact") {
       let digits = value.replace(/\D/g, "").slice(0, 15);
       setProduct((prev) => ({ ...prev, [name]: digits }));
-      setDisplayProduct((prev) => ({ ...prev, [name]: digits }));
       return;
     }
 
-    // For fields that should be saved in lowercase and displayed in uppercase
-    if (["name", "model", "category", "company", "supplier"].includes(name)) {
-      setProduct((prev) => ({ ...prev, [name]: value.toLowerCase() }));
-      setDisplayProduct((prev) => ({ ...prev, [name]: value.toUpperCase() }));
-      return;
-    }
-
-    // Default handling for all other fields (productId, invoiceId, total, value)
+    // For all other fields - keep genuine case as entered by user (no capitalization during typing)
     setProduct((prev) => ({ ...prev, [name]: value }));
-    setDisplayProduct((prev) => ({ ...prev, [name]: value }));
   };
 
   // Form submission handler with comprehensive validation
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const toastOptions = { 
+    const toastOptions = {
       position: "top-right",
-      theme: "dark", 
-      autoClose: 2000 
+      theme: "dark",
+      autoClose: 2000,
+    };
+
+    // Create capitalized version for validation and saving (but keep original for display)
+    const capitalizedProduct = {
+      ...product,
+      name: capitalizeText(product.name),
+      model: capitalizeText(product.model),
+      category: capitalizeText(product.category),
+      company: capitalizeText(product.company),
+      supplier: capitalizeText(product.supplier),
+      paymentMethod: product.paymentMethod, // Keep payment method as-is (from predefined list)
     };
 
     // Validate Product ID
-    if (!/^P-\d+$/.test(product.productId))
+    if (!/^P-\d+$/.test(capitalizedProduct.productId))
       return toast.error("Invalid Product ID", toastOptions);
 
     // Validate Invoice ID
-    if (!/^Inv-\d+$/.test(product.invoiceId))
+    if (!/^Inv-\d+$/.test(capitalizedProduct.invoiceId))
       return toast.error("Invalid or missing Invoice ID", toastOptions);
 
     // Required fields
@@ -254,33 +298,34 @@ export default function AddPurchase({ onSave }) {
       { key: "category", label: "Category" },
       { key: "company", label: "Company" },
       { key: "supplier", label: "Supplier" },
+      { key: "paymentMethod", label: "Payment Method" },
     ];
 
     for (const field of requiredFields) {
-      if (!product[field.key].trim())
+      if (!capitalizedProduct[field.key].trim())
         return toast.error(`${field.label} is required`, toastOptions);
     }
 
     // Price validation
-    if (!product.price || parseFloat(product.price) <= 0)
+    if (!capitalizedProduct.price || parseFloat(capitalizedProduct.price) <= 0)
       return toast.error("Valid Purchase Price required", toastOptions);
 
     // Quantity validation
-    if (!product.quantity || parseInt(product.quantity) <= 0)
+    if (!capitalizedProduct.quantity || parseInt(capitalizedProduct.quantity) <= 0)
       return toast.error("Valid Quantity required", toastOptions);
 
     // Supplier contact validation
-    const fullSupplierContact = "+" + product.supplierContact;
+    const fullSupplierContact = "+" + capitalizedProduct.supplierContact;
     if (!/^\+\d{7,15}$/.test(fullSupplierContact))
       return toast.error(
         "Supplier Contact must start with '+' and 7–15 digits",
         toastOptions
       );
 
-    // Unique model validation
+    // Unique model validation (case-insensitive for comparison)
     if (
       products.some(
-        (p) => p.model?.toLowerCase() === product.model.toLowerCase()
+        (p) => p.model?.toLowerCase() === capitalizedProduct.model.toLowerCase()
       )
     )
       return toast.error("Model must be unique!", toastOptions);
@@ -288,8 +333,8 @@ export default function AddPurchase({ onSave }) {
     // Check if supplier already exists (same supplier, company, and contact)
     const existingSupplier = products.find(
       (p) =>
-        p.supplier?.toLowerCase() === product.supplier.toLowerCase() &&
-        p.company?.toLowerCase() === product.company.toLowerCase() &&
+        p.supplier?.toLowerCase() === capitalizedProduct.supplier.toLowerCase() &&
+        p.company?.toLowerCase() === capitalizedProduct.company.toLowerCase() &&
         p.supplierContact === fullSupplierContact
     );
 
@@ -303,16 +348,16 @@ export default function AddPurchase({ onSave }) {
           supplierContact: existingSupplier.supplierContact,
         }
       : {
-          supplier: product.supplier,
-          company: product.company,
+          supplier: capitalizedProduct.supplier,
+          company: capitalizedProduct.company,
           supplierContact: fullSupplierContact,
         };
 
     const newProduct = {
-      ...product,
+      ...capitalizedProduct, // Use the capitalized version for saving
       ...supplierData,
-      price: parseFloat(product.price),
-      quantity: parseInt(product.quantity),
+      price: parseFloat(capitalizedProduct.price),
+      quantity: parseInt(capitalizedProduct.quantity),
       savedOn: timestamp,
       updatedOn: timestamp,
       type: "new-purchase",
@@ -339,8 +384,8 @@ export default function AddPurchase({ onSave }) {
     // ✅ Show unified success message
     toast.success(
       existingSupplier
-        ? `Supplier Exist — product saved with Invoice ${product.invoiceId}`
-        : `Product saved with Invoice ${product.invoiceId}`,
+        ? `Supplier Exist — product saved with Invoice ${capitalizedProduct.invoiceId}`
+        : `Product saved with Invoice ${capitalizedProduct.invoiceId}`,
       {
         ...toastOptions,
         onClose: () => {
@@ -349,14 +394,9 @@ export default function AddPurchase({ onSave }) {
             productId: nextProductId,
             invoiceId: nextInvoiceId,
           });
-          setDisplayProduct({
-            ...emptyProduct,
-            productId: nextProductId,
-            invoiceId: nextInvoiceId,
-          });
 
-          // Navigate depending on case
-          navigate(existingSupplier ? "/up-pos" : "/up-inventory");
+          // ✅ Redirect using window.location.href
+          window.location.href = "/up-dashboard";
         },
       }
     );
@@ -375,15 +415,10 @@ export default function AddPurchase({ onSave }) {
       productId,
       invoiceId,
     });
-    setDisplayProduct({
-      ...emptyProduct,
-      productId,
-      invoiceId,
-    });
-    toast.info("Form cleared", { 
+    toast.info("Form cleared", {
       position: "top-right",
-      theme: "dark", 
-      autoClose: 1500 
+      theme: "dark",
+      autoClose: 1500,
     });
   };
 
@@ -392,11 +427,7 @@ export default function AddPurchase({ onSave }) {
     // Main container with padding and full height
     <div className="px-4 py-2 min-h-[100%]">
       {/* Toast notifications container */}
-      <ToastContainer 
-        position="top-right"
-        theme="dark" 
-        autoClose={2000} 
-      />
+      <ToastContainer position="top-right" theme="dark" autoClose={2000} />
 
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto space-y-3">
@@ -422,7 +453,7 @@ export default function AddPurchase({ onSave }) {
                 <input
                   type="text"
                   name="invoiceId"
-                  value={displayProduct.invoiceId}
+                  value={product.invoiceId}
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
                 />
@@ -436,7 +467,7 @@ export default function AddPurchase({ onSave }) {
                 <input
                   type="text"
                   name="productId"
-                  value={displayProduct.productId}
+                  value={product.productId}
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
                 />
@@ -455,7 +486,7 @@ export default function AddPurchase({ onSave }) {
                   id="name"
                   name="name"
                   placeholder="Enter product name"
-                  value={displayProduct.name}
+                  value={product.name} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -474,7 +505,7 @@ export default function AddPurchase({ onSave }) {
                   id="model"
                   name="model"
                   placeholder="Enter model"
-                  value={displayProduct.model}
+                  value={product.model} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -493,7 +524,7 @@ export default function AddPurchase({ onSave }) {
                   id="category"
                   name="category"
                   placeholder="Enter category"
-                  value={displayProduct.category}
+                  value={product.category} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -512,7 +543,7 @@ export default function AddPurchase({ onSave }) {
                   id="quantity"
                   name="quantity"
                   placeholder="Enter quantity"
-                  value={displayProduct.quantity}
+                  value={product.quantity}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -531,7 +562,7 @@ export default function AddPurchase({ onSave }) {
                   id="price"
                   name="price"
                   placeholder="Enter purchase price"
-                  value={displayProduct.price}
+                  value={product.price}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -549,7 +580,7 @@ export default function AddPurchase({ onSave }) {
                   type="text"
                   id="value"
                   name="value"
-                  value={displayProduct.value}
+                  value={product.value}
                   placeholder="0.0"
                   readOnly
                   className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
@@ -569,7 +600,7 @@ export default function AddPurchase({ onSave }) {
                   id="supplier"
                   name="supplier"
                   placeholder="Enter supplier name"
-                  value={displayProduct.supplier}
+                  value={product.supplier} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -588,14 +619,14 @@ export default function AddPurchase({ onSave }) {
                   id="company"
                   name="company"
                   placeholder="Enter company name"
-                  value={displayProduct.company}
+                  value={product.company} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
               </div>
 
               {/* Supplier Contact input with country code prefix */}
-              <div className="md:col-span-2">
+              <div>
                 <label
                   htmlFor="supplierContact"
                   className="block mb-1 text-sm text-white/80"
@@ -612,11 +643,37 @@ export default function AddPurchase({ onSave }) {
                     name="supplierContact"
                     placeholder="923001234567"
                     maxLength={15}
-                    value={displayProduct.supplierContact}
+                    value={product.supplierContact}
                     onChange={handleChange}
                     className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Payment Method dropdown */}
+              <div>
+                <label
+                  htmlFor="paymentMethod"
+                  className="block mb-1 text-sm text-white/80"
+                >
+                  Payment Method
+                </label>
+                <select
+                  id="paymentMethod"
+                  name="paymentMethod"
+                  value={product.paymentMethod}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none scrollbar-hide"
+                >
+                  <option value="" className="bg-black/90">
+                    Select a payment method
+                  </option>
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method} value={method} className="bg-black/90">
+                      {method}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

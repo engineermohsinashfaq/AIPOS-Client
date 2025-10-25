@@ -35,30 +35,38 @@ const getNextGuarantorId = () => {
   return `G-${String(nextId).padStart(3, "0")}`;
 };
 
+// Helper function to capitalize text (first letter of each word)
+const capitalizeText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    .trim();
+};
+
 // Main AddGuarantor component function
 export default function AddGuarantor({ onSave }) {
   // State management for guarantor form data
   const [guarantor, setGuarantor] = useState(emptyGuarantor);
-  const [displayGuarantor, setDisplayGuarantor] = useState(emptyGuarantor);
 
   // Effect hook to generate guarantor ID on component mount
   useEffect(() => {
     const nextId = getNextGuarantorId();
     setGuarantor((prev) => ({ ...prev, guarantorId: nextId }));
-    setDisplayGuarantor((prev) => ({ ...prev, guarantorId: nextId }));
   }, []);
 
   // Form input change handler with special formatting for contact and CNIC fields
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let updatedValue = value;
-    let displayValue = value;
 
     // Special handling for contact field - only allow digits and limit length
     if (name === "contact") {
       let digits = value.replace(/\D/g, "").slice(0, 15);
-      updatedValue = digits;
-      displayValue = digits;
+      setGuarantor((prev) => ({ ...prev, [name]: digits }));
+      return;
     }
 
     // Special handling for CNIC field - format with dashes
@@ -66,33 +74,21 @@ export default function AddGuarantor({ onSave }) {
       let digits = value.replace(/\D/g, "").slice(0, 13);
       
       // Apply CNIC formatting rules: 12345-1234567-1
+      let formatted = "";
       if (digits.length <= 5) {
-        updatedValue = digits;
-        displayValue = digits;
+        formatted = digits;
       } else if (digits.length <= 12) {
-        updatedValue = `${digits.slice(0, 5)}-${digits.slice(5)}`;
-        displayValue = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+        formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
       } else {
-        updatedValue = `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
-        displayValue = `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
+        formatted = `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
       }
       
-      // Save in lowercase, display in uppercase
-      setGuarantor((prev) => ({ ...prev, [name]: updatedValue.toLowerCase() }));
-      setDisplayGuarantor((prev) => ({ ...prev, [name]: displayValue.toUpperCase() }));
+      setGuarantor((prev) => ({ ...prev, [name]: formatted }));
       return;
     }
 
-    // For fields that should be saved in lowercase and displayed in uppercase
-    if (["firstName", "lastName", "city", "address"].includes(name)) {
-      setGuarantor((prev) => ({ ...prev, [name]: value.toLowerCase() }));
-      setDisplayGuarantor((prev) => ({ ...prev, [name]: value.toUpperCase() }));
-      return;
-    }
-
-    // Default handling for all other fields (guarantorId, contact)
-    setGuarantor((prev) => ({ ...prev, [name]: updatedValue }));
-    setDisplayGuarantor((prev) => ({ ...prev, [name]: displayValue }));
+    // For all other fields - keep genuine case as entered by user (no capitalization during typing)
+    setGuarantor((prev) => ({ ...prev, [name]: value }));
   };
 
   // Form submission handler with comprehensive validation
@@ -106,36 +102,45 @@ export default function AddGuarantor({ onSave }) {
       autoClose: 2000 
     };
 
+    // Create capitalized version for validation and saving (but keep original for display)
+    const capitalizedGuarantor = {
+      ...guarantor,
+      firstName: capitalizeText(guarantor.firstName),
+      lastName: capitalizeText(guarantor.lastName),
+      city: capitalizeText(guarantor.city),
+      address: capitalizeText(guarantor.address),
+    };
+
     // Validate Guarantor ID format
-    if (!/^G-\d+$/.test(guarantor.guarantorId))
+    if (!/^G-\d+$/.test(capitalizedGuarantor.guarantorId))
       return toast.error("Invalid Guarantor ID format", toastOptions);
     
     // Validate First Name (required field)
-    if (!guarantor.firstName.trim())
+    if (!capitalizedGuarantor.firstName.trim())
       return toast.error("First Name is required", toastOptions);
     
     // Validate Last Name (required field)
-    if (!guarantor.lastName.trim())
+    if (!capitalizedGuarantor.lastName.trim())
       return toast.error("Last Name is required", toastOptions);
 
     // Validate Contact format with country code
-    const fullContact = "+" + guarantor.contact;
+    const fullContact = "+" + capitalizedGuarantor.contact;
     if (!/^\+\d{7,15}$/.test(fullContact))
       return toast.error("Contact must be valid (+923001234567)", toastOptions);
 
     // Validate CNIC format (Pakistan standard)
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(guarantor.cnic))
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(capitalizedGuarantor.cnic))
       return toast.error(
         "CNIC format is invalid (12345-1234567-1)",
         toastOptions
       );
 
     // Validate City (required field)
-    if (!guarantor.city.trim())
+    if (!capitalizedGuarantor.city.trim())
       return toast.error("City is required", toastOptions);
     
     // Validate Address (required field)
-    if (!guarantor.address.trim())
+    if (!capitalizedGuarantor.address.trim())
       return toast.error("Address is required", toastOptions);
 
     // Check for duplicate CNIC in existing guarantors
@@ -143,7 +148,7 @@ export default function AddGuarantor({ onSave }) {
       localStorage.getItem("all_guarantors_data") || "[]"
     );
     const cnicExists = existing.some(
-      (g) => g.cnic.replace(/\s/g, "") === guarantor.cnic.replace(/\s/g, "")
+      (g) => g.cnic.replace(/\s/g, "") === capitalizedGuarantor.cnic.replace(/\s/g, "")
     );
     if (cnicExists)
       return toast.error(
@@ -153,7 +158,7 @@ export default function AddGuarantor({ onSave }) {
 
     // Prepare guarantor data for saving with additional metadata
     const savedGuarantor = {
-      ...guarantor,
+      ...capitalizedGuarantor, // Use the capitalized version for saving
       contact: fullContact, // Store with country code prefix
       dateAdded: new Date().toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -173,14 +178,13 @@ export default function AddGuarantor({ onSave }) {
     toast.success("Guarantor added successfully!", {
       ...toastOptions,
       onClose: () => {
-        window.location.href = "/up-all-guarantors";
+        window.location.href = "/up-dashboard";
       },
     });
 
     // Generate a new ID and reset form after successful save
     const newId = getNextGuarantorId();
     setGuarantor({ ...emptyGuarantor, guarantorId: newId });
-    setDisplayGuarantor({ ...emptyGuarantor, guarantorId: newId });
   };
 
   // Form clear/reset handler
@@ -188,7 +192,6 @@ export default function AddGuarantor({ onSave }) {
     // Reset form but preserve the current guarantor ID
     const currentId = guarantor.guarantorId;
     setGuarantor({ ...emptyGuarantor, guarantorId: currentId });
-    setDisplayGuarantor({ ...emptyGuarantor, guarantorId: currentId });
     toast.info("Form cleared", { 
       position: "top-right",
       theme: "dark", 
@@ -230,7 +233,7 @@ export default function AddGuarantor({ onSave }) {
                 type="text"
                 id="guarantorId"
                 name="guarantorId"
-                value={displayGuarantor.guarantorId}
+                value={guarantor.guarantorId}
                 readOnly
                 className="w-full p-3 rounded-md bg-black/40 border border-white/30 text-white outline-none cursor-not-allowed"
               />
@@ -251,7 +254,7 @@ export default function AddGuarantor({ onSave }) {
                   id="firstName"
                   name="firstName"
                   placeholder="First Name"
-                  value={displayGuarantor.firstName}
+                  value={guarantor.firstName} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -270,7 +273,7 @@ export default function AddGuarantor({ onSave }) {
                   id="lastName"
                   name="lastName"
                   placeholder="Last Name"
-                  value={displayGuarantor.lastName}
+                  value={guarantor.lastName} // Display original input
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                 />
@@ -296,7 +299,7 @@ export default function AddGuarantor({ onSave }) {
                     id="contact"
                     name="contact"
                     placeholder="923001234567"
-                    value={displayGuarantor.contact}
+                    value={guarantor.contact}
                     onChange={handleChange}
                     className="w-full pl-6 p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
                   />
@@ -316,7 +319,7 @@ export default function AddGuarantor({ onSave }) {
                   id="cnic"
                   name="cnic"
                   placeholder="12345-1234567-1"
-                  value={displayGuarantor.cnic}
+                  value={guarantor.cnic}
                   onChange={handleChange}
                   maxLength={15}
                   className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
@@ -337,7 +340,7 @@ export default function AddGuarantor({ onSave }) {
                 id="city"
                 name="city"
                 placeholder="City"
-                value={displayGuarantor.city}
+                value={guarantor.city} // Display original input
                 onChange={handleChange}
                 className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"
               />
@@ -355,7 +358,7 @@ export default function AddGuarantor({ onSave }) {
                 id="address"
                 name="address"
                 placeholder="Enter full residential address"
-                value={displayGuarantor.address}
+                value={guarantor.address} // Display original input
                 onChange={handleChange}
                 rows="3"
                 className="w-full p-3 rounded-md bg-black/30 border border-white/20 text-white outline-none"

@@ -1,129 +1,96 @@
-import React from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import salesData from "../../constants/salesData";
-
-// Extended dark color palette
-const darkColors = [
-  "#0f172a", // slate-900
-  "#1e293b", // slate-800
-  "#312e81", // indigo-900
-  "#3730a3", // indigo-800
-  "#064e3b", // emerald-900
-  "#065f46", // emerald-800
-  "#7c2d12", // amber-900
-  "#78350f", // amber-800
-];
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const SalesChart = () => {
-  // Detect small screens
-  const isSmallScreen =
-    typeof window !== "undefined" && window.innerWidth < 640;
+  // Get real sales data from localStorage
+  const getSalesData = () => {
+    try {
+      const salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      
+      // Group by month
+      const monthlyData = salesHistory.reduce((acc, sale) => {
+        const date = new Date(sale.timestamp || sale.savedOn);
+        const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        
+        if (!acc[monthYear]) {
+          acc[monthYear] = { month: monthYear, sales: 0, installments: 0 };
+        }
+        
+        const amount = parseFloat(sale.finalTotal) || 0;
+        if (sale.type === "installment-sale" || sale.invoiceId?.startsWith("INST-")) {
+          acc[monthYear].installments += amount;
+        } else {
+          acc[monthYear].sales += amount;
+        }
+        
+        return acc;
+      }, {});
+      
+      // Convert to array and get last 6 months
+      const data = Object.values(monthlyData)
+        .sort((a, b) => new Date(a.month) - new Date(b.month))
+        .slice(-6);
+      
+      return data.length > 0 ? data : [
+        { month: "Jan", sales: 0, installments: 0 },
+        { month: "Feb", sales: 0, installments: 0 },
+        { month: "Mar", sales: 0, installments: 0 },
+        { month: "Apr", sales: 0, installments: 0 },
+        { month: "May", sales: 0, installments: 0 },
+        { month: "Jun", sales: 0, installments: 0 },
+      ];
+    } catch (error) {
+      console.error("Error generating sales chart data:", error);
+      return [
+        { month: "Jan", sales: 0, installments: 0 },
+        { month: "Feb", sales: 0, installments: 0 },
+        { month: "Mar", sales: 0, installments: 0 },
+        { month: "Apr", sales: 0, installments: 0 },
+        { month: "May", sales: 0, installments: 0 },
+        { month: "Jun", sales: 0, installments: 0 },
+      ];
+    }
+  };
+
+  const data = getSalesData();
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">
-        Sales Trend
-      </h3>
-      <div className="w-full h-64 sm:h-72 md:h-80 lg:h-96 pb-4 sm:pb-0">
+    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-lg p-6">
+      <h3 className="text-xl font-semibold text-white mb-4">Sales Overview</h3>
+      <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={salesData}>
-            <defs>
-              {/* Cash Sales Gradient - emerald shades */}
-              <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={darkColors[4]} stopOpacity={0.9} />
-                <stop
-                  offset="95%"
-                  stopColor={darkColors[4]}
-                  stopOpacity={0.2}
-                />
-              </linearGradient>
-
-              {/* Installments Gradient - indigo shades */}
-              <linearGradient
-                id="installmentGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="5%" stopColor={darkColors[2]} stopOpacity={0.9} />
-                <stop
-                  offset="95%"
-                  stopColor={darkColors[2]}
-                  stopOpacity={0.2}
-                />
-              </linearGradient>
-            </defs>
-
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,.7)"
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="month" 
+              stroke="#9CA3AF"
+              fontSize={12}
             />
-
-            <XAxis
-              dataKey="month"
-              stroke="rgba(255,255,255,0.9)"
-              tick={{
-                fontSize: isSmallScreen ? 13 : 14,
-                fill: "rgba(255,255,255,0.9)",
-              }}
+            <YAxis 
+              stroke="#9CA3AF"
+              fontSize={12}
+              tickFormatter={(value) => `Rs ${value / 1000}k`}
             />
-
-            <YAxis
-              stroke="rgba(255,255,255,0.9)"
-              tick={{
-                fontSize: isSmallScreen ? 13 : 14,
-                fill: "rgba(255,255,255,0.9)",
-              }}
+            <Tooltip 
+              formatter={(value) => [`Rs ${value.toLocaleString()}`, 'Amount']}
+              contentStyle={{ backgroundColor: '#1F2937', border: 'none' }}
             />
-
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(10, 10, 10, 0.95)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: "8px",
-                color: "rgba(255,255,255,0.9)",
-                fontSize: isSmallScreen ? 13 : 14,
-              }}
-              labelStyle={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: isSmallScreen ? 13 : 14,
-              }}
-            />
-
-            <Legend
-              wrapperStyle={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: isSmallScreen ? 13 : 14,
-              }}
-            />
-
-            <Area
-              type="monotone"
-              dataKey="sales"
-              stroke={darkColors[5]} // emerald-800
-              fillOpacity={1}
-              fill="url(#salesGradient)"
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="sales" 
+              stroke="#3B82F6" 
+              strokeWidth={2}
               name="Cash Sales"
             />
-            <Area
-              type="monotone"
-              dataKey="installments"
-              stroke={darkColors[3]} // indigo-800
-              fillOpacity={1}
-              fill="url(#installmentGradient)"
+            <Line 
+              type="monotone" 
+              dataKey="installments" 
+              stroke="#8B5CF6" 
+              strokeWidth={2}
               name="Installment Sales"
             />
-          </AreaChart>
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
