@@ -276,7 +276,7 @@ const loadPurchaseHistory = () => {
 
 // Purchase type display formatter
 const getPurchaseType = (product) => {
-  return product.type === "stock-addition" ? "STOCK ADDITION" : "NEW PURCHASE";
+  return product.type === "stock-addition" ? "Stock Addition" : "New Purchase";
 };
 
 // Main PurchaseDetails component function
@@ -455,7 +455,7 @@ export default function PurchaseDetails() {
       `purchase-report-${new Date().toISOString().split("T")[0]}`
     );
     if (success) {
-      notifySuccess("PURCHASE REPORT EXPORTED TO EXCEL SUCCESSFULLY");
+      notifySuccess("Purchase report exported successfully.");
     }
   };
 
@@ -491,7 +491,14 @@ export default function PurchaseDetails() {
             <SearchIcon className="text-white" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
               placeholder="SEARCH PURCHASES..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
@@ -499,7 +506,7 @@ export default function PurchaseDetails() {
 
           {/* Purchase Type filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">PURCHASE TYPE</label>
+            <label className="text-sm text-white/70">TYPE</label>
             <select
               value={purchaseTypeFilter}
               onChange={(e) => setPurchaseTypeFilter(e.target.value)}
@@ -542,7 +549,7 @@ export default function PurchaseDetails() {
 
           {/* Date range filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">DATE RANGE</label>
+            <label className="text-sm text-white/70">DATE</label>
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
@@ -614,7 +621,7 @@ export default function PurchaseDetails() {
           p.type === "stock-addition"
             ? " bg-blue-700/30 hover:bg-blue-700/50"
             : " bg-green-700/30 hover:bg-green-700/50"
-        }`}
+        }`} 
                 >
                   {/* Invoice ID column */}
                   <td className="p-3 font-mono">{p.invoiceId}</td>
@@ -624,7 +631,7 @@ export default function PurchaseDetails() {
                   {/* Purchase type with colored badge */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1  text-xs text-white border rounded-full border-white/30 ${
+                      className={`px-2 py-1  text-xs text-white border border-white/30 rounded-full ${
                         p.type === "stock-addition"
                           ? "bg-blue-600"
                           : "bg-green-600"
@@ -673,7 +680,7 @@ export default function PurchaseDetails() {
         </div>
       </div>
 
-      {/* Product details modal */}
+      {/* Product view details modal */}
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           {/* Modal content container */}
@@ -688,16 +695,16 @@ export default function PurchaseDetails() {
                 <p className="text-sm text-gray-600 mt-1">
                   PURCHASE & INVOICE DETAILS
                 </p>
-                <div className="mt-2 space-y-1">
+                <div className="mt-1 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
                     INVOICE: {selectedProduct.invoiceId}
                   </p>
                   {/* Purchase type badge */}
                   <span
-                    className={`inline-block px-2 py-1 rounded text-xs ${
+                    className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${
                       selectedProduct.type === "stock-addition"
-                        ? "bg-blue-200 text-blue-800 border border-blue-400"
-                        : "bg-green-200 text-green-800 border border-green-400"
+                        ? "bg-blue-600 text-white border border-blue-900"
+                        : "bg-green-600 text-white border border-green-900"
                     }`}
                   >
                     {getPurchaseType(selectedProduct)}

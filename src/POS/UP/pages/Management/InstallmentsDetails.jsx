@@ -14,38 +14,28 @@ const PAYMENT_METHODS = [
   "Credit",
   "Easypaisa",
   "JazzCash",
-  "Al Baraka Bank (Pakistan) Limited",
   "Allied Bank",
   "Askari Bank",
-  "Bank AL Habib Limited",
+  "Bank AL Habib ",
   "Bank Alfalah",
   "Bank Islami",
   "Bank of Punjab",
   "Bank of Khyber",
-  "Dubai Islamic Bank Pakistan Limited",
-  "Faysal Bank Limited",
+  "Faysal Bank ",
   "First Women Bank",
-  "Habib Bank Limited",
-  "Habib Metropolitan Bank Limited",
   "HBL Bank",
-  "Industrial and Commercial Bank of China",
-  "Industrial Development Bank of Pakistan",
   "JS Bank",
   "MCB Bank",
   "MCB Islamic Bank",
   "Meezan Bank",
-  "NBP (National Bank of Pakistan)",
-  "Punjab Provincial Cooperative Bank Ltd.",
+  "NBP",
   "Samba Bank",
-  "Silkbank Limited",
-  "Sindh Bank Limited",
-  "SME Bank Limited",
-  "Soneri Bank Limited",
-  "Standard Chartered Bank (Pakistan) Ltd",
-  "Summit Bank Limited",
-  "UBL (United Bank Limited)",
-  "United Bank Limited",
-  "Zarai Taraqiati Bank Limited",
+  "Silkbank ",
+  "Sindh Bank ",
+  "SME Bank ",
+  "Soneri Bank ",
+  "Summit Bank ",
+  "UBL ",
 ];
 
 // Date formatting utility function - converts date to standardized string
@@ -545,10 +535,17 @@ export default function InstallmentsDetails() {
           {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
-            <input
+             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="SEARCH INSTALLMENT PAYMENTS..."
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
+              placeholder="SEARCH INSTALLMENTS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>

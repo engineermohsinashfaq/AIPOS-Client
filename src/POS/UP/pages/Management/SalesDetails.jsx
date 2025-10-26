@@ -8,6 +8,36 @@ import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
+// Payment methods list - All available payment options
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib ",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Faysal Bank ",
+  "First Women Bank",
+  "HBL Bank",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP",
+  "Samba Bank",
+  "Silkbank ",
+  "Sindh Bank ",
+  "SME Bank ",
+  "Soneri Bank ",
+  "Summit Bank ",
+  "UBL ",
+];
+
 // Date formatting utility function - converts various date formats to standardized string
 const formatDateTime = (dateInput) => {
   // Return dash for empty/null dates
@@ -72,17 +102,6 @@ const formatDateTime = (dateInput) => {
   }
 };
 
-// Currency formatter function with 2 decimal places
-const formatCurrency = (amount) => {
-  if (!amount || isNaN(amount)) return "Rs 0.00";
-  return new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: "PKR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
-
 // Short date formatter - extracts only the date portion
 const formatShortDate = (dateString) => {
   if (!dateString) return "—";
@@ -142,29 +161,33 @@ const parseDateForSorting = (dateInput) => {
   }
 };
 
-// Date range calculation utilities
+// Date range calculation utilities - Fixed to handle timezone issues
 const getDateRange = (range) => {
   const now = new Date();
   const start = new Date();
-  
+
   switch (range) {
-    case '7days':
+    case "7days":
       start.setDate(now.getDate() - 7);
       break;
-    case '15days':
+    case "15days":
       start.setDate(now.getDate() - 15);
       break;
-    case '30days':
+    case "30days":
       start.setDate(now.getDate() - 30);
       break;
-    case '90days':
+    case "90days":
       start.setDate(now.getDate() - 90);
       break;
-    case 'all':
+    case "all":
     default:
       return { start: null, end: null };
   }
-  
+
+  // Set time to beginning of day for start date and end of day for end date
+  start.setHours(0, 0, 0, 0);
+  now.setHours(23, 59, 59, 999);
+
   return { start, end: now };
 };
 
@@ -178,39 +201,39 @@ const exportToExcel = (data, filename) => {
   try {
     // Define CSV headers
     const headers = [
-      'Invoice ID',
-      'Product Name',
-      'Product Model',
-      'Product Category',
-      'Sale Type',
-      'Payment Method',
-      'Quantity',
-      'Unit Price',
-      'Sale Price',
-      'Discount',
-      'Discount Amount',
-      'Markup',
-      'Markup Amount',
-      'Final Total',
-      'Customer ID',
-      'Customer Name',
-      'Guarantor ID',
-      'Guarantor Name',
-      'Plan Months',
-      'Advance Payment',
-      'Remaining Amount',
-      'Monthly Payment',
-      'Date'
+      "Invoice ID",
+      "Product Name",
+      "Product Model",
+      "Product Category",
+      "Sale Type",
+      "Payment Method",
+      "Quantity",
+      "Unit Price",
+      "Sale Price",
+      "Discount",
+      "Discount Amount",
+      "Markup",
+      "Markup Amount",
+      "Final Total",
+      "Customer ID",
+      "Customer Name",
+      "Guarantor ID",
+      "Guarantor Name",
+      "Plan Months",
+      "Advance Payment",
+      "Remaining Amount",
+      "Monthly Payment",
+      "Date",
     ];
 
     // Convert data to CSV rows
-    const csvRows = data.map(sale => [
+    const csvRows = data.map((sale) => [
       sale.invoiceId,
       sale.productName,
       sale.productModel,
       sale.productCategory,
       getSaleType(sale),
-      getPaymentMethodDisplay(sale),
+      sale.paymentMethod || "Payment Method", // Directly use payment method from data
       getDisplayQuantity(sale),
       sale.unitPrice || sale.salePrice,
       sale.salePrice,
@@ -219,42 +242,42 @@ const exportToExcel = (data, filename) => {
       sale.markup || 0,
       sale.markupAmount || 0,
       sale.finalTotal,
-      sale.customerId || '',
-      sale.customer || '',
-      sale.guarantorId || '',
-      sale.guarantor || '',
+      sale.customerId || "",
+      sale.customer || "",
+      sale.guarantorId || "",
+      sale.guarantor || "",
       sale.planMonths || 0,
       sale.advancePaymentAmount || 0,
       sale.remainingAmount || 0,
       sale.monthlyPayment || 0,
-      formatShortDate(sale.timestamp)
+      formatShortDate(sale.timestamp),
     ]);
 
     // Combine headers and rows
     const csvContent = [
-      headers.join(','),
-      ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
-    ].join('\n');
+      headers.join(","),
+      ...csvRows.map((row) => row.map((field) => `"${field}"`).join(",")),
+    ].join("\n");
 
     // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.csv`);
-    link.style.visibility = 'hidden';
-    
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    link.style.visibility = "hidden";
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     URL.revokeObjectURL(url);
-    
+
     return true;
   } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    toast.error('Failed to export data');
+    console.error("Error exporting to Excel:", error);
+    toast.error("Failed to export data");
     return false;
   }
 };
@@ -292,42 +315,18 @@ const loadSalesHistory = () => {
   }
 };
 
-// Payment method display formatter
+// Payment method display formatter - Directly display the payment method from data
 const getPaymentMethodDisplay = (sale) => {
-  // If paymentMethod exists in the sale object, use it
-  if (sale.paymentMethod) {
-    const methodMap = {
-      cash: "Cash",
-      hbl: "HBL Bank",
-      jazzcash: "JazzCash",
-      easypaisa: "Easy Paisa",
-      meezan: "Meezan Bank",
-    };
-    return methodMap[sale.paymentMethod] || sale.paymentMethod;
-  }
-
-  // Fallback removed since customerType is no longer available
-  return "Payment Method";
+  // Directly return the payment method from sale data
+  return sale.paymentMethod || "Payment Method";
 };
 
 // Payment method background color formatter
 const getPaymentMethodColor = (sale) => {
   const paymentMethod = sale.paymentMethod;
 
-  switch (paymentMethod) {
-    case "meezan":
-      return "bg-purple-950/50";
-    case "hbl":
-      return "bg-cyan-800/50";
-    case "easypaisa":
-      return "bg-green-700/50";
-    case "jazzcash":
-      return "bg-red-700/50";
-    case "cash":
-      return "bg-blue-600/50";
-    default:
-      return "bg-black/70";
-  }
+  // Default color for all payment methods
+  return "bg-black/70";
 };
 
 // Sale type detection based on invoice ID
@@ -358,29 +357,23 @@ const getDisplayQuantity = (sale) => {
   return 1;
 };
 
-// Helper function to convert text to uppercase
-const toUpperCase = (text) => {
-  if (!text || typeof text !== 'string') return text;
-  return text;
-};
-
 // Sale type display formatter
 const getSaleType = (sale) => {
   // First check if type is explicitly set
   if (sale.type) {
-    return sale.type === "cash-sale" ? "CASH SALE" : "INSTALLMENT SALE";
+    return sale.type === "cash-sale" ? "Cash Sale" : "Installment Sale";
   }
 
   // Fallback to invoice-based detection
   const detectedType = getSaleTypeFromInvoice(sale.invoiceId);
-  return detectedType === "cash-sale" ? "CASH SALE" : "INSTALLMENT SALE";
+  return detectedType === "cash-sale" ? "Cash Sale" : "Installment Sale";
 };
 
 // Sale type badge color formatter
 const getSaleTypeColor = (sale) => {
   // First check if type is explicitly set
   if (sale.type) {
-    return sale.type === "cash-sale" ? "bg-green-600" : "bg-purple-600";
+    return sale.type === "cash-sale" ? "bg-green-600" : "bg-blue-600";
   }
 
   // Fallback to invoice-based detection
@@ -440,16 +433,16 @@ export default function SalesDetails() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Memoized filtered sales history based on search query and filters
+  // Memoized filtered sales history based on search query and filters - FIXED FILTER LOGIC
   const filtered = useMemo(() => {
     let arr = salesHistory.slice(); // Start with already sorted array
 
-    // Apply search filter if query exists
+    // Apply search filter if query exists - FIXED SEARCH LOGIC
     if (query.trim()) {
-      const q = query;
-      arr = arr.filter((sale) =>
-        // Search across multiple sale fields
-        [
+      const q = query.toUpperCase(); // Convert search query to uppercase
+      arr = arr.filter((sale) => {
+        // Create searchable string from all relevant fields
+        const searchableText = [
           sale.invoiceId,
           sale.productName,
           sale.productModel,
@@ -461,60 +454,87 @@ export default function SalesDetails() {
           sale.guarantorId,
           sale.guarantor,
         ]
+          .filter(Boolean) // Remove null/undefined values
           .join(" ")
-          
-          .includes(q)
-      );
-    }
+          .toUpperCase();
 
-    // Apply sale type filter if not "All"
-    if (saleTypeFilter !== "All") {
-      arr = arr.filter((sale) => {
-        const saleType = getActualSaleType(sale);
-        return saleTypeFilter === "cash-sale" ? saleType === "cash-sale" : saleType === "installment-sale";
+        return searchableText.includes(q);
       });
     }
 
-    // Apply payment method filter if not "All"
-    if (paymentMethodFilter !== "All") {
-      arr = arr.filter((sale) => sale.paymentMethod === paymentMethodFilter);
+    // Apply sale type filter if not "All" - FIXED SALE TYPE FILTER
+    if (saleTypeFilter !== "All") {
+      arr = arr.filter((sale) => {
+        const saleType = getActualSaleType(sale);
+        return saleType === saleTypeFilter;
+      });
     }
 
-    // Apply date range filter if not "all"
+    // Apply payment method filter if not "All" - FIXED PAYMENT METHOD FILTER
+    if (paymentMethodFilter !== "All") {
+      arr = arr.filter((sale) => {
+        // Handle cases where paymentMethod might be null/undefined
+        const salePaymentMethod = sale.paymentMethod || "";
+        return salePaymentMethod === paymentMethodFilter;
+      });
+    }
+
+    // Apply date range filter if not "all" - FIXED DATE RANGE FILTER
     if (dateRangeFilter !== "all") {
       const { start, end } = getDateRange(dateRangeFilter);
       if (start && end) {
         arr = arr.filter((sale) => {
-          const saleDate = new Date(sale.timestamp || sale.savedOn || sale.date || sale.createdAt);
-          return saleDate >= start && saleDate <= end;
+          try {
+            const saleDate = parseDateForSorting(
+              sale.timestamp || sale.savedOn || sale.date || sale.createdAt
+            );
+            // Compare dates properly
+            return saleDate >= start && saleDate <= end;
+          } catch (error) {
+            console.error("Date filtering error:", error);
+            return false; // Exclude records with invalid dates
+          }
         });
       }
     }
 
     // Return filtered results - they maintain the original sort order
     return arr;
-  }, [salesHistory, query, saleTypeFilter, paymentMethodFilter, dateRangeFilter]);
+  }, [
+    salesHistory,
+    query,
+    saleTypeFilter,
+    paymentMethodFilter,
+    dateRangeFilter,
+  ]);
 
-  // Statistics calculation
+  // Statistics calculation - FIXED STATS CALCULATION
   const stats = useMemo(() => {
     const total = filtered.length;
-    const cashSales = filtered.filter(sale => getActualSaleType(sale) === 'cash-sale').length;
-    const installmentSales = filtered.filter(sale => getActualSaleType(sale) === 'installment-sale').length;
-    const totalRevenue = filtered.reduce((sum, sale) => sum + (sale.finalTotal || 0), 0);
+    const cashSales = filtered.filter(
+      (sale) => getActualSaleType(sale) === "cash-sale"
+    ).length;
+    const installmentSales = filtered.filter(
+      (sale) => getActualSaleType(sale) === "installment-sale"
+    ).length;
+    const totalRevenue = filtered.reduce(
+      (sum, sale) => sum + (parseFloat(sale.finalTotal) || 0),
+      0
+    );
     const cashRevenue = filtered
-      .filter(sale => getActualSaleType(sale) === 'cash-sale')
-      .reduce((sum, sale) => sum + (sale.finalTotal || 0), 0);
+      .filter((sale) => getActualSaleType(sale) === "cash-sale")
+      .reduce((sum, sale) => sum + (parseFloat(sale.finalTotal) || 0), 0);
     const installmentRevenue = filtered
-      .filter(sale => getActualSaleType(sale) === 'installment-sale')
-      .reduce((sum, sale) => sum + (sale.finalTotal || 0), 0);
-    
-    return { 
-      total, 
-      cashSales, 
-      installmentSales, 
-      totalRevenue, 
-      cashRevenue, 
-      installmentRevenue 
+      .filter((sale) => getActualSaleType(sale) === "installment-sale")
+      .reduce((sum, sale) => sum + (parseFloat(sale.finalTotal) || 0), 0);
+
+    return {
+      total,
+      cashSales,
+      installmentSales,
+      totalRevenue: Math.round(totalRevenue),
+      cashRevenue: Math.round(cashRevenue),
+      installmentRevenue: Math.round(installmentRevenue),
     };
   }, [filtered]);
 
@@ -542,9 +562,12 @@ export default function SalesDetails() {
       return;
     }
 
-    const success = exportToExcel(filtered, `sales-report-${new Date().toISOString().split('T')[0]}`);
+    const success = exportToExcel(
+      filtered,
+      `sales-report-${new Date().toISOString().split("T")[0]}`
+    );
     if (success) {
-      notifySuccess("SALES REPORT EXPORTED TO EXCEL SUCCESSFULLY");
+      notifySuccess("Sales report exported successfully.");
     }
   };
 
@@ -565,7 +588,7 @@ export default function SalesDetails() {
             <div className="grid grid-cols-2 gap-2">
               <span className="font-medium text-gray-700">CUSTOMER ID:</span>
               <span className="text-gray-900 text-right font-mono">
-                {toUpperCase(sale.customerId)} {toUpperCase(sale.customer || "—")}
+                {sale.customerId} {sale.customer || "—"}
               </span>
             </div>
           )}
@@ -574,7 +597,7 @@ export default function SalesDetails() {
             <div className="grid grid-cols-2 gap-2">
               <span className="font-medium text-gray-700">GUARANTOR ID:</span>
               <span className="text-gray-900 text-right font-mono">
-                {toUpperCase(sale.guarantorId)} {toUpperCase(sale.guarantor || "—")}
+                {sale.guarantorId} {sale.guarantor || "—"}
               </span>
             </div>
           )}
@@ -596,7 +619,7 @@ export default function SalesDetails() {
                   ADVANCE PAYMENT:
                 </span>
                 <span className="text-gray-900 text-right">
-                  {formatCurrency(sale.advancePaymentAmount)}/-
+                  Rs: {sale.advancePaymentAmount}/-
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -604,7 +627,7 @@ export default function SalesDetails() {
                   REMAINING AMOUNT:
                 </span>
                 <span className="text-gray-900 text-right font-semibold">
-                  {formatCurrency(sale.remainingAmount || 0)}/-
+                  Rs: {sale.remainingAmount || 0}/-
                 </span>
               </div>
             </>
@@ -613,7 +636,7 @@ export default function SalesDetails() {
           <div className="grid grid-cols-2 gap-2 border-t border-dashed border-gray-300 pt-2 mt-2">
             <span className="font-medium text-gray-700">MONTHLY PAYMENT:</span>
             <span className="text-gray-900 text-right font-semibold">
-              {formatCurrency(sale.monthlyPayment || 0)}/-
+              Rs: {sale.monthlyPayment || 0}/-
             </span>
           </div>
         </div>
@@ -629,7 +652,7 @@ export default function SalesDetails() {
                 <div key={index} className="flex justify-between">
                   <span>PAYMENT {payment.paymentNumber}:</span>
                   <span>
-                    {payment.dueDate} - {formatCurrency(payment.paymentAmount)}
+                    {payment.dueDate} - {payment.paymentAmount}
                   </span>
                 </div>
               ))}
@@ -656,7 +679,7 @@ export default function SalesDetails() {
           {sale.customer && (
             <div className="grid grid-cols-2 gap-2">
               <span className="font-medium text-gray-700">CUSTOMER:</span>
-              <span className="text-gray-900 text-right">{toUpperCase(sale.customer)}</span>
+              <span className="text-gray-900 text-right">{sale.customer}</span>
             </div>
           )}
         </div>
@@ -688,7 +711,14 @@ export default function SalesDetails() {
             <SearchIcon className="text-white" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
               placeholder="SEARCH SALES..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
@@ -696,15 +726,24 @@ export default function SalesDetails() {
 
           {/* Sale Type filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">SALE TYPE</label>
+            <label className="text-sm text-white/70">TYPE</label>
             <select
               value={saleTypeFilter}
               onChange={(e) => setSaleTypeFilter(e.target.value)}
               className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
-              <option className="bg-black/95 text-white">ALL</option>
-              <option value="cash-sale" className="bg-black/95 text-white">CASH SALE</option>
-              <option value="installment-sale" className="bg-black/95 text-white">INSTALLMENT SALE</option>
+              <option value="All" className="bg-black/95 text-white">
+                ALL
+              </option>
+              <option value="cash-sale" className="bg-black/95 text-white">
+                Cash Sale
+              </option>
+              <option
+                value="installment-sale"
+                className="bg-black/95 text-white"
+              >
+                Installment Sale
+              </option>
             </select>
           </div>
 
@@ -716,28 +755,45 @@ export default function SalesDetails() {
               onChange={(e) => setPaymentMethodFilter(e.target.value)}
               className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
-              <option className="bg-black/95 text-white">ALL</option>
-              <option value="cash" className="bg-black/95 text-white">CASH</option>
-              <option value="hbl" className="bg-black/95 text-white">HBL BANK</option>
-              <option value="meezan" className="bg-black/95 text-white">MEEZAN BANK</option>
-              <option value="easypaisa" className="bg-black/95 text-white">EASY PAISA</option>
-              <option value="jazzcash" className="bg-black/95 text-white">JAZZ CASH</option>
+              <option value="All" className="bg-black/95 text-white">
+                ALL
+              </option>
+              {/* Map through PAYMENT_METHODS array to generate options */}
+              {PAYMENT_METHODS.map((method) => (
+                <option
+                  key={method}
+                  value={method}
+                  className="bg-black/95 text-white"
+                >
+                  {method}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Date range filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">DATE RANGE</label>
+            <label className="text-sm text-white/70">DATE</label>
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
               className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
-              <option value="all" className="bg-black/95 text-white">ALL TIME</option>
-              <option value="7days" className="bg-black/95 text-white">LAST 7 DAYS</option>
-              <option value="15days" className="bg-black/95 text-white">LAST 15 DAYS</option>
-              <option value="30days" className="bg-black/95 text-white">LAST 30 DAYS</option>
-              <option value="90days" className="bg-black/95 text-white">LAST 90 DAYS</option>
+              <option value="all" className="bg-black/95 text-white">
+                ALL TIME
+              </option>
+              <option value="7days" className="bg-black/95 text-white">
+                LAST 7 DAYS
+              </option>
+              <option value="15days" className="bg-black/95 text-white">
+                LAST 15 DAYS
+              </option>
+              <option value="30days" className="bg-black/95 text-white">
+                LAST 30 DAYS
+              </option>
+              <option value="90days" className="bg-black/95 text-white">
+                LAST 90 DAYS
+              </option>
             </select>
           </div>
         </div>
@@ -787,15 +843,15 @@ export default function SalesDetails() {
         ${
           // Different hover colors based on sale type
           getActualSaleType(sale) === "cash-sale"
-            ? "hover:bg-green-600/50"
-            : "hover:bg-purple-600/50"
+            ? "bg-green-700/30 hover:bg-green-700/50"
+            : "bg-blue-700/30 hover:bg-blue-700/50"
         }`}
                 >
                   {/* Invoice ID column */}
-                  <td className="p-3 font-mono">{toUpperCase(sale.invoiceId)}</td>
+                  <td className="p-3 font-mono">{sale.invoiceId}</td>
 
                   {/* Product name column */}
-                  <td className="p-3">{toUpperCase(sale.productName)}</td>
+                  <td className="p-3">{sale.productName}</td>
 
                   {/* Sale Type with colored badge */}
                   <td className="p-3">
@@ -808,21 +864,19 @@ export default function SalesDetails() {
                     </span>
                   </td>
 
-                  {/* Payment method column */}
+                  {/* Payment method column - Directly display payment method from data */}
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 text-xs border rounded-full border-white/30 ${getPaymentMethodColor(
                         sale
                       )}`}
                     >
-                      {toUpperCase(getPaymentMethodDisplay(sale))}
+                      {sale.paymentMethod || "Payment Method"}
                     </span>
                   </td>
 
                   {/* Final total column */}
-                  <td className="p-3 font-semibold">
-                    {formatCurrency(sale.finalTotal)}
-                  </td>
+                  <td className="p-3 font-semibold">Rs: {sale.finalTotal}/-</td>
 
                   {/* Date column with short format */}
                   <td className="p-3 text-sm">
@@ -849,7 +903,9 @@ export default function SalesDetails() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan="7" className="p-4 text-center text-white/70">
-                    NO SALES RECORDS FOUND.
+                    {salesHistory.length === 0
+                      ? "NO SALES RECORDS FOUND IN SYSTEM."
+                      : "NO SALES RECORDS MATCH YOUR FILTER CRITERIA."}
                   </td>
                 </tr>
               )}
@@ -858,7 +914,7 @@ export default function SalesDetails() {
         </div>
       </div>
 
-      {/* Sale details modal */}
+      {/* Sale view & details modal */}
       {isViewOpen && selectedSale && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           {/* Modal content container */}
@@ -882,13 +938,13 @@ export default function SalesDetails() {
 
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    INVOICE: {toUpperCase(selectedSale.invoiceId)}
+                    INVOICE: {selectedSale.invoiceId}
                   </p>
                   {/* Sale Type badge */}
                   <span
                     className={`inline-block px-2 py-1 my-1 rounded-full text-xs ${getSaleTypeColor(
                       selectedSale
-                    )} text-white border border-gray-700/40`}
+                    )} text-white border border-blue-900`}
                   >
                     {getSaleType(selectedSale)}
                   </span>
@@ -900,25 +956,25 @@ export default function SalesDetails() {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {toUpperCase(selectedSale.productId)}
+                    {selectedSale.productId}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {toUpperCase(selectedSale.productName)}
+                    {selectedSale.productName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
-                    {toUpperCase(selectedSale.productModel)}
+                    {selectedSale.productModel}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CATEGORY:</span>
                   <span className="text-gray-900 text-right">
-                    {toUpperCase(selectedSale.productCategory)}
+                    {selectedSale.productCategory}
                   </span>
                 </div>
               </div>
@@ -941,7 +997,7 @@ export default function SalesDetails() {
                         UNIT PRICE:
                       </span>
                       <span className="text-gray-900 text-right">
-                        {formatCurrency(selectedSale.unitPrice)}
+                        Rs: {selectedSale.unitPrice}/-
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -949,7 +1005,7 @@ export default function SalesDetails() {
                         TOTAL PRICE:
                       </span>
                       <span className="text-gray-900 text-right font-semibold">
-                        {formatCurrency(selectedSale.salePrice)}
+                        Rs: {selectedSale.salePrice}/-
                       </span>
                     </div>
                   </>
@@ -959,7 +1015,7 @@ export default function SalesDetails() {
                       UNIT PRICE:
                     </span>
                     <span className="text-gray-900 text-right">
-                      {formatCurrency(selectedSale.salePrice)}
+                      Rs: {selectedSale.salePrice}/-
                     </span>
                   </div>
                 )}
@@ -971,8 +1027,8 @@ export default function SalesDetails() {
                         DISCOUNT:
                       </span>
                       <span className="text-gray-900 text-right">
-                        {selectedSale.discount}% (
-                        {formatCurrency(selectedSale.discountAmount || 0)})
+                        {selectedSale.discount}% ( Rs:{" "}
+                        {selectedSale.discountAmount || 0}/-)
                       </span>
                     </div>
                   </>
@@ -985,8 +1041,8 @@ export default function SalesDetails() {
                   <div className="grid grid-cols-2 gap-2">
                     <span className="font-medium text-gray-700">MARKUP:</span>
                     <span className="text-gray-900 text-right">
-                      {selectedSale.markup || 0}% (
-                      {formatCurrency(selectedSale.markupAmount || 0)})
+                      {selectedSale.markup || 0}% ( Rs:{" "}
+                      {selectedSale.markupAmount || 0}/-)
                     </span>
                   </div>
                 )}
@@ -1001,7 +1057,7 @@ export default function SalesDetails() {
                         selectedSale
                       )}`}
                     >
-                      {toUpperCase(getPaymentMethodDisplay(selectedSale))}
+                      {selectedSale.paymentMethod || "Payment Method"}
                     </span>
                   </span>
                 </div>
@@ -1013,11 +1069,11 @@ export default function SalesDetails() {
                 : renderCashSaleDetails(selectedSale)}
 
               {/* Total value highlight section */}
-              <div className="bg-green-100 border border-green-200 rounded-md p-2 mb-6 ">
+              <div className="bg-green-200 border border-green-900 rounded-md p-2 mb-6 ">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-green-900">FINAL TOTAL:</span>
                   <span className="font-bold text-green-900 text-right">
-                    {formatCurrency(selectedSale.finalTotal)}
+                    Rs: {selectedSale.finalTotal}/-
                   </span>
                 </div>
               </div>
@@ -1072,12 +1128,16 @@ export default function SalesDetails() {
                     REPORT GENERATED: {formatDateTime(new Date())}
                   </p>
                   <p className="text-gray-600">
-                    Total Records: {filtered.length} | Date Range: {
-                      dateRangeFilter === 'all' ? 'All Time' :
-                      dateRangeFilter === '7days' ? 'Last 7 Days' :
-                      dateRangeFilter === '15days' ? 'Last 15 Days' :
-                      dateRangeFilter === '30days' ? 'Last 30 Days' : 'Last 90 Days'
-                    }
+                    Total Records: {filtered.length} | Date Range:{" "}
+                    {dateRangeFilter === "all"
+                      ? "All Time"
+                      : dateRangeFilter === "7days"
+                      ? "Last 7 Days"
+                      : dateRangeFilter === "15days"
+                      ? "Last 15 Days"
+                      : dateRangeFilter === "30days"
+                      ? "Last 30 Days"
+                      : "Last 90 Days"}
                   </p>
                 </div>
               </div>
@@ -1085,28 +1145,44 @@ export default function SalesDetails() {
               {/* Statistics Summary */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-900">{stats.total}</div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {stats.total}
+                  </div>
                   <div className="text-blue-700 text-sm">TOTAL SALES</div>
                 </div>
                 <div className="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-green-900">{stats.cashSales}</div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {stats.cashSales}
+                  </div>
                   <div className="text-green-700 text-sm">CASH SALES</div>
                 </div>
                 <div className="bg-purple-100 border border-purple-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-purple-900">{stats.installmentSales}</div>
-                  <div className="text-purple-700 text-sm">INSTALLMENT SALES</div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {stats.installmentSales}
+                  </div>
+                  <div className="text-purple-700 text-sm">
+                    INSTALLMENT SALES
+                  </div>
                 </div>
                 <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-yellow-900">{formatCurrency(stats.totalRevenue)}</div>
+                  <div className="text-2xl font-bold text-yellow-900">
+                    Rs: {stats.totalRevenue}/-
+                  </div>
                   <div className="text-yellow-700 text-sm">TOTAL REVENUE</div>
                 </div>
                 <div className="bg-teal-100 border border-teal-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-teal-900">{formatCurrency(stats.cashRevenue)}</div>
+                  <div className="text-2xl font-bold text-teal-900">
+                    Rs: {stats.cashRevenue}/-
+                  </div>
                   <div className="text-teal-700 text-sm">CASH REVENUE</div>
                 </div>
                 <div className="bg-indigo-100 border border-indigo-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-indigo-900">{formatCurrency(stats.installmentRevenue)}</div>
-                  <div className="text-indigo-700 text-sm">INSTALLMENT REVENUE</div>
+                  <div className="text-2xl font-bold text-indigo-900">
+                    Rs: {stats.installmentRevenue}/-
+                  </div>
+                  <div className="text-indigo-700 text-sm">
+                    INSTALLMENT REVENUE
+                  </div>
                 </div>
               </div>
 

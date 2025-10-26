@@ -10,43 +10,32 @@ const PAYMENT_METHODS = [
   "Credit",
   "Easypaisa",
   "JazzCash",
-  "Al Baraka Bank (Pakistan) Limited",
   "Allied Bank",
   "Askari Bank",
-  "Bank AL Habib Limited",
+  "Bank AL Habib ",
   "Bank Alfalah",
   "Bank Islami",
   "Bank of Punjab",
   "Bank of Khyber",
-  "Dubai Islamic Bank Pakistan Limited",
-  "Faysal Bank Limited",
+  "Faysal Bank ",
   "First Women Bank",
-  "Habib Bank Limited",
-  "Habib Metropolitan Bank Limited",
   "HBL Bank",
-  "Industrial and Commercial Bank of China",
-  "Industrial Development Bank of Pakistan",
   "JS Bank",
   "MCB Bank",
   "MCB Islamic Bank",
   "Meezan Bank",
-  "NBP (National Bank of Pakistan)",
-  "Punjab Provincial Cooperative Bank Ltd.",
+  "NBP",
   "Samba Bank",
-  "Silkbank Limited",
-  "Sindh Bank Limited",
-  "SME Bank Limited",
-  "Soneri Bank Limited",
-  "Standard Chartered Bank (Pakistan) Ltd",
-  "Summit Bank Limited",
-  "UBL (United Bank Limited)",
-  "United Bank Limited",
-  "Zarai Taraqiati Bank Limited",
+  "Silkbank ",
+  "Sindh Bank ",
+  "SME Bank ",
+  "Soneri Bank ",
+  "Summit Bank ",
+  "UBL ",
 ];
 
 // |===============================| Cash Component |===============================|
 const Cash = () => {
-
   // Load products from localStorage
   const loadProducts = () => {
     try {
@@ -564,7 +553,6 @@ const Cash = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div className="space-y-2">
-                  
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Product ID:</span>
                     <span className="font-mono font-semibold text-white text-sm md:text-base">
@@ -585,7 +573,7 @@ const Cash = () => {
                       {selectedProduct.name}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Category:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
@@ -594,7 +582,6 @@ const Cash = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Current Stock:</span>
                     <span
@@ -614,7 +601,6 @@ const Cash = () => {
                     </span>
                   </div>
                 </div>
-                
               </div>
             </div>
 
@@ -704,7 +690,7 @@ const Cash = () => {
             {/* Financial Summary Section */}
             <div className="bg-cyan-800/70 backdrop-blur-md border border-cyan-800 rounded-md p-4 md:p-6 mb-6">
               <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <span className="text-cyan-300">📈</span>
+                <span className="text-cyan-900">📈</span>
                 Financial Summary
               </h4>
 
@@ -771,7 +757,7 @@ const Cash = () => {
           <div className="bg-cyan-800/90 backdrop-blur-md border border-cyan-900 rounded-md p-6 w-full max-w-md text-white">
             {/* Modal header */}
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-purple-300">⚠️</span>
+              <span className="text-purple-900">⚠️</span>
               Confirm Sale Transaction
             </h3>
 
@@ -799,7 +785,9 @@ const Cash = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Discount:</span>
-                <span className="font-semibold text-white">{discount}%</span>
+                <span className="font-semibold text-white">
+                  ({discount}%(Rs: {discountAmount}/-))
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Payment Method:</span>
@@ -853,7 +841,7 @@ const Cash = () => {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">Sale Receipt</p>
-                <div className="mt-2 space-y-1">
+                <div className="mt-1 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
                     Invoice: {currentTransaction.invoiceId}
                   </p>
@@ -912,8 +900,8 @@ const Cash = () => {
                         Discount:
                       </span>
                       <span className="text-gray-900 text-right">
-                        {currentTransaction.discount}% (
-                        {currentTransaction.discountAmount})
+                        {currentTransaction.discount}% ( Rs:{" "}
+                        {currentTransaction.discountAmount}/-)
                       </span>
                     </div>
                   </>
@@ -921,7 +909,7 @@ const Cash = () => {
               </div>
 
               {/* Total value highlight section */}
-              <div className="bg-green-100 border border-green-200 rounded-md p-2 mt-3">
+              <div className="bg-green-200 border border-green-900 rounded-md p-2 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-green-900">Total:</span>
                   <span className="font-bold text-green-900 text-right">
@@ -979,19 +967,3 @@ const Cash = () => {
 
 // |===============================| Export |===============================|
 export default Cash;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

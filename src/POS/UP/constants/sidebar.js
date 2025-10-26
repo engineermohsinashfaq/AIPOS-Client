@@ -121,9 +121,9 @@ export const menuItems = [
         path: "/up-suppliers-details",
       },
       {
-        icon: TrendingUp,
-        label: "Sales Details",
-        path: "/up-sales-details",
+        icon: Inventory,
+        label: "Inventory Details",
+        path: "/up-inventory-details",
       },
       {
         icon: CreditCard,
@@ -136,9 +136,9 @@ export const menuItems = [
         path: "/up-purchase-details",
       },
       {
-        icon: Inventory,
-        label: "Inventory Details",
-        path: "/up-inventory-details",
+        icon: TrendingUp,
+        label: "Sales Details",
+        path: "/up-sales-details",
       },
 
     ],

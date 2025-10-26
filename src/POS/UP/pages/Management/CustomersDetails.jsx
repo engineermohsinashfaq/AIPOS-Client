@@ -332,13 +332,13 @@ export default function CustomersDetails() {
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":
-        return "bg-green-500/70 border border-white/20";
+        return "bg-green-600 border border-white/30";
       case "Inactive":
-        return "bg-yellow-500/70 border border-white/20";
+        return "bg-yellow-600 border border-white/30";
       case "Suspended":
-        return "bg-red-500/70 border border-white/20";
+        return "bg-red-600 border border-white/30";
       default:
-        return "bg-gray-500/70 border border-gray-600";
+        return "bg-gray-600 border border-white/30";
     }
   };
 
@@ -346,13 +346,13 @@ export default function CustomersDetails() {
   const getStatusBackgroundColor = (status) => {
     switch (status) {
       case "Active":
-        return "bg-green-200 border border-green-900";
+        return "bg-green-200 border border-green-900 ";
       case "Inactive":
-        return "bg-yellow-200 border border-yellow-300";
+        return "bg-yellow-200 border border-yellow-900 ";
       case "Suspended":
-        return "bg-red-200 border border-red-300";
+        return "bg-red-200 border border-red-900 ";
       default:
-        return "bg-gray-200 border border-gray-300";
+        return "bg-gray-200 border border-gray-900 ";
     }
   };
 
@@ -528,7 +528,14 @@ export default function CustomersDetails() {
             <SearchIcon className="text-white" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
               placeholder="SEARCH CUSTOMERS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
@@ -621,10 +628,10 @@ export default function CustomersDetails() {
                     key={c.customerId}
                     className={`border-t border-white/15 transition ${
                       c.status === "Inactive"
-                        ? "bg-yellow-500/30 hover:bg-yellow-500/40"
+                        ? "bg-yellow-700/30 hover:bg-yellow-700/50"
                         : c.status === "Suspended"
-                        ? "bg-red-500/30 hover:bg-red-500/50"
-                        : "bg-green-500/30 hover:bg-green-500/50"
+                        ? "bg-red-700/30 hover:bg-red-700/50"
+                        : "bg-green-700/30 hover:bg-green-700/50"
                     }`}
                   >
                     {/* Customer ID column */}
@@ -632,7 +639,7 @@ export default function CustomersDetails() {
 
                     {/* Customer name with avatar */}
                     <td className="p-3 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-white/20 border border-white/20 flex items-center justify-center">
                         <span className="font-medium text-white">
                           {initials(c)}
                         </span>
@@ -656,7 +663,7 @@ export default function CustomersDetails() {
                     {/* Status column */}
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
+                        className={`px-2 py-1 rounded-full text-xs font-medium text-white  ${getStatusColor(
                           c.status
                         )}`}
                       >
@@ -884,7 +891,7 @@ export default function CustomersDetails() {
                 <p className="text-sm text-gray-600 mt-1">
                   CUSTOMER INFORMATION
                 </p>
-                <div className="mt-2 space-y-1">
+                <div className="mt-1 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
                     CUSTOMER ID: {selectedCustomer.customerId}
                   </p>

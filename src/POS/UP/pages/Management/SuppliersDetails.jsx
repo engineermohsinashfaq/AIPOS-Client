@@ -502,7 +502,14 @@ export default function SuppliersDetails() {
             <SearchIcon className="text-white" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
               placeholder="SEARCH SUPPLIERS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />

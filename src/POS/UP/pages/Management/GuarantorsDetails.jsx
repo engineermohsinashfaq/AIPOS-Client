@@ -630,9 +630,16 @@ export default function GuarantorsDetails() {
           {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
-            <input
+             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Capitalize first letter of every word
+                const formattedValue = value.replace(/\b\w/g, (char) =>
+                  char.toUpperCase()
+                );
+                setQuery(formattedValue);
+              }}
               placeholder="SEARCH GUARANTORS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />

@@ -11,38 +11,28 @@ const PAYMENT_METHODS = [
   "Credit",
   "Easypaisa",
   "JazzCash",
-  "Al Baraka Bank (Pakistan) Limited",
   "Allied Bank",
   "Askari Bank",
-  "Bank AL Habib Limited",
+  "Bank AL Habib ",
   "Bank Alfalah",
   "Bank Islami",
   "Bank of Punjab",
   "Bank of Khyber",
-  "Dubai Islamic Bank Pakistan Limited",
-  "Faysal Bank Limited",
+  "Faysal Bank ",
   "First Women Bank",
-  "Habib Bank Limited",
-  "Habib Metropolitan Bank Limited",
   "HBL Bank",
-  "Industrial and Commercial Bank of China",
-  "Industrial Development Bank of Pakistan",
   "JS Bank",
   "MCB Bank",
   "MCB Islamic Bank",
   "Meezan Bank",
-  "NBP (National Bank of Pakistan)",
-  "Punjab Provincial Cooperative Bank Ltd.",
+  "NBP",
   "Samba Bank",
-  "Silkbank Limited",
-  "Sindh Bank Limited",
-  "SME Bank Limited",
-  "Soneri Bank Limited",
-  "Standard Chartered Bank (Pakistan) Ltd",
-  "Summit Bank Limited",
-  "UBL (United Bank Limited)",
-  "United Bank Limited",
-  "Zarai Taraqiati Bank Limited",
+  "Silkbank ",
+  "Sindh Bank ",
+  "SME Bank ",
+  "Soneri Bank ",
+  "Summit Bank ",
+  "UBL ",
 ];
 
 // |===============================| Invoice Number Generator |===============================|
@@ -977,7 +967,7 @@ const Installment = () => {
             <p className="text-white italic text-base">
               Select a product to begin installment sale
             </p>
-            <p className="text-white text-xs mt-2">
+            <p className="text-white text-sm mt-2">
               Choose from the dropdown above to process an installment
               transaction
             </p>
@@ -1029,7 +1019,7 @@ const Installment = () => {
                           : "text-red-400"
                       }`}
                     >
-                      {selectedProduct.quantity} pcs
+                      {selectedProduct.quantity} Piece(s)
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -1057,12 +1047,12 @@ const Installment = () => {
                       required
                     />
                     {!isQuantityAvailable && (
-                      <div className="text-xs bg-red-500/70 text-white py-1 px-2 w-max rounded-full font-medium mt-2">
-                        Only {selectedProduct.quantity} pcs in stock
+                      <div className="text-sm bg-red-500/70 text-white py-1 px-2 w-max rounded-full font-medium mt-2">
+                        Only {selectedProduct.quantity} Piece(s) in stock
                       </div>
                     )}
-                    <p className="text-xs text-white/70 mt-1">
-                      Available: {selectedProduct.quantity} pcs
+                    <p className="text-sm text-white/70 mt-1">
+                      Available: {selectedProduct.quantity} Piece(s)
                     </p>
                   </div>
                 ),
@@ -1080,7 +1070,7 @@ const Installment = () => {
                       placeholder="Enter selling price"
                       required
                     />
-                    <p className="text-xs text-white/70 mt-1">
+                    <p className="text-sm text-white/70 mt-1">
                       Unit price: {parseFloat(selectedProduct.pricePerUnit)}
                     </p>
                   </>
@@ -1198,12 +1188,12 @@ const Installment = () => {
                     </select>
                     {selectedCustomerStatus && (
                       <div
-                        className={`text-xs font-medium  bg-white/90 py-1 px-2  w-max rounded-full ${
+                        className={`text-sm font-medium  py-1 px-2  w-max rounded-full ${
                           selectedCustomerStatus === "Active"
-                            ? "text-green-500"
+                            ? "bg-green-600 border border-white/70 "
                             : selectedCustomerStatus === "Inactive"
-                            ? "text-red-500"
-                            : "text-yellow-500"
+                            ? "bg-red-600 border border-white/70"
+                            : "bg-yellow-600 border border-white/70"
                         }`}
                       >
                         Status: {selectedCustomerStatus}
@@ -1243,7 +1233,7 @@ const Installment = () => {
                 <div className="flex justify-between">
                   <span className="text-white/80">Quantity:</span>
                   <span className="text-white font-medium">
-                    {quantity} units
+                    {quantity} Piece(s)
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1378,19 +1368,24 @@ const Installment = () => {
 
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
-                <span className="text-white">Product:</span>
-                <span className="font-semibold">{selectedProduct?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white">Quantity:</span>
-                <span className="font-semibold">{quantity} units</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-white">Invoice ID:</span>
                 <span className="font-mono font-bold text-white">
                   {newInvoiceId}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-white">Product:</span>
+                <span className="font-semibold">{selectedProduct?.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">Model:</span>
+                <span className="font-semibold">{selectedProduct?.model}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white">Quantity:</span>
+                <span className="font-semibold">{quantity} Piece(s</span>
+              </div>
+
               <div className="flex justify-between">
                 <span className="text-white">Customer:</span>
                 <span className="font-semibold text-white">
@@ -1420,7 +1415,7 @@ const Installment = () => {
                 <div className="flex justify-between">
                   <span className="text-white">Discount:</span>
                   <span className="font-semibold text-white">
-                    {discount}% ({discountAmount})
+                    {discount}% (Rs: {discountAmount}/-)
                   </span>
                 </div>
               )}
@@ -1428,7 +1423,7 @@ const Installment = () => {
                 <div className="flex justify-between">
                   <span className="text-white">Markup:</span>
                   <span className="font-semibold text-white">
-                    {markupRate}% ({markupAmount})
+                    {markupRate}% (Rs: {markupAmount}/-)
                   </span>
                 </div>
               )}
@@ -1448,7 +1443,7 @@ const Installment = () => {
               </div>
               <div className="flex justify-between border-t border-white/20 pt-2">
                 <span className="text-white">Final Amount:</span>
-                <span className="font-bold text-white">{finalTotal}</span>
+                <span className="font-bold text-white">Rs: {finalTotal}/-</span>
               </div>
               {advancePaymentAmount > 0 && (
                 <div className="flex justify-between">
@@ -1510,7 +1505,7 @@ const Installment = () => {
                 <p className="text-sm text-gray-600 mt-1">
                   Installment Sale Receipt
                 </p>
-                <div className="mt-2 space-y-1">
+                <div className="mt-1 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
                     Invoice: {currentTransaction.invoiceId}
                   </p>
@@ -1549,7 +1544,7 @@ const Installment = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Quantity:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.quantity} piece(s)
+                    {currentTransaction.quantity} Piece(s)
                   </span>
                 </div>
               </div>
@@ -1559,14 +1554,14 @@ const Installment = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Customer:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.customerId} - 
+                    {currentTransaction.customerId} -
                     {currentTransaction.customer}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Guarantor:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.guarantorId} - 
+                    {currentTransaction.guarantorId} -
                     {currentTransaction.guarantor}
                   </span>
                 </div>
@@ -1661,7 +1656,7 @@ const Installment = () => {
               </div>
 
               {/* Total value highlight section */}
-              <div className="bg-green-300 border border-green-400 rounded-md p-2 mt-3">
+              <div className="bg-green-200 border border-green-900 rounded-md p-2 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-green-900">
                     Total Amount:
