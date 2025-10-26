@@ -1,9 +1,9 @@
-// |===============================| CustomerReports Component |===============================|
+// |===============================| GuarantorsReports Component |===============================|
 // Import necessary React hooks and external libraries
 import React, { useState, useMemo, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { X, Download, Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -86,6 +86,52 @@ const formatShortDate = (dateString) => {
   }
 };
 
+// Enhanced date parser for consistent sorting and filtering
+const parseDateForSorting = (dateInput) => {
+  if (!dateInput) return new Date(0); // Return epoch for invalid dates
+
+  try {
+    // Handle multiple date formats
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+
+    if (typeof dateInput === "string") {
+      // Handle DD/MM/YYYY HH:MM:SS format
+      if (dateInput.includes("/")) {
+        const parts = dateInput.split(" ");
+        const datePart = parts[0];
+        const timePart = parts[1] || "00:00:00";
+
+        if (datePart.includes("/")) {
+          const [day, month, year] = datePart.split("/");
+          const [hours, minutes, seconds] = timePart.split(":");
+          return new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+            parseInt(hours) || 0,
+            parseInt(minutes) || 0,
+            parseInt(seconds) || 0
+          );
+        }
+      }
+
+      // Handle ISO format and other standard formats
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    // Fallback for other types (timestamps, etc.)
+    return new Date(dateInput);
+  } catch (error) {
+    console.error("Date parsing error for sorting:", error, dateInput);
+    return new Date(0);
+  }
+};
+
 // Date range calculation utilities
 const getDateRange = (range) => {
   const now = new Date();
@@ -112,6 +158,16 @@ const getDateRange = (range) => {
   return { start, end: now };
 };
 
+// Capitalize case utility function
+const toCapitalizeCase = (str) => {
+  if (!str || typeof str !== "string") return str;
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 // Function to export data to Excel (CSV format)
 const exportToExcel = (data, filename) => {
   if (!data || data.length === 0) {
@@ -122,30 +178,28 @@ const exportToExcel = (data, filename) => {
   try {
     // Define CSV headers
     const headers = [
-      "Customer ID",
+      "Guarantor ID",
       "First Name",
       "Last Name",
+      "Contact Number",
       "CNIC",
-      "Contact",
       "City",
       "Address",
-      "Status",
       "Date Added",
       "Last Updated",
     ];
 
     // Convert data to CSV rows
-    const csvRows = data.map((customer) => [
-      customer.customerId,
-      customer.firstName,
-      customer.lastName,
-      customer.cnic,
-      customer.contact,
-      customer.city,
-      customer.address || "",
-      customer.status,
-      formatShortDate(customer.dateAdded),
-      customer.updatedAt ? formatShortDate(customer.updatedAt) : "",
+    const csvRows = data.map((guarantor) => [
+      guarantor.guarantorId,
+      guarantor.firstName,
+      guarantor.lastName,
+      guarantor.contact,
+      guarantor.cnic,
+      guarantor.city,
+      guarantor.address || "",
+      formatShortDate(guarantor.dateAdded),
+      guarantor.updatedAt ? formatShortDate(guarantor.updatedAt) : "",
     ]);
 
     // Combine headers and rows
@@ -177,36 +231,38 @@ const exportToExcel = (data, filename) => {
   }
 };
 
-// Capitalize case utility function
-const toCapitalizeCase = (str) => {
-  if (!str || typeof str !== "string") return str;
-  return str
-    .toLowerCase()
-    .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
-
-// Main CustomerReports component function
-export default function CustomersReports() {
-  // State management for customers data with localStorage initialization
-  const [customers, setCustomers] = useState(() => {
+// Main GuarantorsDetails component function
+export default function GuarantorsDetails() {
+  // State management for guarantors data with localStorage initialization and date fixing
+  const [guarantors, setGuarantors] = useState(() => {
     try {
-      const raw = localStorage.getItem("all_customers_data");
-      return raw ? JSON.parse(raw) : [];
+      const raw = localStorage.getItem("all_guarantors_data");
+      const data = raw ? JSON.parse(raw) : [];
+
+      // Fix date format for existing guarantors with incomplete dates
+      const fixedData = data.map((guarantor) => {
+        if (guarantor.dateAdded && !guarantor.dateAdded.includes(":")) {
+          return {
+            ...guarantor,
+            dateAdded: formatDateTime(new Date()),
+          };
+        }
+        return guarantor;
+      });
+
+      // Update localStorage if dates were fixed
+      if (
+        data.length > 0 &&
+        fixedData.some((g, i) => g.dateAdded !== data[i].dateAdded)
+      ) {
+        localStorage.setItem("all_guarantors_data", JSON.stringify(fixedData));
+      }
+
+      return fixedData;
     } catch {
       return [];
     }
   });
-
-  // State for search functionality
-  const [query, setQuery] = useState("");
-
-  // State for status filtering
-  const [statusFilter, setStatusFilter] = useState("All");
-
-  // State for date range filtering
-  const [dateRangeFilter, setDateRangeFilter] = useState("all");
 
   // State for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -220,14 +276,23 @@ export default function CustomersReports() {
   // State for edit mode
   const [editing, setEditing] = useState(false);
 
-  // State for selected customer details
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  // State for search query
+  const [query, setQuery] = useState("");
+
+  // State for city filtering
+  const [cityFilter, setCityFilter] = useState("All");
+
+  // State for date range filtering
+  const [dateRangeFilter, setDateRangeFilter] = useState("all");
+
+  // State for selected guarantor details
+  const [selectedGuarantor, setSelectedGuarantor] = useState(null);
 
   // State for form data
   const [form, setForm] = useState({});
 
-  // State for tracking original customer data before edits
-  const [originalCustomer, setOriginalCustomer] = useState(null);
+  // State for tracking original guarantor data before edits
+  const [originalGuarantor, setOriginalGuarantor] = useState(null);
 
   // State for tracking form changes
   const [formChanges, setFormChanges] = useState({});
@@ -236,93 +301,94 @@ export default function CustomersReports() {
   const [password, setPassword] = useState("");
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
-  // Effect hook to persist customers data to localStorage
+  // Effect hook to persist guarantors data to localStorage
   useEffect(() => {
-    localStorage.setItem("all_customers_data", JSON.stringify(customers));
-  }, [customers]);
+    localStorage.setItem("all_guarantors_data", JSON.stringify(guarantors));
+  }, [guarantors]);
 
-  // Memoized filtered customers based on search query, status filter, and date range
-  const filtered = useMemo(() => {
-    let arr = customers.slice();
+  // Get unique cities for filter dropdown
+  const uniqueCities = useMemo(() => {
+    const cities = [...new Set(guarantors.map((g) => g.city))].filter(Boolean);
+    return cities.sort();
+  }, [guarantors]);
+
+  // Memoized filtered guarantors based on search query and filters
+  const filteredGuarantors = useMemo(() => {
+    let arr = guarantors.slice();
 
     // Apply search filter if query exists
     if (query.trim()) {
-      const q = query.toLowerCase();
-      arr = arr.filter((c) =>
-        // Search across multiple customer fields
-        [
-          c.customerId,
-          c.firstName,
-          c.lastName,
-          c.contact,
-          c.cnic,
-          c.city,
-          c.address,
+      const q = query.toLowerCase().trim();
+      arr = arr.filter((g) => {
+        // Search across multiple guarantor fields
+        const searchableFields = [
+          g.guarantorId,
+          g.firstName,
+          g.lastName,
+          g.contact,
+          g.cnic,
+          g.city,
+          g.address,
         ]
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
-      );
+          .filter(Boolean) // Remove null/undefined values
+          .map((field) => field.toString().toLowerCase())
+          .join(" ");
+
+        return searchableFields.includes(q);
+      });
     }
 
-    // Apply status filter if not "All"
-    if (statusFilter !== "All")
-      arr = arr.filter((c) => c.status === statusFilter);
+    // Apply city filter if not "All"
+    if (cityFilter !== "All") {
+      arr = arr.filter((g) => g.city === cityFilter);
+    }
 
     // Apply date range filter if not "all"
     if (dateRangeFilter !== "all") {
       const { start, end } = getDateRange(dateRangeFilter);
       if (start && end) {
-        arr = arr.filter((c) => {
-          const customerDate = new Date(
-            c.dateAdded || c.createdAt || c.updatedAt
-          );
-          return customerDate >= start && customerDate <= end;
+        arr = arr.filter((g) => {
+          const guarantorDate = parseDateForSorting(g.dateAdded);
+          return guarantorDate >= start && guarantorDate <= end;
         });
       }
     }
 
-    // Sort by customer ID
-    arr.sort((a, b) => a.customerId.localeCompare(b.customerId));
-    return arr;
-  }, [customers, query, statusFilter, dateRangeFilter]);
+    // Sort by date added (newest first)
+    return arr.sort((a, b) => {
+      const dateA = parseDateForSorting(a.dateAdded);
+      const dateB = parseDateForSorting(b.dateAdded);
+      return dateB - dateA;
+    });
+  }, [guarantors, query, cityFilter, dateRangeFilter]);
 
   // Statistics calculation
   const stats = useMemo(() => {
-    const total = filtered.length;
-    const active = filtered.filter((c) => c.status === "Active").length;
-    const inactive = filtered.filter((c) => c.status === "Inactive").length;
-    const suspended = filtered.filter((c) => c.status === "Suspended").length;
+    const total = filteredGuarantors.length;
+    const withAddress = filteredGuarantors.filter(
+      (g) => g.address && g.address.trim() !== ""
+    ).length;
+    const recentlyUpdated = filteredGuarantors.filter((g) => {
+      if (!g.updatedAt) return false;
+      const updateDate = parseDateForSorting(g.updatedAt);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return updateDate >= thirtyDaysAgo;
+    }).length;
+    const recentlyAdded = filteredGuarantors.filter((g) => {
+      const addDate = parseDateForSorting(g.dateAdded);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return addDate >= thirtyDaysAgo;
+    }).length;
 
-    return { total, active, inactive, suspended };
-  }, [filtered]);
-
-  // Memoized form modification checker - tracks changes between original and current form
-  const isFormModified = useMemo(() => {
-    if (!originalCustomer || !form) return false;
-
-    // Fields to compare for changes
-    const fieldsToCompare = ["contact", "city", "address", "status"];
-
-    const changes = {};
-    let hasChanges = false;
-
-    // Compare each field for changes
-    fieldsToCompare.forEach((field) => {
-      const originalValue = String(originalCustomer[field] || "").trim();
-      const formValue = String(form[field] || "").trim();
-      if (originalValue !== formValue) {
-        changes[field] = {
-          from: originalValue,
-          to: formValue,
-        };
-        hasChanges = true;
-      }
-    });
-
-    setFormChanges(changes);
-    return hasChanges;
-  }, [form, originalCustomer]);
+    return {
+      total,
+      withAddress,
+      recentlyUpdated,
+      recentlyAdded,
+    };
+  }, [filteredGuarantors]);
 
   // Toast notification configuration
   const toastConfig = {
@@ -333,9 +399,9 @@ export default function CustomersReports() {
   const notifySuccess = (msg) => toast.success(msg, toastConfig);
   const notifyError = (msg) => toast.error(msg, toastConfig);
 
-  // Generate customer initials from first and last name
-  const initials = (c) =>
-    `${(c.firstName || "").charAt(0)}${(c.lastName || "").charAt(
+  // Generate guarantor initials from first and last name
+  const initials = (g) =>
+    `${(g.firstName || "").charAt(0)}${(g.lastName || "").charAt(
       0
     )}`.toUpperCase();
 
@@ -345,62 +411,14 @@ export default function CustomersReports() {
       contact: "CONTACT",
       city: "CITY",
       address: "ADDRESS",
-      status: "STATUS",
     };
-    return fieldNames[field] || field;
+    return fieldNames[field] || field.toUpperCase();
   };
 
-  // Get password for display - can be replaced with DB fetch later
-  const getCustomerPassword = (customer) => {
-    return "pakistan@123"; // This will be fetched from DB later
-  };
-
-  // Get status color class
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-500/70 border border-white/20";
-      case "Inactive":
-        return "bg-yellow-500/70 border border-white/20";
-      case "Suspended":
-        return "bg-red-500/70 border border-white/20";
-      default:
-        return "bg-gray-500/70 border border-gray-600";
-    }
-  };
-
-  // Get status background color for view modal
-  const getStatusBackgroundColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-200 border border-green-900";
-      case "Inactive":
-        return "bg-yellow-200 border border-yellow-300";
-      case "Suspended":
-        return "bg-red-200 border border-red-300";
-      default:
-        return "bg-gray-200 border border-gray-300";
-    }
-  };
-
-  // Get status text color for view modal
-  const getStatusTextColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "text-green-900";
-      case "Inactive":
-        return "text-yellow-900";
-      case "Suspended":
-        return "text-red-900";
-      default:
-        return "text-gray-900";
-    }
-  };
-
-  // Open edit modal with customer data
-  const handleOpenEdit = (customer) => {
-    setForm(customer);
-    setOriginalCustomer(customer);
+  // Open edit modal with guarantor data
+  const handleOpenEdit = (guarantor) => {
+    setForm(guarantor);
+    setOriginalGuarantor(guarantor);
     setFormChanges({});
     setEditing(true);
     setIsModalOpen(true);
@@ -433,7 +451,7 @@ export default function CustomersReports() {
     const posPassword = "0000";
 
     if (password !== posPassword) {
-      notifyError("INVALID PASSWORD. ACCESS DENIED.");
+      notifyError("Invalid password. Changes not saved.");
       setPassword("");
       return;
     }
@@ -448,7 +466,7 @@ export default function CustomersReports() {
   const saveChanges = () => {
     // Validate required fields
     if (!form.contact?.trim()) {
-      notifyError("CONTACT NUMBER IS REQUIRED");
+      notifyError("Contact number is required.");
       return;
     }
 
@@ -461,9 +479,8 @@ export default function CustomersReports() {
       // Apply Capitalize case to city and address
       city: toCapitalizeCase(form.city || ""),
       address: toCapitalizeCase(form.address || ""),
-      // Keep contact and status as-is (contact has special format, status is from dropdown)
+      // Keep contact as-is (contact has special format)
       contact: form.contact,
-      status: form.status,
       updatedAt: formatDateTime(new Date()),
     };
 
@@ -476,32 +493,27 @@ export default function CustomersReports() {
             .join(", ")}`
         : "RECORD UPDATED";
 
-    // Prepare updated customer data with metadata
+    // Prepare updated guarantor data with metadata
     const updatedForm = {
       ...processedForm,
       lastUpdateMessage: updateMessage,
     };
 
-    // Update customers state
-    setCustomers((prev) =>
-      prev.map((c) => (c.customerId === form.customerId ? updatedForm : c))
+    // Update guarantors state
+    setGuarantors((prev) =>
+      prev.map((g) => (g.guarantorId === form.guarantorId ? updatedForm : g))
     );
 
     // Close modal and reset states
     setIsModalOpen(false);
-    setOriginalCustomer(null);
+    setOriginalGuarantor(null);
     setFormChanges({});
-    notifySuccess(`${form.customerId} UPDATED SUCCESSFULLY.`);
+    notifySuccess(`Guarantor updated successfully.`);
   };
 
   // Handle save button click - show password prompt
   const handleSave = (e) => {
     e.preventDefault();
-
-    if (!isFormModified) {
-      notifyError("NO CHANGES DETECTED TO SAVE");
-      return;
-    }
 
     setShowPasswordPrompt(true);
   };
@@ -509,7 +521,7 @@ export default function CustomersReports() {
   // Close modal handler
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setOriginalCustomer(null);
+    setOriginalGuarantor(null);
     setFormChanges({});
     setPassword("");
     setShowPasswordPrompt(false);
@@ -531,17 +543,17 @@ export default function CustomersReports() {
 
   // Generate and download Excel report
   const handleDownloadReport = () => {
-    if (filtered.length === 0) {
+    if (filteredGuarantors.length === 0) {
       notifyError("No data available to export");
       return;
     }
 
     const success = exportToExcel(
-      filtered,
-      `customer-report-${new Date().toISOString().split("T")[0]}`
+      filteredGuarantors,
+      `guarantors-report-${new Date().toISOString().split("T")[0]}`
     );
     if (success) {
-      notifySuccess("REPORT EXPORTED TO EXCEL SUCCESSFULLY");
+      notifySuccess("Guarantors report exported successfully");
     }
   };
 
@@ -549,6 +561,51 @@ export default function CustomersReports() {
   const handleOpenReport = () => {
     setIsReportOpen(true);
   };
+
+  // Effect hook to fix existing guarantor dates on component mount
+  useEffect(() => {
+    const fixExistingGuarantorDates = () => {
+      const raw = localStorage.getItem("all_guarantors_data");
+      if (!raw) return;
+
+      try {
+        const data = JSON.parse(raw);
+        let needsFix = false;
+
+        // Fix dates that are missing time component
+        const fixedData = data.map((guarantor) => {
+          if (
+            guarantor.dateAdded &&
+            (guarantor.dateAdded.length <= 10 ||
+              !guarantor.dateAdded.includes(":"))
+          ) {
+            const originalDate = new Date(guarantor.dateAdded);
+            if (!isNaN(originalDate.getTime())) {
+              needsFix = true;
+              return {
+                ...guarantor,
+                dateAdded: formatDateTime(originalDate),
+              };
+            }
+          }
+          return guarantor;
+        });
+
+        // Update localStorage and state if fixes were applied
+        if (needsFix) {
+          localStorage.setItem(
+            "all_guarantors_data",
+            JSON.stringify(fixedData)
+          );
+          setGuarantors(fixedData);
+        }
+      } catch (error) {
+        console.error("Error fixing guarantor dates:", error);
+      }
+    };
+
+    fixExistingGuarantorDates();
+  }, []);
 
   // Component render method
   return (
@@ -561,39 +618,46 @@ export default function CustomersReports() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            CUSTOMER REPORTS
-          </h1>
+          <h1 className="text-3xl font-bold mb-2">GUARANTORS DETAILS</h1>
           <p className="text-white/80">
-            VIEW, ANALYZE, AND EXPORT CUSTOMER DATA WITH ADVANCED FILTERING.
+            ANALYZE AND EXPORT GUARANTORS DATA WITH ADVANCED FILTERING AND
+            REPORTING.
           </p>
         </div>
 
-        {/* Search and filter panel */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        {/* Search and Filter Panel */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
           {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
             <SearchIcon className="text-white" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="SEARCH CUSTOMERS..."
+              placeholder="SEARCH GUARANTORS..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
-          {/* Status filter dropdown */}
+          {/* City filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">STATUS</label>
+            <label className="text-sm text-white/70">CITY</label>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
-              <option className="bg-black/95 text-white">All</option>
-              <option className="bg-black/95 text-white">Active</option>
-              <option className="bg-black/95 text-white">Inactive</option>
-              <option className="bg-black/95 text-white">Suspended</option>
+              <option value="All" className="bg-black/95 text-white">
+                ALL
+              </option>
+              {uniqueCities.map((city) => (
+                <option
+                  key={city}
+                  value={city}
+                  className="bg-black/95 text-white"
+                >
+                  {city}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -603,7 +667,7 @@ export default function CustomersReports() {
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
               <option value="all" className="bg-black/95 text-white">
                 ALL TIME
@@ -643,77 +707,59 @@ export default function CustomersReports() {
         </div>
 
         {/* Main data table container */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide">
-          {/* Customers table */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide ">
+          {/* Guarantors table */}
           <table className="w-full text-white/90 min-w-[900px]">
             {/* Table header with column labels */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
                 <th className="p-3">ID</th>
                 <th className="p-3">NAME</th>
-                <th className="p-3">CNIC</th>
                 <th className="p-3">CONTACT</th>
+                <th className="p-3">CNIC</th>
                 <th className="p-3">CITY</th>
-                <th className="p-3">STATUS</th>
                 <th className="p-3">DATE ADDED</th>
                 <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
 
-            {/* Table body with customer records */}
+            {/* Table body with guarantor records */}
             <tbody>
-              {/* Map through filtered customer records */}
-              {filtered.length > 0 ? (
-                filtered.map((c) => (
+              {/* Map through filtered guarantor records */}
+              {filteredGuarantors.length > 0 ? (
+                filteredGuarantors.map((g) => (
                   <tr
-                    key={c.customerId}
-                    className={`border-t border-white/15 transition ${
-                      c.status === "Inactive"
-                        ? "bg-yellow-500/30 hover:bg-yellow-500/40"
-                        : c.status === "Suspended"
-                        ? "bg-red-500/30 hover:bg-red-500/40"
-                        : "bg-green-500/30 hover:bg-green-500/40"
-                    }`}
+                    key={g.guarantorId}
+                    className="border-t border-white/15 hover:bg-white/5 transition"
                   >
-                    {/* Customer ID column */}
-                    <td className="p-3">{c.customerId}</td>
+                    {/* Guarantor ID column */}
+                    <td className="p-3">{g.guarantorId}</td>
 
-                    {/* Customer name with avatar */}
+                    {/* Guarantor name with avatar */}
                     <td className="p-3 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
                         <span className="font-medium text-white">
-                          {initials(c)}
+                          {initials(g)}
                         </span>
                       </div>
                       <div>
-                        <div className="font-medium text-white">
-                          {c.firstName} {c.lastName}
-                        </div>
+                        {g.firstName} {g.lastName}
                       </div>
                     </td>
 
-                    {/* CNIC column */}
-                    <td className="p-3">{c.cnic}</td>
-
                     {/* Contact column */}
-                    <td className="p-3">{c.contact}</td>
+                    <td className="p-3">{g.contact}</td>
+
+                    {/* CNIC column */}
+                    <td className="p-3">{g.cnic}</td>
 
                     {/* City column */}
-                    <td className="p-3">{c.city}</td>
+                    <td className="p-3">{g.city}</td>
 
-                    {/* Status column */}
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
-                          c.status
-                        )}`}
-                      >
-                        {c.status}
-                      </span>
+                    {/* Date added column with short format */}
+                    <td className="p-3 text-sm">
+                      {formatShortDate(g.dateAdded)}
                     </td>
-
-                    {/* Date Added column */}
-                    <td className="p-3">{formatShortDate(c.dateAdded)}</td>
 
                     {/* Actions column with view and edit buttons */}
                     <td className="p-3 flex gap-2">
@@ -721,7 +767,7 @@ export default function CustomersReports() {
                       <button
                         title="VIEW"
                         onClick={() => {
-                          setSelectedCustomer(c);
+                          setSelectedGuarantor(g);
                           setIsViewOpen(true);
                         }}
                         className="p-2 rounded bg-cyan-900 text-white hover:bg-cyan-950 transition-colors cursor-pointer"
@@ -732,7 +778,7 @@ export default function CustomersReports() {
                       {/* Edit button */}
                       <button
                         title="EDIT"
-                        onClick={() => handleOpenEdit(c)}
+                        onClick={() => handleOpenEdit(g)}
                         className="p-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-colors cursor-pointer"
                       >
                         <EditIcon fontSize="small" />
@@ -743,10 +789,10 @@ export default function CustomersReports() {
               ) : (
                 // Empty state message
                 <tr>
-                  <td colSpan="8" className="text-center py-6 text-white/60">
-                    {customers.length === 0
-                      ? "NO CUSTOMERS ADDED YET."
-                      : "NO CUSTOMERS MATCH YOUR SEARCH CRITERIA."}
+                  <td colSpan="7" className="text-center py-6 text-white/60">
+                    {guarantors.length === 0
+                      ? "NO GUARANTORS ADDED YET."
+                      : "NO GUARANTORS MATCH YOUR SEARCH CRITERIA."}
                   </td>
                 </tr>
               )}
@@ -755,93 +801,81 @@ export default function CustomersReports() {
         </div>
       </div>
 
-      {/* Edit Customer Modal */}
+      {/* Edit Guarantor Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md p-2">
           {/* Modal content container */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-lg text-white">
-            {/* Modal header */}
-            <h2 className="text-xl font-semibold mb-4">
-              EDIT CUSTOMER: {form.customerId}
-            </h2>
-
-            {/* Changes detection display */}
-            {isFormModified && (
-              <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
-                <p className="font-medium text-yellow-300">CHANGES DETECTED:</p>
-                <ul className="text-xs mt-1 space-y-1">
-                  {Object.entries(formChanges).map(([field, change]) => (
-                    <li key={field} className="flex justify-between">
-                      <span>{getFieldDisplayName(field)}:</span>
-                      <span className="text-yellow-200">
-                        "{change.from}" → "{change.to}"
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+            {/* Modal header with guarantor info */}
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">EDIT GUARANTOR</h2>
+              <div className="text-sm text-white/80 mt-2 space-y-1">
+                <p>
+                  <strong>GUARANTOR ID:</strong> {form.guarantorId}
+                </p>
+                <p>
+                  <strong>DATE ADDED:</strong> {formatDateTime(form.dateAdded)}
+                </p>
               </div>
-            )}
+            </div>
 
             {/* Edit form */}
             <form onSubmit={handleSave} className="space-y-3">
-              {/* Form fields remain the same as in AllCustomers */}
+              {/* Read-only name fields */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   name="firstName"
-                  value={form.firstName || ""}
+                  value={form.firstName}
                   readOnly
                   placeholder="FIRST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
                 <input
                   name="lastName"
-                  value={form.lastName || ""}
+                  value={form.lastName}
                   readOnly
                   placeholder="LAST NAME"
                   className="p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
                 />
               </div>
 
+              {/* Read-only guarantor ID */}
               <input
-                name="customerId"
-                value={form.customerId || ""}
+                name="guarantorId"
+                value={form.guarantorId}
                 readOnly
-                placeholder="CUSTOMER ID"
+                placeholder="GUARANTOR ID"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
+              {/* Read-only CNIC */}
               <input
                 name="cnic"
-                value={form.cnic || ""}
+                value={form.cnic}
                 readOnly
                 placeholder="CNIC"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
-              <input
-                name="password"
-                value={getCustomerPassword(form)}
-                readOnly
-                placeholder="PASSWORD"
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
-              />
-
+              {/* Editable contact field */}
               <input
                 name="contact"
-                value={form.contact || ""}
+                value={form.contact}
                 onChange={handleChange}
                 placeholder="CONTACT (+92...)"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
+              {/* Editable city field */}
               <input
                 name="city"
-                value={form.city || ""}
+                value={form.city}
                 onChange={handleChange}
                 placeholder="CITY"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
+              {/* Editable address field */}
               <input
                 name="address"
                 value={form.address || ""}
@@ -850,31 +884,18 @@ export default function CustomersReports() {
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
-              <select
-                name="status"
-                value={form.status || ""}
-                onChange={handleChange}
-                className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
-              >
-                <option className="bg-black/90">Active</option>
-                <option className="bg-black/90">Inactive</option>
-                <option className="bg-black/90">Suspended</option>
-              </select>
-
               {/* Form action buttons */}
               <div className="flex justify-end gap-3 pt-4">
+                {/* Save button (disabled if no changes) */}
                 <button
                   type="submit"
-                  disabled={!isFormModified}
-                  className={`px-4 py-2 rounded border border-white/40 transition hover:cursor-pointer ${
-                    isFormModified
-                      ? "bg-cyan-800/80 hover:bg-cyan-900"
-                      : "bg-gray-600/50 cursor-not-allowed opacity-50"
+                  className={`px-4 py-2 rounded border border-white/40 transition hover:cursor-pointer "bg-cyan-800/80 hover:bg-cyan-900"
                   }`}
                 >
                   SAVE CHANGES
                 </button>
 
+                {/* Cancel button */}
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -941,125 +962,98 @@ export default function CustomersReports() {
         </div>
       )}
 
-      {/* View Customer Details Modal */}
-      {isViewOpen && selectedCustomer && (
+      {/* View Guarantor Details Modal */}
+      {isViewOpen && selectedGuarantor && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
+          {/* Modal content container */}
           <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
+            {/* Modal body content */}
             <div className="p-4 space-y-3">
+              {/* Header section with company info */}
               <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
                 <h2 className="text-xl font-bold tracking-wider text-gray-900">
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  CUSTOMER INFORMATION
+                  GUARANTOR INFORMATION
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    CUSTOMER ID: {selectedCustomer.customerId}
+                    GUARANTOR ID: {selectedGuarantor.guarantorId}
                   </p>
                 </div>
               </div>
 
+              {/* Guarantor details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">FIRST NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.firstName}
+                    {selectedGuarantor.firstName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">LAST NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.lastName}
+                    {selectedGuarantor.lastName}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CONTACT:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.contact}
+                    {selectedGuarantor.contact}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CNIC:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.cnic}
+                    {selectedGuarantor.cnic}
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CITY:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.city}
+                    {selectedGuarantor.city}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">ADDRESS:</span>
                   <span className="text-gray-900 text-right">
-                    {selectedCustomer.address || "—"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2  border-t border-b border-dashed border-gray-300 py-3 ">
-                  <span className="font-medium text-gray-700">PASSWORD:</span>
-                  <span className="text-gray-900 text-right">
-                    {getCustomerPassword(selectedCustomer)}
+                    {selectedGuarantor.address || "—"}
                   </span>
                 </div>
               </div>
 
-              <div
-                className={`rounded-md p-2 mt-3 ${getStatusBackgroundColor(
-                  selectedCustomer.status
-                )}`}
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  <span
-                    className={`font-bold ${getStatusTextColor(
-                      selectedCustomer.status
-                    )}`}
-                  >
-                    ACCOUNT STATUS:
-                  </span>
-                  <span
-                    className={`font-bold text-right ${getStatusTextColor(
-                      selectedCustomer.status
-                    )}`}
-                  >
-                    {selectedCustomer.status}
-                  </span>
-                </div>
-              </div>
-
+              {/* Timestamp and update history section */}
               <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span>DATE ADDED:</span>
                   <span className="text-right">
-                    {formatDateTime(selectedCustomer.dateAdded)}
+                    {formatDateTime(selectedGuarantor.dateAdded)}
                   </span>
                 </div>
-                {selectedCustomer.updatedAt && (
+                {/* Show update timestamp if available */}
+                {selectedGuarantor.updatedAt && (
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <span>LAST UPDATED:</span>
                     <span className="text-right">
-                      {formatDateTime(selectedCustomer.updatedAt)}
+                      {formatDateTime(selectedGuarantor.updatedAt)}
                     </span>
-                  </div>
-                )}
-                {selectedCustomer.lastUpdateMessage && (
-                  <div className="col-span-2 mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
-                    <span className="font-medium">UPDATE NOTE: </span>
-                    {selectedCustomer.lastUpdateMessage}
                   </div>
                 )}
               </div>
 
+              {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>THIS IS A COMPUTER-GENERATED CUSTOMER RECORD.</p>
+                <p>THIS IS A COMPUTER-GENERATED GUARANTOR RECORD.</p>
                 <p>CONTAINS PERSONAL AND CONTACT INFORMATION ONLY.</p>
               </div>
             </div>
 
+            {/* Modal action buttons (sticky footer) */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 rounded-b-lg p-2 print:hidden">
               <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                {/* Print button */}
                 <button
                   onClick={handlePrint}
                   className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
@@ -1068,6 +1062,7 @@ export default function CustomersReports() {
                   <span>PRINT</span>
                 </button>
 
+                {/* Close modal button */}
                 <button
                   onClick={() => setIsViewOpen(false)}
                   className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
@@ -1091,14 +1086,14 @@ export default function CustomersReports() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-lg text-gray-600 mt-1">
-                  CUSTOMER REPORT SUMMARY
+                  GUARANTORS REPORT SUMMARY
                 </p>
                 <div className="mt-3 space-y-1 text-sm">
                   <p className="font-semibold text-gray-700">
                     REPORT GENERATED: {formatDateTime(new Date())}
                   </p>
                   <p className="text-gray-600">
-                    Total Records: {filtered.length} | Date Range:{" "}
+                    Total Guarantors: {filteredGuarantors.length} | Date Range:{" "}
                     {dateRangeFilter === "all"
                       ? "All Time"
                       : dateRangeFilter === "7days"
@@ -1112,37 +1107,71 @@ export default function CustomersReports() {
                 </div>
               </div>
 
-              {/* Statistics Summary Only */}
+              {/* Statistics Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-blue-900">
                     {stats.total}
                   </div>
-                  <div className="text-blue-700 text-sm">TOTAL CUSTOMERS</div>
+                  <div className="text-blue-700 text-sm">TOTAL GUARANTORS</div>
                 </div>
                 <div className="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-green-900">
-                    {stats.active}
+                    {stats.withAddress}
                   </div>
-                  <div className="text-green-700 text-sm">Active</div>
+                  <div className="text-green-700 text-sm">WITH ADDRESS</div>
+                </div>
+                <div className="bg-purple-100 border border-purple-300 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-900">
+                    {stats.recentlyAdded}
+                  </div>
+                  <div className="text-purple-700 text-sm">RECENTLY ADDED</div>
                 </div>
                 <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-900">
-                    {stats.inactive}
+                    {stats.recentlyUpdated}
                   </div>
-                  <div className="text-yellow-700 text-sm">Inactive</div>
-                </div>
-                <div className="bg-red-100 border border-red-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-red-900">
-                    {stats.suspended}
+                  <div className="text-yellow-700 text-sm">
+                    RECENTLY UPDATED
                   </div>
-                  <div className="text-red-700 text-sm">Suspended</div>
                 </div>
               </div>
 
+              {/* City Distribution */}
+              {uniqueCities.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-bold text-gray-800 mb-3">
+                    CITY DISTRIBUTION
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {uniqueCities.slice(0, 6).map((city) => {
+                      const cityCount = filteredGuarantors.filter(
+                        (g) => g.city === city
+                      ).length;
+                      return (
+                        <div
+                          key={city}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-gray-700">{city}</span>
+                          <span className="font-semibold text-gray-900">
+                            {cityCount}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {uniqueCities.length > 6 && (
+                      <div className="col-span-2 text-center text-gray-600 italic">
+                        ... AND {uniqueCities.length - 6} MORE CITIES
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Footer Information */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>THIS IS A COMPUTER-GENERATED CUSTOMER REPORT.</p>
+                <p>THIS IS A COMPUTER-GENERATED GUARANTORS REPORT.</p>
                 <p>CONTAINS CONFIDENTIAL BUSINESS INFORMATION.</p>
               </div>
             </div>

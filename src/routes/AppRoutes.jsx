@@ -68,15 +68,15 @@ import UPPOS from "../POS/UP/pages/POS/POS";
 
 import UPAddGuarantor from "../POS/UP/pages/Guarantors/AddGuarantor";
 
-import UPInstallmentManagement from "../POS/UP/pages/Installments/InstallmentManagement";
+import UPManageInstallments from "../POS/UP/pages/Installments/ManageInstallments";
 
-import UPPurchaseReport from "../POS/UP/pages/Reports/PurchaseReport";
-import UPInventoryReport from "../POS/UP/pages/Reports/InventoryReport";
-import UPCustomerReport from "../POS/UP/pages/Reports/CustomersReport";
-import UPInstallmentsReport from "../POS/UP/pages/Reports/InstallmentsReport";
-import UPSalesReport from "../POS/UP/pages/Reports/SalesReport";
-import UPGuarantorsReport from "../POS/UP/pages/Reports/GuarantorsReport";
-import UPSuppliersReport from "../POS/UP/pages/Reports/SuppliersReport";
+import UPPurchaseDetails from "../POS/UP/pages/Management/PurchaseDetails";
+import UPInventoryDetails from "../POS/UP/pages/Management/InventoryDetails";
+import UPCustomersDetails from "../POS/UP/pages/Management/CustomersDetails";
+import UPInstallmentsDetails from "../POS/UP/pages/Management/InstallmentsDetails";
+import UPSalesDetails from "../POS/UP/pages/Management/SalesDetails";
+import UPGuarantorsDetails from "../POS/UP/pages/Management/GuarantorsDetails";
+import UPSuppliersDetails from "../POS/UP/pages/Management/SuppliersDetails";
 
 import UPSystemBackup from "../POS/UP/pages/Settings/SystemBackup/SystemBackup";
 import UPProfile from "../POS/UP/pages/Settings/Profile/Profile";
@@ -245,26 +245,29 @@ const AppRoutes = () => {
             <Route path="up-pos" element={<UPPOS />} />
             <Route path="up-add-guarantor" element={<UPAddGuarantor />} />
             <Route
-              path="up-installment-management"
-              element={<UPInstallmentManagement />}
+              path="up-manage-installments"
+              element={<UPManageInstallments />}
             />
-            <Route path="up-purchase-report" element={<UPPurchaseReport />} />
-            <Route path="up-inventory-report" element={<UPInventoryReport />} />
-            <Route path="up-customer-report" element={<UPCustomerReport />} />
+            <Route path="up-purchase-details" element={<UPPurchaseDetails />} />
             <Route
-              path="up-installments-report"
-              element={<UPInstallmentsReport />}
+              path="up-inventory-details"
+              element={<UPInventoryDetails />}
+            />
+            <Route path="up-customers-details" element={<UPCustomersDetails />} />
+            <Route
+              path="up-installments-details"
+              element={<UPInstallmentsDetails />}
             />
             <Route
-              path="up-guarantors-report"
-              element={<UPGuarantorsReport />}
+              path="up-guarantors-details"
+              element={<UPGuarantorsDetails />}
             />
             <Route
-              path="up-suppliers-report"
-              element={<UPSuppliersReport />}
+              path="up-suppliers-details"
+              element={<UPSuppliersDetails />}
             />
 
-            <Route path="up-sales-report" element={<UPSalesReport />} />
+            <Route path="up-sales-details" element={<UPSalesDetails />} />
             <Route path="up-system-backup" element={<UPSystemBackup />} />
             <Route path="up-profile" element={<UPProfile />} />
             <Route path="up-developers" element={<UPDevelopers />} />

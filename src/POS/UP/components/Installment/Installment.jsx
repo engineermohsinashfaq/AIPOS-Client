@@ -5,6 +5,46 @@ import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 
+// |===============================| Payment Methods List |===============================|
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Al Baraka Bank (Pakistan) Limited",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib Limited",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Dubai Islamic Bank Pakistan Limited",
+  "Faysal Bank Limited",
+  "First Women Bank",
+  "Habib Bank Limited",
+  "Habib Metropolitan Bank Limited",
+  "HBL Bank",
+  "Industrial and Commercial Bank of China",
+  "Industrial Development Bank of Pakistan",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP (National Bank of Pakistan)",
+  "Punjab Provincial Cooperative Bank Ltd.",
+  "Samba Bank",
+  "Silkbank Limited",
+  "Sindh Bank Limited",
+  "SME Bank Limited",
+  "Soneri Bank Limited",
+  "Standard Chartered Bank (Pakistan) Ltd",
+  "Summit Bank Limited",
+  "UBL (United Bank Limited)",
+  "United Bank Limited",
+  "Zarai Taraqiati Bank Limited",
+];
+
 // |===============================| Invoice Number Generator |===============================|
 const generateInvoiceNumber = () => {
   try {
@@ -128,7 +168,7 @@ const Installment = () => {
   const [planMonths, setPlanMonths] = useState(3);
   const [markupRate, setMarkupRate] = useState("0");
   const [advancePayment, setAdvancePayment] = useState("0");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -141,15 +181,8 @@ const Installment = () => {
       const stored = localStorage.getItem("products");
       if (stored) {
         const productsData = JSON.parse(stored);
-        // Convert all product string fields to lowercase when loading
-        const formattedProducts = productsData.map(product => ({
-          ...product,
-          name: product.name ? product.name : "",
-          model: product.model ? product.model : "",
-          category: product.category ? product.category : "",
-          company: product.company ? product.company : ""
-        }));
-        setProducts(formattedProducts);
+        // REMOVED: No case conversion - show data as stored
+        setProducts(productsData);
       } else {
         setProducts([]);
       }
@@ -163,7 +196,7 @@ const Installment = () => {
       const storedCustomers = localStorage.getItem("all_customers_data");
       if (storedCustomers) {
         const customersData = JSON.parse(storedCustomers);
-        // Convert all customer string fields to lowercase when loading
+        // REMOVED: No case conversion - show data as stored
         const formattedCustomers = customersData.map((customer) => ({
           id: customer.customerId,
           name: `${customer.firstName} ${customer.lastName}`,
@@ -187,7 +220,7 @@ const Installment = () => {
       const storedGuarantors = localStorage.getItem("all_guarantors_data");
       if (storedGuarantors) {
         const guarantorsData = JSON.parse(storedGuarantors);
-        // Convert all guarantor string fields to lowercase when loading
+        // REMOVED: No case conversion - show data as stored
         const formattedGuarantors = guarantorsData.map((guarantor) => ({
           id: guarantor.guarantorId,
           name: `${guarantor.firstName} ${guarantor.lastName}`,
@@ -314,11 +347,11 @@ const Installment = () => {
           parseFloat(found.pricePerUnit) || parseFloat(found.price) || 0;
         setSelectedProduct({
           productId: found.productId,
-          name: found.name,
-          model: found.model,
-          category: found.category,
+          name: found.name, // Show as stored (no case conversion)
+          model: found.model, // Show as stored (no case conversion)
+          category: found.category, // Show as stored (no case conversion)
           quantity: found.quantity,
-          company: found.company,
+          company: found.company, // Show as stored (no case conversion)
           pricePerUnit: pricePerUnit.toString(),
           value: found.value || "0.00",
         });
@@ -327,7 +360,7 @@ const Installment = () => {
         setDiscount("0");
         setMarkupRate("0");
         setAdvancePayment("0");
-        setPaymentMethod("cash");
+        setPaymentMethod("Cash");
         setShowFullAdvanceWarning(false);
       } else {
         setSelectedProduct(null);
@@ -336,7 +369,7 @@ const Installment = () => {
         setDiscount("0");
         setMarkupRate("0");
         setAdvancePayment("0");
-        setPaymentMethod("cash");
+        setPaymentMethod("Cash");
         setShowFullAdvanceWarning(false);
       }
     } else {
@@ -346,21 +379,14 @@ const Installment = () => {
       setDiscount("0");
       setMarkupRate("0");
       setAdvancePayment("0");
-      setPaymentMethod("cash");
+      setPaymentMethod("Cash");
       setShowFullAdvanceWarning(false);
     }
   }, [selectedProductId, products]);
 
   // |===============================| Helper Functions |===============================|
   const getPaymentMethodDisplay = useCallback((method) => {
-    const methodMap = {
-      cash: "Cash",
-      hbl: "HBL Bank",
-      jazzcash: "JazzCash",
-      easypaisa: "EasyPaisa",
-      meezan: "Meezan Bank",
-    };
-    return methodMap[method] || method;
+    return method; // Now returns the method name as is from PAYMENT_METHODS
   }, []);
 
   const renderInputGroup = useCallback(
@@ -642,15 +668,15 @@ const Installment = () => {
       timestamp: new Date().toISOString(),
       type: "installment-sale",
       productId: selectedProduct.productId,
-      productName: selectedProduct.name, // Already in lowercase from state
-      productModel: selectedProduct.model, // Already in lowercase from state
-      productCategory: selectedProduct.category, // Already in lowercase from state
+      productName: selectedProduct.name, // Show as stored (no case conversion)
+      productModel: selectedProduct.model, // Show as stored (no case conversion)
+      productCategory: selectedProduct.category, // Show as stored (no case conversion)
       quantity: parseInt(quantity),
       customerType: "installment",
-      customer: selectedCustomer?.name, // Already in lowercase from state
+      customer: selectedCustomer?.name, // Show as stored (no case conversion)
       customerId: selectedCustomer?.id,
       customerStatus: selectedCustomer?.status,
-      guarantor: selectedGuarantor?.name, // Already in lowercase from state
+      guarantor: selectedGuarantor?.name, // Show as stored (no case conversion)
       guarantorId: selectedGuarantor?.id,
       unitPrice: parseFloat(price),
       salePrice: totalSellingPrice,
@@ -666,14 +692,14 @@ const Installment = () => {
       monthlyPayment: monthlyPayment,
       finalTotal: finalTotal,
       paymentTimeline: timeline,
-      company: selectedProduct.company, // Already in lowercase from state
+      company: selectedProduct.company, // Show as stored (no case conversion)
       pricePerUnit: selectedProduct.pricePerUnit,
       inventoryValue: selectedProduct.value,
       paymentMethod: paymentMethod,
       isFullAdvancePayment: isFullAdvancePayment,
     };
 
-    // Update product stock in localStorage - save in lowercase
+    // Update product stock in localStorage - save as is (no case conversion)
     const updatedProducts = products.map((p) => {
       if (p.productId === selectedProduct.productId) {
         const currentQty = parseInt(p.quantity) || 0;
@@ -693,7 +719,7 @@ const Installment = () => {
     localStorage.setItem("products", JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
 
-    // Add to sales history - data is already in lowercase from state
+    // Add to sales history - data is shown as stored (no case conversion)
     const existingSalesHistory =
       JSON.parse(localStorage.getItem("salesHistory")) || [];
     const updatedSalesHistory = [...existingSalesHistory, transactionDetails];
@@ -741,7 +767,7 @@ const Installment = () => {
     setSelectedGuarantorId("");
     setMarkupRate("0");
     setAdvancePayment("0");
-    setPaymentMethod("cash");
+    setPaymentMethod("Cash");
     setPlanMonths(3);
     setNewInvoiceId(generateInvoiceNumber());
   }, [
@@ -927,7 +953,7 @@ const Installment = () => {
           <select
             value={selectedProductId}
             onChange={(e) => setSelectedProductId(e.target.value)}
-            className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+            className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
           >
             <option value="" className="bg-black/90">
               -- Select Product --
@@ -967,23 +993,9 @@ const Installment = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-white text-sm">Invoice No:</span>
-                    <span className="font-mono font-bold text-white text-sm md:text-base">
-                      {newInvoiceId}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Product ID:</span>
                     <span className="font-mono font-semibold text-white text-sm md:text-base">
                       {selectedProduct.productId}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white text-sm">Name:</span>
-                    <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.name}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -995,11 +1007,19 @@ const Installment = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
+                    <span className="text-white text-sm">Name:</span>
+                    <span className="font-semibold text-white text-sm md:text-base">
+                      {selectedProduct.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Category:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
                       {selectedProduct.category}
                     </span>
                   </div>
+                </div>
+                <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Current Stock:</span>
                     <span
@@ -1010,6 +1030,12 @@ const Installment = () => {
                       }`}
                     >
                       {selectedProduct.quantity} pcs
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white text-sm">Avg Unit Price:</span>
+                    <span className="font-mono font-bold text-white text-sm md:text-base">
+                      Rs: {parseInt(selectedProduct.pricePerUnit)}/-
                     </span>
                   </div>
                 </div>
@@ -1112,23 +1138,20 @@ const Installment = () => {
                   <select
                     value={paymentMethod}
                     onChange={handlePaymentMethodChange}
-                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                   >
-                    <option value="cash" className="bg-black/90">
-                      Cash
+                    <option value="" className="bg-black/90">
+                      -- Select Payment Method --
                     </option>
-                    <option value="easypaisa" className="bg-black/90">
-                      EasyPaisa
-                    </option>
-                    <option value="jazzcash" className="bg-black/90">
-                      JazzCash
-                    </option>
-                    <option value="meezan" className="bg-black/90">
-                      Meezan Bank
-                    </option>
-                    <option value="hbl" className="bg-black/90">
-                      HBL Bank
-                    </option>
+                    {PAYMENT_METHODS.map((method) => (
+                      <option
+                        key={method}
+                        value={method}
+                        className="bg-black/90"
+                      >
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 ),
               })}
@@ -1139,7 +1162,7 @@ const Installment = () => {
                   <select
                     value={planMonths}
                     onChange={(e) => setPlanMonths(Number(e.target.value))}
-                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                   >
                     {[...Array(24).keys()]
                       .map((i) => i + 1)
@@ -1162,14 +1185,14 @@ const Installment = () => {
                     <select
                       value={selectedCustomerId}
                       onChange={(e) => setSelectedCustomerId(e.target.value)}
-                      className="w-full p-3 mb-2 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                      className="w-full p-3 mb-2 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                     >
                       <option value="" className="bg-black/90">
                         -- Select Customer --
                       </option>
                       {customers.map((c) => (
                         <option key={c.id} value={c.id} className="bg-black/90">
-                          {c.name}
+                          {c.name} - ({c.cnic})
                         </option>
                       ))}
                     </select>
@@ -1196,14 +1219,14 @@ const Installment = () => {
                   <select
                     value={selectedGuarantorId}
                     onChange={(e) => setSelectedGuarantorId(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                    className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                   >
                     <option value="" className="bg-black/90">
                       -- Select Guarantor --
                     </option>
                     {guarantors.map((g) => (
                       <option key={g.id} value={g.id} className="bg-black/90">
-                        {g.name}
+                        {g.name} - ({g.cnic})
                       </option>
                     ))}
                   </select>
@@ -1384,13 +1407,13 @@ const Installment = () => {
               <div className="flex justify-between">
                 <span className="text-white">Selling Price:</span>
                 <span className="font-semibold text-white">
-                  {parseFloat(price)}
+                  Rs: {parseFloat(price)}/-
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white">Total Selling Price:</span>
                 <span className="font-semibold text-white">
-                  {totalSellingPrice}
+                  Rs: {totalSellingPrice}/-
                 </span>
               </div>
               {parseFloat(discount) > 0 && (
@@ -1413,13 +1436,13 @@ const Installment = () => {
                 <div className="flex justify-between">
                   <span className="text-white">Advance Payment:</span>
                   <span className="font-semibold text-white">
-                    {advancePaymentAmount}
+                    Rs: {advancePaymentAmount}/-
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-white">Payment Method:</span>
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-black rounded-full px-2 py-1 bg-white/70">
                   {getPaymentMethodDisplay(paymentMethod)}
                 </span>
               </div>
@@ -1431,14 +1454,14 @@ const Installment = () => {
                 <div className="flex justify-between">
                   <span className="text-white">Remaining Amount:</span>
                   <span className="font-semibold text-white">
-                    {remainingAmount}
+                    Rs: {remainingAmount}/-
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-white">Monthly Payment:</span>
                 <span className="font-semibold text-white">
-                  {monthlyPayment}
+                  Rs: {monthlyPayment}/-
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1526,7 +1549,7 @@ const Installment = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Quantity:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.quantity} units
+                    {currentTransaction.quantity} piece(s)
                   </span>
                 </div>
               </div>
@@ -1536,14 +1559,14 @@ const Installment = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Customer:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.customerId}{" "}
+                    {currentTransaction.customerId} - 
                     {currentTransaction.customer}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Guarantor:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.guarantorId}{" "}
+                    {currentTransaction.guarantorId} - 
                     {currentTransaction.guarantor}
                   </span>
                 </div>
@@ -1556,7 +1579,7 @@ const Installment = () => {
                     Selling Price:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.unitPrice}
+                    Rs: {currentTransaction.unitPrice}/-
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1564,30 +1587,30 @@ const Installment = () => {
                     Total Price:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.salePrice}
+                    Rs: {currentTransaction.salePrice}/-
                   </span>
                 </div>
                 {currentTransaction.discount > 0 && (
                   <div className="grid grid-cols-2 gap-2">
                     <span className="font-medium text-gray-700">Discount:</span>
                     <span className="text-gray-900 text-right">
-                      {currentTransaction.discount}% (
-                      {currentTransaction.discountAmount})
+                      {currentTransaction.discount}% ( Rs:{" "}
+                      {currentTransaction.discountAmount}/-)
                     </span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">Subtotal:</span>
                   <span className="text-gray-900 text-right">
-                    {currentTransaction.subtotal}
+                    Rs: {currentTransaction.subtotal}/-
                   </span>
                 </div>
                 {currentTransaction.markupAmount > 0 && (
                   <div className="grid grid-cols-2 gap-2">
                     <span className="font-medium text-gray-700">Markup:</span>
                     <span className="text-gray-900 text-right">
-                      {currentTransaction.markupRate} (
-                      {currentTransaction.markupAmount})
+                      {currentTransaction.markupRate} ( Rs:{" "}
+                      {currentTransaction.markupAmount}/-)
                     </span>
                   </div>
                 )}
@@ -1598,7 +1621,7 @@ const Installment = () => {
                         Advance Payment:
                       </span>
                       <span className="text-gray-900 text-right">
-                        {currentTransaction.advancePaymentAmount}
+                        Rs: {currentTransaction.advancePaymentAmount}/-
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1606,7 +1629,7 @@ const Installment = () => {
                         Remaining Amount:
                       </span>
                       <span className="text-gray-900 text-right font-semibold">
-                        {currentTransaction.remainingAmount}
+                        Rs: {currentTransaction.remainingAmount}/-
                       </span>
                     </div>
                   </>
@@ -1632,19 +1655,19 @@ const Installment = () => {
                     Monthly Payment:
                   </span>
                   <span className="text-gray-900 text-right font-semibold">
-                    {currentTransaction.monthlyPayment}
+                    Rs: {currentTransaction.monthlyPayment}/-
                   </span>
                 </div>
               </div>
 
               {/* Total value highlight section */}
-              <div className="bg-green-100 border border-green-200 rounded-md p-2 mt-3">
+              <div className="bg-green-300 border border-green-400 rounded-md p-2 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-bold text-green-900">
                     Total Amount:
                   </span>
                   <span className="font-bold text-green-900 text-right">
-                    {currentTransaction.finalTotal}
+                    Rs: {currentTransaction.finalTotal}/-
                   </span>
                 </div>
               </div>
@@ -1661,7 +1684,7 @@ const Installment = () => {
                       <div key={index} className="flex justify-between">
                         <span>Payment {payment.paymentNumber}:</span>
                         <span>
-                          {payment.dueDate} - {payment.paymentAmount}
+                          {payment.dueDate} - Rs: {payment.paymentAmount}/-
                         </span>
                       </div>
                     ))}

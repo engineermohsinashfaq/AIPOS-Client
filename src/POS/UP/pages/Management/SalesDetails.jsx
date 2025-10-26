@@ -326,7 +326,7 @@ const getPaymentMethodColor = (sale) => {
     case "cash":
       return "bg-blue-600/50";
     default:
-      return "bg-orange-600/50";
+      return "bg-black/70";
   }
 };
 
@@ -399,8 +399,8 @@ const isInstallmentSale = (sale) => {
   return getActualSaleType(sale) === "installment-sale";
 };
 
-// Main SalesReports component function
-export default function SalesReport() {
+// Main SalesDetails component function
+export default function SalesDetails() {
   // State management for sales history data
   const [salesHistory, setSalesHistory] = useState(loadSalesHistory);
 
@@ -675,7 +675,7 @@ export default function SalesReport() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">SALES REPORTS</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">SALES DETAILS</h1>
           <p className="text-white/80">
             ANALYZE AND EXPORT SALES DATA WITH ADVANCED FILTERING AND REPORTING.
           </p>
@@ -700,7 +700,7 @@ export default function SalesReport() {
             <select
               value={saleTypeFilter}
               onChange={(e) => setSaleTypeFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
               <option className="bg-black/95 text-white">ALL</option>
               <option value="cash-sale" className="bg-black/95 text-white">CASH SALE</option>
@@ -710,11 +710,11 @@ export default function SalesReport() {
 
           {/* Payment Method filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">PAYMENT METHOD</label>
+            <label className="text-sm text-white/70">METHOD</label>
             <select
               value={paymentMethodFilter}
               onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
               <option className="bg-black/95 text-white">ALL</option>
               <option value="cash" className="bg-black/95 text-white">CASH</option>
@@ -731,7 +731,7 @@ export default function SalesReport() {
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1 scrollbar-hide"
             >
               <option value="all" className="bg-black/95 text-white">ALL TIME</option>
               <option value="7days" className="bg-black/95 text-white">LAST 7 DAYS</option>

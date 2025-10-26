@@ -353,8 +353,8 @@ const capitalizeText = (text) => {
   );
 };
 
-// Main ProductsReports component function
-export default function InventoryReport() {
+// Main InventoryDetails component function
+export default function InventoryDetails() {
   // State management for products data
   const [products, setProducts] = useState(loadProducts);
 
@@ -571,33 +571,6 @@ export default function InventoryReport() {
     return fieldNames[field] || field;
   };
 
-  // Memoized form modification checker - tracks changes between original and current form
-  const isFormModified = useMemo(() => {
-    if (!originalProduct || !form) return false;
-
-    // Fields to compare for changes
-    const fieldsToCompare = ["name", "model", "category", "quantity", "price"];
-
-    const changes = {};
-    let hasChanges = false;
-
-    // Compare each field for changes
-    fieldsToCompare.forEach((field) => {
-      const originalValue = String(originalProduct[field] || "").trim();
-      const formValue = String(form[field] || "").trim();
-      if (originalValue !== formValue) {
-        changes[field] = {
-          from: originalValue,
-          to: formValue,
-        };
-        hasChanges = true;
-      }
-    });
-
-    setFormChanges(changes);
-    return hasChanges;
-  }, [form, originalProduct]);
-
   // Open edit modal with product data
   const handleOpenEdit = (product) => {
     setForm(product);
@@ -606,16 +579,9 @@ export default function InventoryReport() {
     setIsEditOpen(true);
   };
 
-  // Form input change handler with capitalization
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Apply capitalization to text fields (name, model, category)
-    if (name === "name" || name === "model" || name === "category") {
-      setForm((s) => ({ ...s, [name]: capitalizeText(value) }));
-    } else {
-      setForm((s) => ({ ...s, [name]: value }));
-    }
+    setForm((s) => ({ ...s, [name]: value }));
   };
 
   // Password change handler
@@ -662,7 +628,7 @@ export default function InventoryReport() {
     const quantity = parseInt(form.quantity);
     const price = parseFloat(form.price);
     if (isNaN(quantity) || quantity < 0) {
-      notifyError("");
+      notifyError("INVALID QUANTITY");
       return;
     }
     if (isNaN(price) || price < 0) {
@@ -670,33 +636,22 @@ export default function InventoryReport() {
       return;
     }
 
-    // Generate update message based on changed fields
-    const changedFields = Object.keys(formChanges);
-    const updateMessage =
-      changedFields.length > 0
-        ? `UPDATED: ${changedFields
-            .map((field) => getFieldDisplayName(field))
-            .join(", ")}`
-        : "PRODUCT UPDATED";
-
-    // Calculate derived fields
-    const updatedValue = (quantity * price).toFixed(2);
-    const updatedPricePerUnit = quantity > 0 ? price.toFixed(2) : "0.00";
-
-    // Prepare updated product data with metadata
-    const updatedForm = {
+    // Apply capitalization only when saving
+    const processedForm = {
       ...form,
+      name: capitalizeText(form.name || ""),
+      model: capitalizeText(form.model || ""),
+      category: capitalizeText(form.category || ""),
       quantity: quantity,
       price: price,
-      value: updatedValue, // Store calculated inventory value
-      pricePerUnit: updatedPricePerUnit, // Store price per unit
+      value: (quantity * price).toFixed(2), // Store calculated inventory value
+      pricePerUnit: quantity > 0 ? price.toFixed(2) : "0.00", // Store price per unit
       updatedAt: formatDateTime(new Date()),
-      lastUpdateMessage: updateMessage,
     };
 
     // Update products state
     setProducts((prev) =>
-      prev.map((p) => (p.productId === form.productId ? updatedForm : p))
+      prev.map((p) => (p.productId === form.productId ? processedForm : p))
     );
 
     // Close modal and reset states
@@ -709,11 +664,6 @@ export default function InventoryReport() {
   // Handle save button click - show password prompt
   const handleSave = (e) => {
     e.preventDefault();
-
-    if (!isFormModified) {
-      notifyError("NO CHANGES DETECTED TO SAVE");
-      return;
-    }
 
     setPendingAction("edit");
     setShowPasswordPrompt(true);
@@ -807,13 +757,12 @@ export default function InventoryReport() {
     <div className="p-2 min-h-screen text-white">
       {/* Toast notifications container */}
       <ToastContainer position="top-right" theme="dark" autoClose={2000} />
-
       {/* Content wrapper with max width constraint */}
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            INVENTORY REPORTS
+            INVENTORY DETAILS
           </h1>
           <p className="text-white/80">
             ANALYZE AND EXPORT PRODUCTS DATA WITH ADVANCED FILTERING AND
@@ -840,7 +789,7 @@ export default function InventoryReport() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
               <option value="All" className="bg-black/95 text-white">
                 ALL
@@ -863,22 +812,22 @@ export default function InventoryReport() {
             <select
               value={stockLevelFilter}
               onChange={(e) => setStockLevelFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
               <option value="All" className="bg-black/95 text-white">
                 ALL
               </option>
               <option value="out-of-stock" className="bg-black/95 text-white">
-                OUT OF STOCK
+                Out Of Stock
               </option>
               <option value="low" className="bg-black/95 text-white">
-                LOW STOCK
+                Low Stock
               </option>
               <option value="medium" className="bg-black/95 text-white">
-                MEDIUM STOCK
+                Medium Stock
               </option>
               <option value="high" className="bg-black/95 text-white">
-                IN STOCK
+                In Stock
               </option>
             </select>
           </div>
@@ -889,7 +838,7 @@ export default function InventoryReport() {
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
               <option value="all" className="bg-black/95 text-white">
                 ALL TIME
@@ -1049,8 +998,7 @@ export default function InventoryReport() {
           </table>
         </div>
       </div>
-
-      {/* Edit Product Modal */}
+      {/* // Edit Product Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 backdrop-blur-md">
           {/* Modal content container */}
@@ -1059,23 +1007,6 @@ export default function InventoryReport() {
             <h2 className="text-xl font-semibold mb-4">
               EDIT PRODUCT: {form.productId}
             </h2>
-
-            {/* Changes detection display */}
-            {isFormModified && (
-              <div className="mb-4 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
-                <p className="font-medium text-yellow-300">CHANGES DETECTED:</p>
-                <ul className="text-xs mt-1 space-y-1">
-                  {Object.entries(formChanges).map(([field, change]) => (
-                    <li key={field} className="flex justify-between">
-                      <span>{getFieldDisplayName(field)}:</span>
-                      <span className="text-yellow-200">
-                        "{change.from}" → "{change.to}"
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {/* Edit form */}
             <form onSubmit={handleSave} className="space-y-3">
@@ -1088,7 +1019,7 @@ export default function InventoryReport() {
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none cursor-not-allowed opacity-70"
               />
 
-              {/* Product Name */}
+              {/* Product Name - Normal input (no auto-capitalization) */}
               <input
                 name="name"
                 value={form.name || ""}
@@ -1097,7 +1028,7 @@ export default function InventoryReport() {
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
 
-              {/* Model and Category */}
+              {/* Model and Category - Normal inputs (no auto-capitalization) */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   name="model"
@@ -1115,7 +1046,7 @@ export default function InventoryReport() {
                 />
               </div>
 
-              {/* Quantity and Price readOnly */}
+              {/* Quantity and Price - Editable inputs */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="number"
@@ -1144,12 +1075,7 @@ export default function InventoryReport() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="submit"
-                  disabled={!isFormModified}
-                  className={`px-4 py-2 rounded border border-white/40 transition hover:cursor-pointer ${
-                    isFormModified
-                      ? "bg-cyan-800/80 hover:bg-cyan-900"
-                      : "bg-gray-600/50 cursor-not-allowed opacity-50"
-                  }`}
+                  className="px-4 py-2 rounded border border-white/40 transition hover:cursor-pointer bg-cyan-800/80 hover:bg-cyan-900"
                 >
                   SAVE CHANGES
                 </button>
@@ -1166,7 +1092,6 @@ export default function InventoryReport() {
           </div>
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && productToDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/20 z-50 p-2 md:p-4 backdrop-blur-md">
@@ -1212,7 +1137,6 @@ export default function InventoryReport() {
           </div>
         </div>
       )}
-
       {/* Password Verification Modal */}
       {showPasswordPrompt && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/20 z-50 backdrop-blur-md">
@@ -1271,7 +1195,6 @@ export default function InventoryReport() {
           </div>
         </div>
       )}
-
       {/* Product Details View Modal */}
       {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
@@ -1423,7 +1346,6 @@ export default function InventoryReport() {
           </div>
         </div>
       )}
-
       {/* Report Summary Modal */}
       {isReportOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">

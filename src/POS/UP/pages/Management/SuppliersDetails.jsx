@@ -82,25 +82,25 @@ const formatShortDate = (dateString) => {
 const getDateRange = (range) => {
   const now = new Date();
   const start = new Date();
-  
+
   switch (range) {
-    case '7days':
+    case "7days":
       start.setDate(now.getDate() - 7);
       break;
-    case '15days':
+    case "15days":
       start.setDate(now.getDate() - 15);
       break;
-    case '30days':
+    case "30days":
       start.setDate(now.getDate() - 30);
       break;
-    case '90days':
+    case "90days":
       start.setDate(now.getDate() - 90);
       break;
-    case 'all':
+    case "all":
     default:
       return { start: null, end: null };
   }
-  
+
   return { start, end: now };
 };
 
@@ -114,47 +114,47 @@ const exportToExcel = (data, filename) => {
   try {
     // Define CSV headers
     const headers = [
-      'Supplier Name',
-      'Company',
-      'Contact Number',
-      'Date Added',
-      'Last Updated'
+      "Supplier Name",
+      "Company",
+      "Contact Number",
+      "Date Added",
+      "Last Updated",
     ];
 
     // Convert data to CSV rows
-    const csvRows = data.map(supplier => [
+    const csvRows = data.map((supplier) => [
       supplier.name,
       supplier.company,
       supplier.contact,
       formatShortDate(supplier.dateAdded),
-      supplier.updatedAt ? formatShortDate(supplier.updatedAt) : ''
+      supplier.updatedAt ? formatShortDate(supplier.updatedAt) : "",
     ]);
 
     // Combine headers and rows
     const csvContent = [
-      headers.join(','),
-      ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
-    ].join('\n');
+      headers.join(","),
+      ...csvRows.map((row) => row.map((field) => `"${field}"`).join(",")),
+    ].join("\n");
 
     // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.csv`);
-    link.style.visibility = 'hidden';
-    
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    link.style.visibility = "hidden";
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     URL.revokeObjectURL(url);
-    
+
     return true;
   } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    toast.error('Failed to export data');
+    console.error("Error exporting to Excel:", error);
+    toast.error("Failed to export data");
     return false;
   }
 };
@@ -222,12 +222,12 @@ const extractSuppliersFromData = () => {
 
 // Helper function to convert text to uppercase
 const toUpperCase = (text) => {
-  if (!text || typeof text !== 'string') return text;
+  if (!text || typeof text !== "string") return text;
   return text;
 };
 
-// Main SuppliersReports component function
-export default function SuppliersReport() {
+// Main SuppliersDetails component function
+export default function SuppliersDetails() {
   const [suppliers, setSuppliers] = useState([]);
   const [query, setQuery] = useState("");
   const [companyFilter, setCompanyFilter] = useState("All");
@@ -260,7 +260,9 @@ export default function SuppliersReport() {
 
   // Get unique companies for filter dropdown
   const uniqueCompanies = useMemo(() => {
-    const companies = [...new Set(suppliers.map(s => s.company))].filter(Boolean);
+    const companies = [...new Set(suppliers.map((s) => s.company))].filter(
+      Boolean
+    );
     return companies.sort();
   }, [suppliers]);
 
@@ -270,11 +272,7 @@ export default function SuppliersReport() {
       const q = query.trim();
       if (!q) return true;
 
-      const combined = [
-        s.name,
-        s.contact,
-        s.company,
-      ]
+      const combined = [s.name, s.contact, s.company]
         .map((v) => String(v || ""))
         .join(" ");
 
@@ -307,17 +305,17 @@ export default function SuppliersReport() {
   // Statistics calculation
   const stats = useMemo(() => {
     const total = filteredSuppliers.length;
-    const recentlyUpdated = filteredSuppliers.filter(s => {
+    const recentlyUpdated = filteredSuppliers.filter((s) => {
       if (!s.updatedAt) return false;
       const updateDate = new Date(s.updatedAt);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       return updateDate >= thirtyDaysAgo;
     }).length;
-    
-    return { 
-      total, 
-      recentlyUpdated 
+
+    return {
+      total,
+      recentlyUpdated,
     };
   }, [filteredSuppliers]);
 
@@ -360,7 +358,10 @@ export default function SuppliersReport() {
       return;
     }
 
-    const success = exportToExcel(filteredSuppliers, `suppliers-report-${new Date().toISOString().split('T')[0]}`);
+    const success = exportToExcel(
+      filteredSuppliers,
+      `suppliers-report-${new Date().toISOString().split("T")[0]}`
+    );
     if (success) {
       notifySuccess("SUPPLIERS REPORT EXPORTED TO EXCEL SUCCESSFULLY");
     }
@@ -416,9 +417,12 @@ export default function SuppliersReport() {
 
     // Generate update message based on changed fields
     const changedFields = Object.keys(formChanges);
-    const updateMessage = changedFields.length > 0 
-      ? `UPDATED: ${changedFields.map(field => getFieldDisplayName(field)).join(', ')}`
-      : "RECORD UPDATED";
+    const updateMessage =
+      changedFields.length > 0
+        ? `UPDATED: ${changedFields
+            .map((field) => getFieldDisplayName(field))
+            .join(", ")}`
+        : "RECORD UPDATED";
 
     // Update suppliers state with modified data
     setSuppliers((prev) =>
@@ -455,11 +459,7 @@ export default function SuppliersReport() {
     if (!originalSupplier || !form) return false;
 
     // Fields to compare for changes
-    const fieldsToCompare = [
-      "name",
-      "contact",
-      "company",
-    ];
+    const fieldsToCompare = ["name", "contact", "company"];
 
     const changes = {};
     let hasChanges = false;
@@ -471,7 +471,7 @@ export default function SuppliersReport() {
       if (originalValue !== formValue) {
         changes[field] = {
           from: originalValue,
-          to: formValue
+          to: formValue,
         };
         hasChanges = true;
       }
@@ -488,9 +488,10 @@ export default function SuppliersReport() {
       <div className="max-w-8xl mx-auto space-y-6">
         {/* Page header section */}
         <div>
-          <h1 className="text-3xl font-bold mb-2">SUPPLIERS REPORTS</h1>
+          <h1 className="text-3xl font-bold mb-2">SUPPLIERS DETAILS</h1>
           <p className="text-white/80">
-            ANALYZE AND EXPORT SUPPLIERS DATA WITH ADVANCED FILTERING AND REPORTING.
+            ANALYZE AND EXPORT SUPPLIERS DATA WITH ADVANCED FILTERING AND
+            REPORTING.
           </p>
         </div>
 
@@ -516,8 +517,12 @@ export default function SuppliersReport() {
               className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
             >
               <option className="bg-black/95 text-white">ALL</option>
-              {uniqueCompanies.map(company => (
-                <option key={company} value={company} className="bg-black/95 text-white">
+              {uniqueCompanies.map((company) => (
+                <option
+                  key={company}
+                  value={company}
+                  className="bg-black/95 text-white"
+                >
                   {toUpperCase(company)}
                 </option>
               ))}
@@ -532,11 +537,21 @@ export default function SuppliersReport() {
               onChange={(e) => setDateRangeFilter(e.target.value)}
               className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
             >
-              <option value="all" className="bg-black/95 text-white">ALL TIME</option>
-              <option value="7days" className="bg-black/95 text-white">LAST 7 DAYS</option>
-              <option value="15days" className="bg-black/95 text-white">LAST 15 DAYS</option>
-              <option value="30days" className="bg-black/95 text-white">LAST 30 DAYS</option>
-              <option value="90days" className="bg-black/95 text-white">LAST 90 DAYS</option>
+              <option value="all" className="bg-black/95 text-white">
+                ALL TIME
+              </option>
+              <option value="7days" className="bg-black/95 text-white">
+                LAST 7 DAYS
+              </option>
+              <option value="15days" className="bg-black/95 text-white">
+                LAST 15 DAYS
+              </option>
+              <option value="30days" className="bg-black/95 text-white">
+                LAST 30 DAYS
+              </option>
+              <option value="90days" className="bg-black/95 text-white">
+                LAST 90 DAYS
+              </option>
             </select>
           </div>
         </div>
@@ -655,17 +670,20 @@ export default function SuppliersReport() {
                 <p>
                   <strong>DATE ADDED:</strong> {formatDateTime(form.dateAdded)}
                 </p>
-                
+
                 {/* Changes detection display */}
                 {isFormModified && (
                   <div className="mt-3 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded">
-                    <p className="font-medium text-yellow-300">CHANGES DETECTED:</p>
+                    <p className="font-medium text-yellow-300">
+                      CHANGES DETECTED:
+                    </p>
                     <ul className="text-xs mt-1 space-y-1">
                       {Object.entries(formChanges).map(([field, change]) => (
                         <li key={field} className="flex justify-between">
                           <span>{getFieldDisplayName(field)}:</span>
                           <span className="text-yellow-200">
-                            "{toUpperCase(change.from)}" → "{toUpperCase(change.to)}"
+                            "{toUpperCase(change.from)}" → "
+                            {toUpperCase(change.to)}"
                           </span>
                         </li>
                       ))}
@@ -685,7 +703,7 @@ export default function SuppliersReport() {
                 placeholder="SUPPLIER NAME"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
-              
+
               {/* Editable company field */}
               <input
                 name="company"
@@ -694,7 +712,7 @@ export default function SuppliersReport() {
                 placeholder="COMPANY"
                 className="w-full p-2 rounded bg-black/30 border border-white/20 outline-none"
               />
-              
+
               {/* Editable contact field */}
               <input
                 name="contact"
@@ -718,7 +736,7 @@ export default function SuppliersReport() {
                 >
                   SAVE CHANGES
                 </button>
-                
+
                 {/* Cancel button */}
                 <button
                   type="button"
@@ -837,12 +855,16 @@ export default function SuppliersReport() {
                     REPORT GENERATED: {formatDateTime(new Date())}
                   </p>
                   <p className="text-gray-600">
-                    Total Suppliers: {filteredSuppliers.length} | Date Range: {
-                      dateRangeFilter === 'all' ? 'All Time' :
-                      dateRangeFilter === '7days' ? 'Last 7 Days' :
-                      dateRangeFilter === '15days' ? 'Last 15 Days' :
-                      dateRangeFilter === '30days' ? 'Last 30 Days' : 'Last 90 Days'
-                    }
+                    Total Suppliers: {filteredSuppliers.length} | Date Range:{" "}
+                    {dateRangeFilter === "all"
+                      ? "All Time"
+                      : dateRangeFilter === "7days"
+                      ? "Last 7 Days"
+                      : dateRangeFilter === "15days"
+                      ? "Last 15 Days"
+                      : dateRangeFilter === "30days"
+                      ? "Last 30 Days"
+                      : "Last 90 Days"}
                   </p>
                 </div>
               </div>
@@ -850,27 +872,44 @@ export default function SuppliersReport() {
               {/* Statistics Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-900">{stats.total}</div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {stats.total}
+                  </div>
                   <div className="text-blue-700 text-sm">TOTAL SUPPLIERS</div>
                 </div>
-                
+
                 <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-yellow-900">{stats.recentlyUpdated}</div>
-                  <div className="text-yellow-700 text-sm">RECENTLY UPDATED</div>
+                  <div className="text-2xl font-bold text-yellow-900">
+                    {stats.recentlyUpdated}
+                  </div>
+                  <div className="text-yellow-700 text-sm">
+                    RECENTLY UPDATED
+                  </div>
                 </div>
               </div>
 
               {/* Company Distribution */}
               {uniqueCompanies.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-bold text-gray-800 mb-3">COMPANY DISTRIBUTION</h3>
+                  <h3 className="font-bold text-gray-800 mb-3">
+                    COMPANY DISTRIBUTION
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    {uniqueCompanies.slice(0, 6).map(company => {
-                      const companyCount = filteredSuppliers.filter(s => s.company === company).length;
+                    {uniqueCompanies.slice(0, 6).map((company) => {
+                      const companyCount = filteredSuppliers.filter(
+                        (s) => s.company === company
+                      ).length;
                       return (
-                        <div key={company} className="flex justify-between items-center">
-                          <span className="text-gray-700">{toUpperCase(company)}</span>
-                          <span className="font-semibold text-gray-900">{companyCount}</span>
+                        <div
+                          key={company}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-gray-700">
+                            {toUpperCase(company)}
+                          </span>
+                          <span className="font-semibold text-gray-900">
+                            {companyCount}
+                          </span>
                         </div>
                       );
                     })}

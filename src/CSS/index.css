@@ -5,7 +5,39 @@
 @import "tailwindcss";
 
 /* for gradients that not work in safari app */
-.text-gradient {
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Fix for Safari gradient rendering */
+@supports not (background: linear-gradient(to right, #000, #fff)) {
+  .bg-gradient-to-r {
+    background: -webkit-linear-gradient(
+      left,
+      var(--tw-gradient-from),
+      var(--tw-gradient-to)
+    );
+  }
+}
+
+/* Fallback solid colors for gradients */
+.from-green-500 {
+  --from-green: #10b981;
+}
+.to-emerald-500 {
+  --to-emerald: #059669;
+}
+.from-blue-500 {
+  --from-blue: #3b82f6;
+}
+.to-cyan-500 {
+  --to-cyan: #06b6d4;
+}
+.from-purple-500 {
+  --from-purple: #8b5cf6;
+}
+.to-pink-500 {
+  --to-pink: #ec4899;
+}
+.from-orange-500 {
+  --from-orange: #f59e0b;
+}
+.to-red-500 {
+  --to-red: #ef4444;
 }

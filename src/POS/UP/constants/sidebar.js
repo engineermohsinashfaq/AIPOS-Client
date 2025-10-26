@@ -94,51 +94,53 @@ export const menuItems = [
 
       {
         icon: List,
-        label: "Installment Management",
-        path: "/up-installment-management",
+        label: "Manage Installments",
+        path: "/up-manage-installments",
       }
     ],
   },
 
   {
     icon: BarChart,
-    label: "Reports",
+    label: "Managements",
     children: [
-      {
-        icon: AttachMoney,
-        label: "Purchase Reports",
-        path: "/up-purchase-report",
-      },
-      {
-        icon: Inventory,
-        label: "Inventory Reports",
-        path: "/up-inventory-report",
-      },
+
       {
         icon: People,
-        label: "Customers Reports",
-        path: "/up-customer-report",
+        label: "Customers Details",
+        path: "/up-customers-details",
       },
       {
         icon: Group,
-        label: "Guarantors Reports",
-        path: "/up-guarantors-report",
+        label: "Guarantors Details",
+        path: "/up-guarantors-details",
       },
       {
-        icon: CreditCard,
-        label: "Installments Reports",
-        path: "/up-installments-report",
+        icon: Group,
+        label: "Supliers Details",
+        path: "/up-suppliers-details",
       },
       {
         icon: TrendingUp,
-        label: "Sales Reports",
-        path: "/up-sales-report",
+        label: "Sales Details",
+        path: "/up-sales-details",
       },
       {
-        icon: Group,
-        label: "Supliers Reports",
-        path: "/up-suppliers-report",
+        icon: CreditCard,
+        label: "Installments Details",
+        path: "/up-installments-details",
       },
+      {
+        icon: AttachMoney,
+        label: "Purchase Details",
+        path: "/up-purchase-details",
+      },
+      {
+        icon: Inventory,
+        label: "Inventory Details",
+        path: "/up-inventory-details",
+      },
+
     ],
   },
   {

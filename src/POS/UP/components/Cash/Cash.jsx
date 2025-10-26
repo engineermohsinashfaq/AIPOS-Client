@@ -564,24 +564,11 @@ const Cash = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white text-sm">Invoice No:</span>
-                    <span className="font-mono font-bold text-white text-sm md:text-base">
-                      {newInvoiceId}
-                    </span>
-                  </div>
+                  
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Product ID:</span>
                     <span className="font-mono font-semibold text-white text-sm md:text-base">
                       {selectedProduct.productId}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white text-sm">Name:</span>
-                    <span className="font-semibold text-white text-sm md:text-base">
-                      {selectedProduct.name}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -593,11 +580,21 @@ const Cash = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
+                    <span className="text-white text-sm">Name:</span>
+                    <span className="font-semibold text-white text-sm md:text-base">
+                      {selectedProduct.name}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Category:</span>
                     <span className="font-semibold text-white text-sm md:text-base">
                       {selectedProduct.category}
                     </span>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  
                   <div className="flex justify-between items-center">
                     <span className="text-white text-sm">Current Stock:</span>
                     <span
@@ -610,7 +607,14 @@ const Cash = () => {
                       {selectedProduct.quantity} pcs
                     </span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white text-sm">Avg Unit Price:</span>
+                    <span className="font-mono font-bold text-white text-sm md:text-base">
+                      Rs: {parseInt(selectedProduct.pricePerUnit)}/-
+                    </span>
+                  </div>
                 </div>
+                
               </div>
             </div>
 

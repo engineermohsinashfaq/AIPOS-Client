@@ -5,12 +5,52 @@ import { toast, ToastContainer } from "react-toastify";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-const InstallmentManagement = () => {
+// |===============================| Payment Methods List |===============================|
+const PAYMENT_METHODS = [
+  "Cash",
+  "Credit",
+  "Easypaisa",
+  "JazzCash",
+  "Al Baraka Bank (Pakistan) Limited",
+  "Allied Bank",
+  "Askari Bank",
+  "Bank AL Habib Limited",
+  "Bank Alfalah",
+  "Bank Islami",
+  "Bank of Punjab",
+  "Bank of Khyber",
+  "Dubai Islamic Bank Pakistan Limited",
+  "Faysal Bank Limited",
+  "First Women Bank",
+  "Habib Bank Limited",
+  "Habib Metropolitan Bank Limited",
+  "HBL Bank",
+  "Industrial and Commercial Bank of China",
+  "Industrial Development Bank of Pakistan",
+  "JS Bank",
+  "MCB Bank",
+  "MCB Islamic Bank",
+  "Meezan Bank",
+  "NBP (National Bank of Pakistan)",
+  "Punjab Provincial Cooperative Bank Ltd.",
+  "Samba Bank",
+  "Silkbank Limited",
+  "Sindh Bank Limited",
+  "SME Bank Limited",
+  "Soneri Bank Limited",
+  "Standard Chartered Bank (Pakistan) Ltd",
+  "Summit Bank Limited",
+  "UBL (United Bank Limited)",
+  "United Bank Limited",
+  "Zarai Taraqiati Bank Limited",
+];
+
+const ManageInstallments = () => {
   const [installmentSales, setInstallmentSales] = useState([]);
   const [selectedSale, setSelectedSale] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [currentPayment, setCurrentPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,14 +141,14 @@ const InstallmentManagement = () => {
       const matchesStatus =
         filterStatus === "all" ||
         (filterStatus === "active" && sale.remainingAmount > 0) ||
-        (filterStatus === "completed" && sale.remainingAmount <= 0);
+        (filterStatus === "COMPLETED" && sale.remainingAmount <= 0);
 
       return matchesSearch && matchesStatus;
     });
   }, [installmentSales, searchTerm, filterStatus, customerDetails]);
 
   const getPaymentStatus = (sale) => {
-    if (sale.remainingAmount <= 0) return "completed";
+    if (sale.remainingAmount <= 0) return "COMPLETED";
     return "active";
   };
 
@@ -152,6 +192,47 @@ const InstallmentManagement = () => {
 
   const getTotalInstallments = (sale) => {
     return sale.paymentTimeline ? sale.paymentTimeline.length : 0;
+  };
+
+  const getPaymentHistory = (sale) => {
+    if (!sale.paymentTimeline) return [];
+
+    const history = [];
+    let runningBalance = sale.finalTotal;
+
+    sale.paymentTimeline.forEach((payment, index) => {
+      if (payment.paid) {
+        const paidAmount = payment.actualAmount || payment.paymentAmount;
+        runningBalance -= paidAmount;
+
+        history.push({
+          type: "paid",
+          installmentNumber: index + 1,
+          date: payment.paymentDate,
+          amount: paidAmount,
+          remaining: runningBalance,
+          method: payment.paymentMethod || "Cash",
+          status: "PAID",
+        });
+      } else {
+        const today = new Date();
+        const dueDate = new Date(payment.dueDate);
+        const isOverdue = dueDate < today;
+
+        history.push({
+          type: "due",
+          installmentNumber: index + 1,
+          date: payment.dueDate,
+          amount: payment.paymentAmount,
+          remaining: runningBalance - payment.paymentAmount,
+          status: isOverdue ? "OVERDUE" : "PENDING",
+        });
+
+        runningBalance -= payment.paymentAmount;
+      }
+    });
+
+    return history;
   };
 
   const formatDate = (dateString) => {
@@ -291,13 +372,15 @@ const InstallmentManagement = () => {
       productName: selectedSale.productName,
     };
 
-    const updatedSales = installmentSales.map((sale) => {
+    // FIX 1: Update installment sales with payment method and handle overdue recalculation
+    const updatedInstallmentSales = installmentSales.map((sale) => {
       if (sale.id === selectedSale.id) {
         let remainingPayment = payment;
         const updatedTimeline = sale.paymentTimeline
           ? [...sale.paymentTimeline]
           : [];
 
+        // Update payment timeline with actual paid amounts and payment method
         for (let paymentItem of updatedTimeline) {
           if (!paymentItem.paid && remainingPayment > 0) {
             const paymentDue = paymentItem.paymentAmount;
@@ -305,22 +388,25 @@ const InstallmentManagement = () => {
               paymentItem.paid = true;
               paymentItem.paymentDate = paymentDate;
               paymentItem.actualAmount = paymentDue;
+              paymentItem.paymentMethod = paymentMethod; // Store payment method
               remainingPayment -= paymentDue;
             } else {
               paymentItem.paid = true;
               paymentItem.paymentDate = paymentDate;
               paymentItem.actualAmount = remainingPayment;
+              paymentItem.paymentMethod = paymentMethod; // Store payment method
               remainingPayment = 0;
             }
           }
         }
 
+        // Handle overdue payments recalculation
         const updatedSale = {
           ...sale,
           remainingAmount: sale.remainingAmount - payment,
           lastPaymentDate: paymentDate,
           totalPaid: (sale.totalPaid || 0) + payment,
-          paymentTimeline: updatedTimeline,
+          paymentTimeline: recalculateOverduePayments(updatedTimeline),
         };
 
         return updatedSale;
@@ -328,7 +414,48 @@ const InstallmentManagement = () => {
       return sale;
     });
 
-    localStorage.setItem("salesHistory", JSON.stringify(updatedSales));
+    // FIX 1: Update only installment sales in localStorage without affecting other sales
+    const allSalesHistory =
+      JSON.parse(localStorage.getItem("salesHistory")) || [];
+    const updatedSalesHistory = allSalesHistory.map((sale) => {
+      if (sale.id === selectedSale.id) {
+        let remainingPayment = payment;
+        const updatedTimeline = sale.paymentTimeline
+          ? [...sale.paymentTimeline]
+          : [];
+
+        // Update payment timeline with actual paid amounts and payment method
+        for (let paymentItem of updatedTimeline) {
+          if (!paymentItem.paid && remainingPayment > 0) {
+            const paymentDue = paymentItem.paymentAmount;
+            if (paymentDue <= remainingPayment) {
+              paymentItem.paid = true;
+              paymentItem.paymentDate = paymentDate;
+              paymentItem.actualAmount = paymentDue;
+              paymentItem.paymentMethod = paymentMethod; // Store payment method
+              remainingPayment -= paymentDue;
+            } else {
+              paymentItem.paid = true;
+              paymentItem.paymentDate = paymentDate;
+              paymentItem.actualAmount = remainingPayment;
+              paymentItem.paymentMethod = paymentMethod; // Store payment method
+              remainingPayment = 0;
+            }
+          }
+        }
+
+        return {
+          ...sale,
+          remainingAmount: sale.remainingAmount - payment,
+          lastPaymentDate: paymentDate,
+          totalPaid: (sale.totalPaid || 0) + payment,
+          paymentTimeline: recalculateOverduePayments(updatedTimeline),
+        };
+      }
+      return sale;
+    });
+
+    localStorage.setItem("salesHistory", JSON.stringify(updatedSalesHistory));
 
     const installmentHistory =
       JSON.parse(localStorage.getItem("installmentHistory")) || [];
@@ -338,16 +465,62 @@ const InstallmentManagement = () => {
       JSON.stringify(installmentHistory)
     );
 
-    setInstallmentSales(updatedSales);
+    setInstallmentSales(updatedInstallmentSales);
     setCurrentPayment(paymentRecord);
     setIsReceiptModalOpen(true);
     setShowConfirmation(false);
 
     setPaymentAmount("");
     setPaymentDate("");
-    setPaymentMethod("cash");
+    setPaymentMethod("Cash");
 
     toast.success("Payment recorded successfully!");
+  };
+
+  // Function to recalculate overdue payments and redistribute amounts
+  const recalculateOverduePayments = (paymentTimeline) => {
+    const today = new Date();
+    const overduePayments = paymentTimeline.filter(
+      (payment) => !payment.paid && new Date(payment.dueDate) < today
+    );
+
+    if (overduePayments.length === 0) return paymentTimeline;
+
+    // Calculate total overdue amount
+    const totalOverdue = overduePayments.reduce(
+      (sum, payment) => sum + payment.paymentAmount,
+      0
+    );
+
+    // Get remaining unpaid installments (excluding overdue ones)
+    const remainingPayments = paymentTimeline.filter(
+      (payment) => !payment.paid && new Date(payment.dueDate) >= today
+    );
+
+    if (remainingPayments.length === 0) return paymentTimeline;
+
+    // Calculate new installment amount by distributing overdue amount
+    const newInstallmentAmount = Math.ceil(
+      (totalOverdue +
+        remainingPayments.reduce(
+          (sum, payment) => sum + payment.paymentAmount,
+          0
+        )) /
+        remainingPayments.length
+    );
+
+    // Update remaining payments with new amounts
+    const updatedTimeline = paymentTimeline.map((payment) => {
+      if (!payment.paid && new Date(payment.dueDate) >= today) {
+        return {
+          ...payment,
+          paymentAmount: newInstallmentAmount,
+        };
+      }
+      return payment;
+    });
+
+    return updatedTimeline;
   };
 
   const handleCancelPayment = () => {
@@ -369,7 +542,7 @@ const InstallmentManagement = () => {
 
   const getStatusBadgeClassTable = (status) => {
     switch (status) {
-      case "completed":
+      case "COMPLETED":
         return "bg-green-600 text-white";
       case "active":
         return "bg-blue-600 text-white";
@@ -383,14 +556,7 @@ const InstallmentManagement = () => {
   };
 
   const getPaymentMethodDisplay = (method) => {
-    const methodMap = {
-      cash: "CASH",
-      hbl: "HBL BANK",
-      jazzcash: "JAZZCASH",
-      easypaisa: "EASYPAISA",
-      meezan: "MEEZAN BANK",
-    };
-    return methodMap[method] || method;
+    return method; // Now returns the method name as is from PAYMENT_METHODS
   };
 
   const renderPaymentForm = () => (
@@ -524,23 +690,16 @@ const InstallmentManagement = () => {
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                  className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
                 >
-                  <option value="cash" className="bg-black/90">
-                    CASH
+                  <option value="" className="bg-black/90">
+                    -- SELECT PAYMENT METHOD --
                   </option>
-                  <option value="easypaisa" className="bg-black/90">
-                    EASYPAISA
-                  </option>
-                  <option value="jazzcash" className="bg-black/90">
-                    JAZZCASH
-                  </option>
-                  <option value="meezan" className="bg-black/90">
-                    MEEZAN BANK
-                  </option>
-                  <option value="hbl" className="bg-black/90">
-                    HBL BANK
-                  </option>
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method} value={method} className="bg-black/90">
+                      {method}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -612,16 +771,16 @@ const InstallmentManagement = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full p-3 rounded-lg bg-black/30 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
+                className="w-full p-3 rounded-lg bg-white/5 border border-white/20 text-white outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all scrollbar-hide"
               >
                 <option value="all" className="bg-black/90">
                   ALL INSTALLMENTS
                 </option>
                 <option value="active" className="bg-black/90">
-                  ACTIVE
+                  Active
                 </option>
-                <option value="completed" className="bg-black/90">
-                  COMPLETED
+                <option value="COMPLETED" className="bg-black/90">
+                  Completed
                 </option>
               </select>
             </div>
@@ -742,7 +901,7 @@ const InstallmentManagement = () => {
                       <td className="p-3">
                         <div className="w-full bg-white/20 rounded-full h-2">
                           <div
-                            className="bg-cyan-500 h-2 rounded-full transition-all duration-500"
+                            className="bg-cyan-950 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${progressPercentage}%` }}
                           ></div>
                         </div>
@@ -823,7 +982,7 @@ const InstallmentManagement = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-white">PAYMENT METHOD:</span>
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-black rounded-full px-2 py-1 bg-white/70">
                   {getPaymentMethodDisplay(paymentMethod)}
                 </span>
               </div>
@@ -862,19 +1021,10 @@ const InstallmentManagement = () => {
           </div>
         </div>
       )}
-
+      {/* View Modal */}
       {isViewOpen && selectedSale && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
-          <div className="bg-white text-black rounded-lg w-full max-w-2xl mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
-            {selectedSale.remainingAmount <= 0 && (
-              <div className="absolute top-40 right-67 transform  z-10 print:block">
-                <div className="bg-green-500 text-white text-lg font-bold py-2 px-4 rounded-2xl border-4 border-green-600 shadow-2xl text-center">
-                  <div>PAID</div>
-                  <div className="text-sm">COMPLETED</div>
-                </div>
-              </div>
-            )}
-
+          <div className="bg-white text-black rounded-lg w-full max-w-4xl mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
             <div className="p-4 space-y-3">
               <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
                 <h2 className="text-xl font-bold tracking-wider text-gray-900">
@@ -930,14 +1080,14 @@ const InstallmentManagement = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">CUSTOMER:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.customerId} {selectedSale.customer}
+                    {selectedSale.customerId} - {selectedSale.customer}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">GUARANTOR:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {selectedSale.guarantorId} {selectedSale.guarantor}
+                    {selectedSale.guarantorId} - {selectedSale.guarantor}
                   </span>
                 </div>
               </div>
@@ -1056,107 +1206,133 @@ const InstallmentManagement = () => {
                 </div>
               )}
 
+              {/* Payment History Section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  INSTALLMENT PROGRESS
+                <h4 className="font-medium text-gray-700 mb-3">
+                  PAYMENT HISTORY & SCHEDULE
                 </h4>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="font-medium text-gray-700">
-                    INSTALLMENTS PAID:
-                  </span>
-                  <span className="text-gray-900 text-right">
-                    {getPaidInstallments(selectedSale)}/
-                    {getTotalInstallments(selectedSale)}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${
-                        ((selectedSale.finalTotal -
-                          selectedSale.remainingAmount) /
-                          selectedSale.finalTotal) *
-                        100
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-                <div className="text-xs text-center text-gray-500">
-                  {Math.round(
-                    ((selectedSale.finalTotal - selectedSale.remainingAmount) /
-                      selectedSale.finalTotal) *
-                      100
-                  )}
-                  % PAID
-                </div>
-              </div>
 
-              {selectedSale.paymentTimeline &&
-                selectedSale.paymentTimeline.length > 0 && (
-                  <div className="border-t border-dashed border-gray-300 pt-3 mt-3">
-                    <h4 className="font-medium text-gray-700 mb-2">
-                      PAYMENT SCHEDULE
-                    </h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {selectedSale.paymentTimeline.map((payment, index) => {
-                        const isOverdue =
-                          !payment.paid &&
-                          new Date(payment.dueDate) < new Date();
-                        return (
-                          <div
-                            key={index}
-                            className={`flex justify-between items-center p-2 rounded border ${
-                              payment.paid
-                                ? "bg-green-300 border-green-400"
-                                : isOverdue
-                                ? "bg-red-300 border-red-400"
-                                : "bg-gray-300 border-gray-400"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-700">
-                                PAYMENT {payment.paymentNumber}:
-                              </span>
-                              <span
-                                className={`text-sm ${
-                                  isOverdue
-                                    ? "text-red-600 font-semibold"
-                                    : "text-gray-600"
-                                }`}
-                              >
-                                {formatDate(payment.dueDate)}
-                                {isOverdue && (
-                                  <span className="text-red-500 ml-1">
-                                    (OVERDUE)
+                {/* Payment History Table */}
+                <div className="mb-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="p-2 text-left border">INST #</th>
+                          <th className="p-2 text-left border">DATE</th>
+                          <th className="p-2 text-center border">AMOUNT</th>
+                          <th className="p-2 text-center border">
+                            MINIMUM DUE
+                          </th>
+                          <th className="p-2 text-center border">REMAINING</th>
+                          <th className="p-2 text-center border">STATUS</th>
+                          <th className="p-2 text-center border">METHOD</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getPaymentHistory(selectedSale).map(
+                          (payment, index) => (
+                            <tr
+                              key={index}
+                              className={
+                                payment.type === "paid"
+                                  ? "bg-green-50"
+                                  : payment.status === "OVERDUE"
+                                  ? "bg-red-50"
+                                  : "bg-yellow-50"
+                              }
+                            >
+                              <td className="p-2 border font-medium">
+                                #{payment.installmentNumber}
+                              </td>
+                              <td className="p-2 border">
+                                {formatDate(payment.date)}
+                              </td>
+                              <td className="p-2 border text-center">
+                                <span
+                                  className={`font-semibold ${
+                                    payment.type === "paid"
+                                      ? "text-green-700"
+                                      : payment.status === "OVERDUE"
+                                      ? "text-red-700"
+                                      : "text-yellow-700"
+                                  }`}
+                                >
+                                  RS: {payment.amount}/-
+                                </span>
+                              </td>
+                              <td className="p-2 border text-center">
+                                {payment.type === "due" && (
+                                  <span className="font-semibold text-orange-600">
+                                    RS: {payment.amount}/-
                                   </span>
                                 )}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">
-                                {payment.paymentAmount}
-                              </span>
-                              {payment.paid ? (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                  PAID
+                                {payment.type === "paid" && (
+                                  <span className="text-gray-500">—</span>
+                                )}
+                              </td>
+                              <td className="p-2 border text-center">
+                                <span className="font-medium text-gray-700">
+                                  RS: {payment.remaining}/-
                                 </span>
-                              ) : isOverdue ? (
-                                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                  OVERDUE
+                              </td>
+                              <td className="p-2 border text-center">
+                                <span
+                                  className={`px-2 py-1 text-xs rounded-full ${
+                                    payment.type === "paid"
+                                      ? "bg-green-200 text-green-800"
+                                      : payment.status === "OVERDUE"
+                                      ? "bg-red-200 text-red-800"
+                                      : "bg-yellow-200 text-yellow-800"
+                                  }`}
+                                >
+                                  {payment.status}
                                 </span>
-                              ) : (
-                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                                  PENDING
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              </td>
+                              <td className="p-2 border text-center text-gray-600">
+                                {payment.method || "—"}
+                              </td>
+                            </tr>
+                          )
+                        )}
+
+                        {getPaymentHistory(selectedSale).length === 0 && (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="p-4 text-center text-gray-500 border"
+                            >
+                              No payment history available
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                )}
+                </div>
+
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-gray-200">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">
+                      {getPaidInstallments(selectedSale)}
+                    </div>
+                    <div className="text-xs text-gray-600">PAID</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-orange-600">
+                      {getRemainingInstallments(selectedSale)}
+                    </div>
+                    <div className="text-xs text-gray-600">REMAINING</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">
+                      {getTotalInstallments(selectedSale)}
+                    </div>
+                    <div className="text-xs text-gray-600">TOTAL</div>
+                  </div>
+                </div>
+              </div>
 
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
                 <p>INSTALLMENT MANAGEMENT SYSTEM</p>
@@ -1294,4 +1470,4 @@ const InstallmentManagement = () => {
   );
 };
 
-export default InstallmentManagement;
+export default ManageInstallments;

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
 
@@ -81,13 +80,13 @@ const generateInvoiceId = () => {
 
 // Helper function to capitalize text (first letter of each word)
 const capitalizeText = (text) => {
-  if (!text || typeof text !== 'string') return text;
-  
+  if (!text || typeof text !== "string") return text;
+
   return text
     .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
     .trim();
 };
 
@@ -192,7 +191,6 @@ const calculatePricePerUnit = (
 // Main AddStock component function
 export default function AddStock() {
   // Navigation hook for programmatic routing
-  const navigate = useNavigate();
 
   // State for existing products list
   const [products, setProducts] = useState(loadProducts());
@@ -527,7 +525,7 @@ export default function AddStock() {
           position: "top-right",
           theme: "dark",
           autoClose: 2000,
-          onClose: () => navigate("/up-dashboard"),
+          onClose: () => (window.location.href = "/up-dashboard"),
         }
       );
     } else {
@@ -535,7 +533,7 @@ export default function AddStock() {
         position: "top-right",
         theme: "dark",
         autoClose: 2000,
-        onClose: () => navigate("/up-dashboard"),
+        onClose: () => (window.location.href = "/up-dashboard"),
       });
     }
   };

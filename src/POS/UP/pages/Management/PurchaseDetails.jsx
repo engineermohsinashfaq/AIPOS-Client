@@ -1,6 +1,6 @@
-// |===============================| InstallmentReports Component |===============================|
+// |===============================| PurchaseReports Component |===============================|
 // Import necessary React hooks and external libraries
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Download, Printer } from "lucide-react";
@@ -8,7 +8,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
-// Date formatting utility function - converts date to standardized string
+// Date formatting utility function - converts various date formats to standardized string
 const formatDateTime = (dateInput) => {
   // Return dash for empty/null dates
   if (!dateInput) return "—";
@@ -85,106 +85,6 @@ const formatShortDate = (dateString) => {
   }
 };
 
-// Currency formatter function with 2 decimal places
-const formatCurrency = (amount) => {
-  if (!amount || isNaN(amount)) return "Rs 0.00";
-  return new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: "PKR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
-
-// Date range calculation utilities
-const getDateRange = (range) => {
-  const now = new Date();
-  const start = new Date();
-
-  switch (range) {
-    case "7days":
-      start.setDate(now.getDate() - 7);
-      break;
-    case "15days":
-      start.setDate(now.getDate() - 15);
-      break;
-    case "30days":
-      start.setDate(now.getDate() - 30);
-      break;
-    case "90days":
-      start.setDate(now.getDate() - 90);
-      break;
-    case "all":
-    default:
-      return { start: null, end: null };
-  }
-
-  return { start, end: now };
-};
-
-// Function to export data to Excel (CSV format)
-const exportToExcel = (data, filename) => {
-  if (!data || data.length === 0) {
-    toast.error("No data to export");
-    return;
-  }
-
-  try {
-    // Define CSV headers
-    const headers = [
-      "Receipt ID",
-      "Invoice ID",
-      "Customer",
-      "Product Name",
-      "Payment Amount",
-      "Payment Method",
-      "Remaining Amount",
-      "Payment Date",
-      "Timestamp",
-    ];
-
-    // Convert data to CSV rows
-    const csvRows = data.map((payment) => [
-      payment.receiptId || payment.id?.slice(0, 8),
-      payment.invoiceId,
-      payment.customer,
-      payment.productName,
-      payment.paymentAmount,
-      getPaymentMethodDisplay(payment),
-      payment.remainingAmount || 0,
-      formatShortDate(payment.paymentDate),
-      formatDateTime(payment.timestamp || payment.paymentDate),
-    ]);
-
-    // Combine headers and rows
-    const csvContent = [
-      headers.join(","),
-      ...csvRows.map((row) => row.map((field) => `"${field}"`).join(",")),
-    ].join("\n");
-
-    // Create and download file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}.csv`);
-    link.style.visibility = "hidden";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-
-    return true;
-  } catch (error) {
-    console.error("Error exporting to Excel:", error);
-    toast.error("Failed to export data");
-    return false;
-  }
-};
-
 // Enhanced date parser for consistent sorting
 const parseDateForSorting = (dateInput) => {
   if (!dateInput) return new Date(0); // Return epoch for invalid dates
@@ -231,85 +131,167 @@ const parseDateForSorting = (dateInput) => {
   }
 };
 
-// Load payment history from localStorage with enhanced sorting
-const loadPaymentHistory = () => {
-  try {
-    // Retrieve payment history from localStorage or initialize empty array
-    const history =
-      JSON.parse(window.localStorage?.getItem("installmentHistory")) || [];
+// Date range calculation utilities
+const getDateRange = (range) => {
+  const now = new Date();
+  const start = new Date();
 
-    // Sort by timestamp (newest first)
-    return history.sort((a, b) => {
+  switch (range) {
+    case "7days":
+      start.setDate(now.getDate() - 7);
+      break;
+    case "15days":
+      start.setDate(now.getDate() - 15);
+      break;
+    case "30days":
+      start.setDate(now.getDate() - 30);
+      break;
+    case "90days":
+      start.setDate(now.getDate() - 90);
+      break;
+    case "all":
+    default:
+      return { start: null, end: null };
+  }
+
+  return { start, end: now };
+};
+
+// Function to export data to Excel (CSV format)
+const exportToExcel = (data, filename) => {
+  if (!data || data.length === 0) {
+    toast.error("No data to export");
+    return;
+  }
+
+  try {
+    // Define CSV headers - ADDED PAYMENT METHOD
+    const headers = [
+      "Invoice ID",
+      "Product ID",
+      "Product Name",
+      "Product Model",
+      "Product Category",
+      "Purchase Type",
+      "Quantity",
+      "Unit Price",
+      "Total Price",
+      "Company",
+      "Supplier",
+      "Supplier Contact",
+      "Payment Method", // ADDED THIS LINE
+      "Date",
+    ];
+
+    // Convert data to CSV rows - ADDED PAYMENT METHOD
+    const csvRows = data.map((purchase) => [
+      purchase.invoiceId,
+      purchase.productId,
+      purchase.name,
+      purchase.model,
+      purchase.category,
+      getPurchaseType(purchase),
+      purchase.quantity,
+      purchase.price,
+      purchase.total,
+      purchase.company,
+      purchase.supplier,
+      purchase.supplierContact,
+      purchase.paymentMethod || "N/A", // ADDED THIS LINE
+      formatShortDate(purchase.savedOn),
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(","),
+      ...csvRows.map((row) => row.map((field) => `"${field}"`).join(",")),
+    ].join("\n");
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    return true;
+  } catch (error) {
+    console.error("Error exporting to Excel:", error);
+    toast.error("Failed to export data");
+    return false;
+  }
+};
+
+// Load purchase history from localStorage with enhanced sorting by date - LATEST ON TOP
+const loadPurchaseHistory = () => {
+  try {
+    // Retrieve purchase history from localStorage or initialize empty array
+    const purchaseHistory =
+      JSON.parse(localStorage.getItem("purchaseHistory")) || [];
+
+    // Enhanced sort purchase history by date (newest first) - LATEST PURCHASES ON TOP
+    return purchaseHistory.sort((a, b) => {
       try {
-        const dateA = parseDateForSorting(a.timestamp || a.paymentDate);
-        const dateB = parseDateForSorting(b.timestamp || b.paymentDate);
-        return dateB.getTime() - dateA.getTime();
+        // Extract dates from multiple possible fields with fallbacks
+        const dateA = parseDateForSorting(
+          a.timestamp ||
+            a.savedOn ||
+            a.updatedOn ||
+            a.updatedAt ||
+            a.createdAt ||
+            a.date
+        );
+        const dateB = parseDateForSorting(
+          b.timestamp ||
+            b.savedOn ||
+            b.updatedOn ||
+            b.updatedAt ||
+            b.createdAt ||
+            b.date
+        );
+
+        const timestampA = dateA.getTime();
+        const timestampB = dateB.getTime();
+
+        // Sort descending (newest first) - LATEST PURCHASES ON TOP
+        return timestampB - timestampA;
       } catch (error) {
-        console.error("Sorting error:", error);
+        console.error("Sorting error for items:", a, b, error);
         return 0;
       }
     });
-  } catch (error) {
-    console.error("Error loading payment history from localStorage:", error);
+  } catch {
+    console.error("Error loading purchase history from localStorage.");
     return [];
   }
 };
 
-// Payment method background color formatter
-const getPaymentMethodColor = (payment) => {
-  const paymentMethod = payment.paymentMethod;
-
-  switch (paymentMethod) {
-    case "meezan":
-      return "bg-purple-950/50";
-    case "hbl":
-      return "bg-cyan-800/50";
-    case "easypaisa":
-      return "bg-green-700/50";
-    case "jazzcash":
-      return "bg-red-700/50";
-    case "cash":
-      return "bg-blue-600/50";
-    default:
-      return "bg-orange-600/50";
-  }
+// Purchase type display formatter
+const getPurchaseType = (product) => {
+  return product.type === "stock-addition" ? "STOCK ADDITION" : "NEW PURCHASE";
 };
 
-// Payment method display formatter
-const getPaymentMethodDisplay = (payment) => {
-  const methodMap = {
-    cash: "CASH",
-    hbl: "HBL BANK",
-    jazzcash: "JAZZCASH",
-    easypaisa: "EASY PAISA",
-    meezan: "MEEZAN BANK",
-  };
-  return (
-    methodMap[payment.paymentMethod] ||
-    payment.paymentMethod ||
-    "PAYMENT METHOD"
-  );
-};
-
-// Helper function to convert text to uppercase
-const toUpperCase = (text) => {
-  if (!text || typeof text !== "string") return text;
-  return text;
-};
-
-// Main InstallmentReports component function
-export default function InstallmentReports() {
-  // State management for payment history data
-  const [paymentHistory, setPaymentHistory] = useState([]);
+// Main PurchaseDetails component function
+export default function PurchaseDetails() {
+  // State management for purchase history data
+  const [purchaseHistory, setPurchaseHistory] = useState(loadPurchaseHistory);
 
   // State for search query
   const [query, setQuery] = useState("");
 
-  // State for payment method filtering
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState("All");
+  // State for purchase type filtering
+  const [purchaseTypeFilter, setPurchaseTypeFilter] = useState("All");
 
-  // State for customer filtering
-  const [customerFilter, setCustomerFilter] = useState("All");
+  // State for company filtering
+  const [companyFilter, setCompanyFilter] = useState("All");
 
   // State for date range filtering
   const [dateRangeFilter, setDateRangeFilter] = useState("all");
@@ -320,126 +302,129 @@ export default function InstallmentReports() {
   // State for report modal visibility
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  // State for currently selected receipt details
-  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  // State for currently selected product details
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Effect hook to handle initial data loading
+  // Effect hook to handle localStorage changes and initial data loading
   useEffect(() => {
-    setPaymentHistory(loadPaymentHistory());
-
     // Event handler for storage changes (other tabs/windows)
     const handleStorage = () => {
-      setPaymentHistory(loadPaymentHistory());
+      setPurchaseHistory(loadPurchaseHistory());
     };
     window.addEventListener("storage", handleStorage);
 
+    // Load initial data
+    setPurchaseHistory(loadPurchaseHistory());
+
+    // Cleanup event listener on component unmount
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Get unique customers for filter dropdown
-  const uniqueCustomers = useMemo(() => {
-    const customers = [
-      ...new Set(paymentHistory.map((p) => p.customer)),
-    ].filter(Boolean);
-    return customers.sort();
-  }, [paymentHistory]);
-
-  // Memoized filtered payment history based on search query and filters
-  const filteredHistory = useMemo(() => {
-    let arr = paymentHistory.slice(); // Start with already sorted array
+  // Memoized filtered purchase history based on search query and filters
+  const filtered = useMemo(() => {
+    let arr = purchaseHistory.slice(); // Start with already sorted array
 
     // Apply search filter if query exists
     if (query.trim()) {
-      const q = query;
-      arr = arr.filter((payment) =>
-        [
-          payment.invoiceId,
-          payment.customer,
-          payment.productName,
-          payment.paymentMethod,
-          payment.receiptId,
+      const q = query.trim();
+      arr = arr.filter((p) => {
+        // Search across multiple product fields - ADDED PAYMENT METHOD
+        const searchableFields = [
+          p.productId,
+          p.name,
+          p.model,
+          p.category,
+          p.company,
+          p.supplier,
+          p.supplierContact,
+          p.invoiceId,
+          p.type,
+          p.paymentMethod,
         ]
-          .join(" ")
+          .filter(Boolean) // Remove null/undefined values
+          .map((field) => field.toString())
+          .join(" ");
 
-          .includes(q)
-      );
+        return searchableFields.includes(q);
+      });
     }
 
-    // Apply payment method filter if not "All"
-    if (paymentMethodFilter !== "All") {
-      arr = arr.filter(
-        (payment) => payment.paymentMethod === paymentMethodFilter
-      );
+    // Apply purchase type filter if not "All"
+    if (purchaseTypeFilter !== "All") {
+      arr = arr.filter((p) => {
+        if (purchaseTypeFilter === "new-purchase") {
+          return p.type === "new-purchase";
+        } else if (purchaseTypeFilter === "stock-addition") {
+          return p.type === "stock-addition";
+        }
+        return true;
+      });
     }
 
-    // Apply customer filter if not "All"
-    if (customerFilter !== "All") {
-      arr = arr.filter((payment) => payment.customer === customerFilter);
+    // Apply company filter if not "All"
+    if (companyFilter !== "All") {
+      arr = arr.filter((p) => p.company === companyFilter);
     }
 
     // Apply date range filter if not "all"
     if (dateRangeFilter !== "all") {
       const { start, end } = getDateRange(dateRangeFilter);
       if (start && end) {
-        arr = arr.filter((payment) => {
-          const paymentDate = new Date(
-            payment.paymentDate || payment.timestamp
+        arr = arr.filter((p) => {
+          const purchaseDate = parseDateForSorting(
+            p.savedOn || p.timestamp || p.date
           );
-          return paymentDate >= start && paymentDate <= end;
+          return purchaseDate >= start && purchaseDate <= end;
         });
       }
     }
 
-    // Return filtered results - they maintain the original sort order
+    // Return filtered results - they maintain the original sort order (latest first)
     return arr;
   }, [
-    paymentHistory,
+    purchaseHistory,
     query,
-    paymentMethodFilter,
-    customerFilter,
+    purchaseTypeFilter,
+    companyFilter,
     dateRangeFilter,
   ]);
 
   // Statistics calculation
   const stats = useMemo(() => {
-    const total = filteredHistory.length;
-    const totalAmount = filteredHistory.reduce(
-      (sum, payment) => sum + (parseFloat(payment.paymentAmount) || 0),
+    const total = filtered.length;
+    const newPurchases = filtered.filter(
+      (p) => p.type === "new-purchase"
+    ).length;
+    const stockAdditions = filtered.filter(
+      (p) => p.type === "stock-addition"
+    ).length;
+    const totalQuantity = filtered.reduce(
+      (sum, p) => sum + (parseInt(p.quantity) || 0),
       0
     );
-    const totalRemaining = filteredHistory.reduce(
-      (sum, payment) => sum + (parseFloat(payment.remainingAmount) || 0),
+    const totalPurchaseValue = filtered.reduce(
+      (sum, p) => sum + (parseFloat(p.total) || 0),
       0
     );
-    const cashPayments = filteredHistory.filter(
-      (p) => p.paymentMethod === "cash"
-    ).length;
-    const bankPayments = filteredHistory.filter(
-      (p) => p.paymentMethod !== "cash"
-    ).length;
-    const cashAmount = filteredHistory
-      .filter((p) => p.paymentMethod === "cash")
-      .reduce(
-        (sum, payment) => sum + (parseFloat(payment.paymentAmount) || 0),
-        0
-      );
-    const bankAmount = filteredHistory
-      .filter((p) => p.paymentMethod !== "cash")
-      .reduce(
-        (sum, payment) => sum + (parseFloat(payment.paymentAmount) || 0),
-        0
-      );
+    const averagePurchaseValue = total > 0 ? totalPurchaseValue / total : 0;
 
     return {
       total,
-      totalAmount,
-      totalRemaining,
-      cashPayments,
-      bankPayments,
-      cashAmount,
-      bankAmount,
+      newPurchases,
+      stockAdditions,
+      totalQuantity,
+      totalPurchaseValue,
+      averagePurchaseValue,
     };
-  }, [filteredHistory]);
+  }, [filtered]);
+
+  // Get unique companies for filter dropdown
+  const uniqueCompanies = useMemo(() => {
+    const companies = [
+      ...new Set(purchaseHistory.map((p) => p.company).filter(Boolean)),
+    ];
+    return companies.sort();
+  }, [purchaseHistory]);
 
   // Toast notification configuration
   const toastConfig = {
@@ -460,35 +445,23 @@ export default function InstallmentReports() {
 
   // Generate and download Excel report
   const handleDownloadReport = () => {
-    if (filteredHistory.length === 0) {
+    if (filtered.length === 0) {
       notifyError("No data available to export");
       return;
     }
 
     const success = exportToExcel(
-      filteredHistory,
-      `installment-report-${new Date().toISOString().split("T")[0]}`
+      filtered,
+      `purchase-report-${new Date().toISOString().split("T")[0]}`
     );
     if (success) {
-      notifySuccess("INSTALLMENT REPORT EXPORTED TO EXCEL SUCCESSFULLY");
+      notifySuccess("PURCHASE REPORT EXPORTED TO EXCEL SUCCESSFULLY");
     }
   };
 
   // Open report summary modal
   const handleOpenReport = () => {
     setIsReportOpen(true);
-  };
-
-  // Handle view receipt action
-  const handleViewReceipt = (payment) => {
-    setSelectedReceipt(payment);
-    setIsViewOpen(true);
-  };
-
-  // Handle close modal action
-  const handleCloseModal = () => {
-    setIsViewOpen(false);
-    setSelectedReceipt(null);
   };
 
   // Component render method
@@ -503,15 +476,15 @@ export default function InstallmentReports() {
         {/* Page header section */}
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            INSTALLMENT PAYMENT REPORTS
+            PURCHASE DETAILS
           </h1>
           <p className="text-white/80">
-            ANALYZE AND EXPORT INSTALLMENT PAYMENT DATA WITH ADVANCED FILTERING
-            AND REPORTING.
+            ANALYZE AND EXPORT PURCHASE DATA WITH ADVANCED FILTERING AND
+            REPORTING.
           </p>
         </div>
 
-        {/* Search and Filter Panel */}
+        {/* Search and filter panel */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-md p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
           {/* Search input with icon */}
           <div className="flex items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-2 md:col-span-2">
@@ -519,54 +492,49 @@ export default function InstallmentReports() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="SEARCH INSTALLMENT PAYMENTS..."
+              placeholder="SEARCH PURCHASES..."
               className="flex-1 outline-none bg-transparent text-white placeholder-white/60"
             />
           </div>
 
-          {/* Payment Method filter dropdown */}
+          {/* Purchase Type filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">PAYMENT METHOD</label>
+            <label className="text-sm text-white/70">PURCHASE TYPE</label>
             <select
-              value={paymentMethodFilter}
-              onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              value={purchaseTypeFilter}
+              onChange={(e) => setPurchaseTypeFilter(e.target.value)}
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
-              <option className="bg-black/95 text-white">ALL</option>
-              <option value="cash" className="bg-black/95 text-white">
-                CASH
+              <option value="All" className="bg-black/95 text-white">
+                ALL
               </option>
-              <option value="hbl" className="bg-black/95 text-white">
-                HBL BANK
+              <option value="new-purchase" className="bg-black/95 text-white">
+                New Purchase
               </option>
-              <option value="meezan" className="bg-black/95 text-white">
-                MEEZAN BANK
-              </option>
-              <option value="easypaisa" className="bg-black/95 text-white">
-                EASY PAISA
-              </option>
-              <option value="jazzcash" className="bg-black/95 text-white">
-                JAZZ CASH
+              <option value="stock-addition" className="bg-black/95 text-white">
+                Stock Addition
               </option>
             </select>
           </div>
 
-          {/* Customer filter dropdown */}
+          {/* Company filter dropdown */}
           <div className="flex items-center gap-2 justify-between">
-            <label className="text-sm text-white/70">CUSTOMER</label>
+            <label className="text-sm text-white/70">COMPANY</label>
             <select
-              value={customerFilter}
-              onChange={(e) => setCustomerFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
-              <option className="bg-black/95 text-white">ALL</option>
-              {uniqueCustomers.map((customer) => (
+              <option value="All" className="bg-black/95 text-white">
+                ALL
+              </option>
+              {uniqueCompanies.map((company) => (
                 <option
-                  key={customer}
-                  value={customer}
+                  key={company}
+                  value={company}
                   className="bg-black/95 text-white"
                 >
-                  {toUpperCase(customer)}
+                  {company}
                 </option>
               ))}
             </select>
@@ -578,7 +546,7 @@ export default function InstallmentReports() {
             <select
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
-              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1"
+              className="p-2 border border-white/10 rounded bg-white/10 text-white flex-1  scrollbar-hide"
             >
               <option value="all" className="bg-black/95 text-white">
                 ALL TIME
@@ -618,73 +586,72 @@ export default function InstallmentReports() {
         </div>
 
         {/* Main data table container */}
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide">
-          {/* Payment history table */}
-          <table className="w-full text-white/90 min-w-[800px]">
-            {/* Table header with column labels */}
+        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-md overflow-x-auto scrollbar-hide ">
+          {/* Purchase history table */}
+          <table className="w-full text-white/90 min-w-[1200px]">
+            {/* Table header with column labels - ADDED PAYMENT METHOD COLUMN */}
             <thead className="bg-white/10 text-left text-sm">
               <tr>
+                <th className="p-3">INVOICE</th>
+                <th className="p-3">NAME</th>
+                <th className="p-3">TYPE</th>
+                <th className="p-3">QTY</th>
+                <th className="p-3">PRICE</th>
+                <th className="p-3">PAYMENT METHOD</th>{" "}
+                {/* ADDED THIS COLUMN */}
                 <th className="p-3">DATE</th>
-                <th className="p-3">RECEIPT ID</th>
-                <th className="p-3">INVOICE ID</th>
-                <th className="p-3">CUSTOMER</th>
-                <th className="p-3">PRODUCT</th>
-                <th className="p-3">AMOUNT</th>
-                <th className="p-3">METHOD</th>
                 <th className="p-3">ACTIONS</th>
               </tr>
             </thead>
-
-            {/* Table body with payment records - LATEST PAYMENTS ON TOP */}
+            {/* Table body with purchase records - LATEST PURCHASES ON TOP */}
             <tbody>
-              {/* Map through filtered payment records */}
-              {filteredHistory.map((payment) => (
+              {/* Map through filtered purchase records */}
+              {filtered.map((p) => (
                 <tr
-                  key={`${payment.id}-${payment.paymentDate}`}
-                  className="border-t border-white/5 hover:bg-cyan-600/20 transition"
+                  key={`${p.invoiceId}-${p.productId}`} // Unique key for each row
+                  className={`border-t border-white/5 transition 
+        ${
+          p.type === "stock-addition"
+            ? " bg-blue-700/30 hover:bg-blue-700/50"
+            : " bg-green-700/30 hover:bg-green-700/50"
+        }`}
                 >
-                  {/* Payment date column */}
-                  <td className="p-3">
-                    {formatShortDate(payment.paymentDate || payment.timestamp)}
-                  </td>
-
-                  {/* Receipt ID column - UPPERCASE */}
-                  <td className="p-3 font-mono font-semibold">
-                    {payment.receiptId || "—"}
-                  </td>
-
                   {/* Invoice ID column */}
-                  <td className="p-3 font-mono">
-                    {toUpperCase(payment.invoiceId)}
-                  </td>
-
-                  {/* Customer name column */}
-                  <td className="p-3">{toUpperCase(payment.customer)}</td>
+                  <td className="p-3 font-mono">{p.invoiceId}</td>
 
                   {/* Product name column */}
-                  <td className="p-3">{toUpperCase(payment.productName)}</td>
-
-                  {/* Payment amount column */}
-                  <td className="p-3 font-semibold">
-                    {formatCurrency(payment.paymentAmount)}
-                  </td>
-
-                  {/* Payment method column */}
+                  <td className="p-3">{p.name}</td>
+                  {/* Purchase type with colored badge */}
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 text-xs border rounded-full border-white/30 ${getPaymentMethodColor(
-                        payment
-                      )}`}
+                      className={`px-2 py-1  text-xs text-white border rounded-full border-white/30 ${
+                        p.type === "stock-addition"
+                          ? "bg-blue-600"
+                          : "bg-green-600"
+                      }`}
                     >
-                      {getPaymentMethodDisplay(payment)}
+                      {getPurchaseType(p)}
                     </span>
                   </td>
+                  {/* Quantity column */}
+                  <td className="p-3">{p.quantity}</td>
+                  {/* Price column */}
+                  <td className="p-3">Rs: {p.price}/-</td>
 
+                  {/* Payment Method column - ADDED THIS COLUMN */}
+                  <td className="p-3 text-sm">
+                    {p.paymentMethod ? p.paymentMethod : "—"}
+                  </td>
+                  {/* Date column with short format */}
+                  <td className="p-3 text-sm">{formatShortDate(p.savedOn)}</td>
                   {/* Actions column with view button */}
                   <td className="p-3 flex gap-2">
                     <button
-                      title="View Receipt"
-                      onClick={() => handleViewReceipt(payment)}
+                      title="VIEW"
+                      onClick={() => {
+                        setSelectedProduct(p);
+                        setIsViewOpen(true);
+                      }}
                       className="p-2 rounded bg-cyan-900 text-white hover:bg-cyan-950 transition-colors cursor-pointer"
                     >
                       <VisibilityIcon fontSize="small" />
@@ -694,10 +661,10 @@ export default function InstallmentReports() {
               ))}
 
               {/* Empty state message */}
-              {filteredHistory.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="p-4 text-center text-white/70">
-                    NO PAYMENT RECORDS FOUND.
+                  <td colSpan="11" className="p-4 text-center text-white/70">
+                    NO PURCHASE RECORDS FOUND.
                   </td>
                 </tr>
               )}
@@ -706,8 +673,8 @@ export default function InstallmentReports() {
         </div>
       </div>
 
-      {/* Receipt details modal */}
-      {isViewOpen && selectedReceipt && (
+      {/* Product details modal */}
+      {isViewOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50 p-2 md:p-4 backdrop-blur-md print:p-0">
           {/* Modal content container */}
           <div className="bg-white text-black rounded-lg w-full max-w-md mx-auto max-h-[95vh] overflow-y-auto scrollbar-hide relative font-sans text-sm border border-gray-300">
@@ -719,96 +686,142 @@ export default function InstallmentReports() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  INSTALLMENT PAYMENT RECEIPT
+                  PURCHASE & INVOICE DETAILS
                 </p>
                 <div className="mt-2 space-y-1">
                   <p className="text-xs font-semibold text-gray-700">
-                    RECEIPT ID:{" "}
-                    {selectedReceipt.receiptId ||
-                      selectedReceipt.id?.slice(0, 8)}
+                    INVOICE: {selectedProduct.invoiceId}
                   </p>
-                  <p className="text-xs text-gray-600">
-                    {formatDateTime(
-                      selectedReceipt.timestamp || selectedReceipt.paymentDate
-                    )}
-                  </p>
+                  {/* Purchase type badge */}
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${
+                      selectedProduct.type === "stock-addition"
+                        ? "bg-blue-200 text-blue-800 border border-blue-400"
+                        : "bg-green-200 text-green-800 border border-green-400"
+                    }`}
+                  >
+                    {getPurchaseType(selectedProduct)}
+                  </span>
                 </div>
               </div>
 
-              {/* Payment details section */}
+              {/* Product details section */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">INVOICE NO:</span>
+                  <span className="font-medium text-gray-700">PRODUCT ID:</span>
                   <span className="text-gray-900 text-right font-mono">
-                    {toUpperCase(selectedReceipt.invoiceId)}
+                    {selectedProduct.productId}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">CUSTOMER:</span>
+                  <span className="font-medium text-gray-700">NAME:</span>
                   <span className="text-gray-900 text-right">
-                    {toUpperCase(selectedReceipt.customer)}
+                    {selectedProduct.name}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">PRODUCT:</span>
+                  <span className="font-medium text-gray-700">MODEL:</span>
                   <span className="text-gray-900 text-right">
-                    {toUpperCase(selectedReceipt.productName)}
+                    {selectedProduct.model}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">CATEGORY:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.category}
                   </span>
                 </div>
               </div>
 
-              {/* Payment information section */}
+              {/* Purchase details section */}
               <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">
-                    PAYMENT DATE:
-                  </span>
+                  <span className="font-medium text-gray-700">QUANTITY:</span>
                   <span className="text-gray-900 text-right">
-                    {formatDateTime(
-                      selectedReceipt.paymentDate || selectedReceipt.timestamp
-                    )}
+                    {selectedProduct.quantity} PIECE(S)
                   </span>
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">
+                    PURCHASE PRICE:
+                  </span>
+                  <span className="text-gray-900 text-right">
+                    Rs: {selectedProduct.price}/-
+                  </span>
+                </div>
+                {/* Payment Method section - ADDED THIS SECTION */}
                 <div className="grid grid-cols-2 gap-2">
                   <span className="font-medium text-gray-700">
                     PAYMENT METHOD:
                   </span>
                   <span className="text-gray-900 text-right">
-                    {getPaymentMethodDisplay(selectedReceipt)}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">
-                    AMOUNT PAID:
-                  </span>
-                  <span className="text-gray-900 text-right font-semibold">
-                    {formatCurrency(selectedReceipt.paymentAmount)}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="font-medium text-gray-700">
-                    REMAINING BALANCE:
-                  </span>
-                  <span className="text-gray-900 text-right">
-                    {formatCurrency(selectedReceipt.remainingAmount || 0)}
+                    {selectedProduct.paymentMethod
+                      ? selectedProduct.paymentMethod
+                      : "—"}
                   </span>
                 </div>
               </div>
 
               {/* Total value highlight section */}
-              <div className="bg-green-100 border border-green-200 rounded-md p-2 mb-6">
+              <div className="bg-blue-200 border border-blue-900 rounded-md p-2 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <span className="font-bold text-green-900">TOTAL PAID:</span>
-                  <span className="font-bold text-green-900 text-right">
-                    {formatCurrency(selectedReceipt.paymentAmount)}
+                  <span className="font-bold text-blue-900">
+                    PURCHASE VALUE:
+                  </span>
+                  <span className="font-bold text-blue-900  text-right">
+                    Rs: {selectedProduct.total}/-
                   </span>
                 </div>
               </div>
 
+              {/* Supplier information section */}
+              <div className="border-t border-dashed border-gray-300 pt-3 mt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">COMPANY:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.company}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">SUPPLIER:</span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.supplier}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-gray-700">
+                    SUPPLIER CONTACT:
+                  </span>
+                  <span className="text-gray-900 text-right">
+                    {selectedProduct.supplierContact}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timestamp information */}
+              <div className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 pt-3 mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span>PURCHASE DATE:</span>
+                  <span className="text-right">
+                    {formatDateTime(selectedProduct.savedOn)}
+                  </span>
+                </div>
+                {/* Show update timestamp if available */}
+                {selectedProduct.updatedAt && (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <span>LAST UPDATED:</span>
+                    <span className="text-right">
+                      {formatDateTime(selectedProduct.updatedAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Footer disclaimer */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>THANK YOU FOR YOUR PAYMENT!</p>
-                <p>THIS IS A COMPUTER-GENERATED RECEIPT.</p>
+                <p>THIS IS A COMPUTER-GENERATED PURCHASE RECORD.</p>
+                <p>CONTAINS INVOICE AND PURCHASE DETAILS ONLY.</p>
               </div>
             </div>
 
@@ -818,7 +831,7 @@ export default function InstallmentReports() {
                 {/* Print button */}
                 <button
                   onClick={handlePrint}
-                  className="px-4 py-2 rounded cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
+                  className="px-4 py-2 rounded bg-blue-600 cursor-pointer text-white hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2"
                 >
                   <span>🖨️</span>
                   <span>PRINT</span>
@@ -826,8 +839,8 @@ export default function InstallmentReports() {
 
                 {/* Close modal button */}
                 <button
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 rounded cursor-pointer bg-gray-600 text-white hover:bg-gray-700 transition font-medium"
+                  onClick={() => setIsViewOpen(false)}
+                  className="px-4 py-2 rounded bg-gray-600 cursor-pointer text-white hover:bg-gray-700 transition font-medium"
                 >
                   CLOSE
                 </button>
@@ -848,14 +861,14 @@ export default function InstallmentReports() {
                   ZUBI ELECTRONICS
                 </h2>
                 <p className="text-lg text-gray-600 mt-1">
-                  INSTALLMENT PAYMENT REPORT SUMMARY
+                  PURCHASE REPORT SUMMARY
                 </p>
                 <div className="mt-3 space-y-1 text-sm">
                   <p className="font-semibold text-gray-700">
                     REPORT GENERATED: {formatDateTime(new Date())}
                   </p>
                   <p className="text-gray-600">
-                    Total Records: {filteredHistory.length} | Date Range:{" "}
+                    Total Records: {filtered.length} | Date Range:{" "}
                     {dateRangeFilter === "all"
                       ? "All Time"
                       : dateRangeFilter === "7days"
@@ -875,45 +888,43 @@ export default function InstallmentReports() {
                   <div className="text-2xl font-bold text-blue-900">
                     {stats.total}
                   </div>
-                  <div className="text-blue-700 text-sm">TOTAL PAYMENTS</div>
+                  <div className="text-blue-700 text-sm">TOTAL PURCHASES</div>
                 </div>
                 <div className="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-green-900">
-                    {formatCurrency(stats.totalAmount)}
+                    {stats.newPurchases}
                   </div>
-                  <div className="text-green-700 text-sm">TOTAL COLLECTED</div>
-                </div>
-                <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-yellow-900">
-                    {formatCurrency(stats.totalRemaining)}
-                  </div>
-                  <div className="text-yellow-700 text-sm">
-                    REMAINING BALANCE
-                  </div>
+                  <div className="text-green-700 text-sm">NEW PURCHASES</div>
                 </div>
                 <div className="bg-teal-100 border border-teal-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-teal-900">
-                    {stats.cashPayments}
+                    {stats.stockAdditions}
                   </div>
-                  <div className="text-teal-700 text-sm">CASH PAYMENTS</div>
+                  <div className="text-teal-700 text-sm">STOCK ADDITIONS</div>
+                </div>
+                <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-900">
+                    {stats.totalQuantity}
+                  </div>
+                  <div className="text-yellow-700 text-sm">TOTAL QUANTITY</div>
                 </div>
                 <div className="bg-purple-100 border border-purple-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-900">
-                    {stats.bankPayments}
+                    Rs: {stats.totalPurchaseValue.toLocaleString()}/-
                   </div>
-                  <div className="text-purple-700 text-sm">BANK PAYMENTS</div>
+                  <div className="text-purple-700 text-sm">TOTAL VALUE</div>
                 </div>
                 <div className="bg-indigo-100 border border-indigo-300 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-indigo-900">
-                    {formatCurrency(stats.cashAmount)}
+                    Rs: {stats.averagePurchaseValue.toFixed(2)}/-
                   </div>
-                  <div className="text-indigo-700 text-sm">CASH AMOUNT</div>
+                  <div className="text-indigo-700 text-sm">AVG PURCHASE</div>
                 </div>
               </div>
 
               {/* Footer Information */}
               <div className="text-center border-t border-dashed border-gray-300 pt-4 text-xs text-gray-600">
-                <p>THIS IS A COMPUTER-GENERATED INSTALLMENT PAYMENT REPORT.</p>
+                <p>THIS IS A COMPUTER-GENERATED PURCHASE REPORT.</p>
                 <p>CONTAINS CONFIDENTIAL BUSINESS INFORMATION.</p>
               </div>
             </div>
